@@ -75,6 +75,7 @@
     --glow-mult:1;
     --muted-rgb:245,243,234;
     --line:rgba(244,246,247,0.12);
+    --promo-bg-image:url('bg-marquee.jpg');
   }
   *{box-sizing:border-box; margin:0; padding:0;}
 
@@ -311,32 +312,22 @@
     box-shadow:0 0 22px rgba(var(--gold-rgb),calc(var(--glow-mult) * 0.35)), 0 0 40px rgba(var(--gold-rgb),calc(var(--glow-mult) * 0.15));
   }
   /* PROMO STRIPE */
-  /* Fita 100% em código — arco de cores curvo (não listras retas), esmaecendo
-     pro preto do lado direito, igual à referência. Sem depender de imagem. */
+  /* Imagem de fundo autoral (bg-marquee.jpg) — trocável via --promo-bg-image.
+     Texto em marquee por cima, fundo transparente, sem disputar espaço com a
+     textura. Estrutura de loop (3 cópias + translateX(-33.3333%)) mantida. */
   .promo-stripe{
     position:relative; overflow:hidden;
     height:36px;
-    background:#000000;
-  }
-  .promo-stripe::before{
-    content:'';
-    position:absolute; left:0; top:0; width:62%; height:100%; z-index:2;
-    background:repeating-conic-gradient(
-      from 0deg at -4% 118%,
-      transparent 0deg 12deg,
-      #14532D 12deg 24deg,
-      #FFD400 24deg 36deg,
-      #E11D2E 36deg 48deg,
-      #FFFFFF 48deg 60deg,
-      #2563EB 60deg 72deg
-    );
-    -webkit-mask-image:linear-gradient(90deg, #000 55%, transparent 100%);
-            mask-image:linear-gradient(90deg, #000 55%, transparent 100%);
+    background-image:var(--promo-bg-image);
+    background-size:cover;
+    background-position:center 35%;
+    background-repeat:no-repeat;
   }
   .promo-stripe-track{
     position:relative; z-index:5; height:100%;
     display:flex; align-items:center; gap:48px;
     width:max-content;
+    background:transparent;
     animation:promoMarquee 13.5s linear infinite;
   }
   @keyframes promoMarquee{
@@ -344,10 +335,15 @@
     to{ transform:translateX(-33.3333%); }
   }
   .promo-stripe span{
+    display:inline-flex; align-items:center; gap:10px;
     flex-shrink:0; white-space:nowrap;
-    font-family:'Super Bouncer', 'Bungee', sans-serif; font-weight:400; font-size:15px;
+    font-family:'Super Bouncer', 'Bungee', sans-serif; font-weight:900; font-size:15px;
     letter-spacing:.01em; text-transform:uppercase; color:#FFFFFF;
-    text-shadow:0 2px 5px rgba(0,0,0,0.7);
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,0.65));
+  }
+  .promo-stripe .promo-sep{
+    font-size:12px; line-height:1; font-style:normal; color:var(--gold);
+    filter:drop-shadow(0 0 calc(4px * var(--glow-mult)) var(--gold)) drop-shadow(0 0 calc(9px * var(--glow-mult)) var(--gold));
   }
 
   /* HERO FULL-BLEED — "estádio" animado */
@@ -1184,9 +1180,9 @@
 
     <div class="promo-stripe">
       <div class="promo-stripe-track">
-        <span>O maior hub de mantos</span>
-        <span>O maior hub de mantos</span>
-        <span>O maior hub de mantos</span>
+        <span><i class="promo-sep">✦</i>O maior hub de mantos</span>
+        <span><i class="promo-sep">✦</i>O maior hub de mantos</span>
+        <span><i class="promo-sep">✦</i>O maior hub de mantos</span>
       </div>
     </div>
 
