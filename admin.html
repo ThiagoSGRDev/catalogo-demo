@@ -1,0 +1,3929 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manto Hub — Painel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Rajdhani não tem peso 900 — usamos 700 (o mais pesado real da fonte)
+     nos botões principais pra dar o efeito "extra-negrito" sem arriscar
+     negrito falso/sintético borrado do navegador. */
+  :root{
+    --bg:#050505; --panel:#0A0C0A; --panel-2:#0F120F; --line:rgba(0,255,102,0.16);
+    --text:#FFFFFF; --text-dim:#D1D9E0; --text-faint:#98A2AD;
+    --neon-green:#00FF66; --neon-blue:#00D4FF; --green:#22C55E; --red:#EF4444; --amber:#F59E0B;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background-image:
+      linear-gradient(to bottom, rgba(5,5,5,0.72), rgba(5,5,5,0.94)),
+      url('https://images.unsplash.com/photo-1518605368461-1ee7c5320746?q=80&w=2000&auto=format&fit=crop');
+    background-size:cover; background-position:center; background-repeat:no-repeat;
+    background-attachment:fixed;
+    color:var(--text); font-family:'Rajdhani', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height:100vh; -webkit-tap-highlight-color:transparent;
+    position:relative;
+  }
+  body::after{
+    content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(circle at 0% 0%, rgba(0,255,102,0.16), transparent 30%),
+      radial-gradient(circle at 100% 0%, rgba(0,255,102,0.12), transparent 30%),
+      radial-gradient(circle at 0% 100%, rgba(0,255,102,0.10), transparent 30%),
+      radial-gradient(circle at 100% 100%, rgba(0,255,102,0.14), transparent 30%);
+    filter:blur(100px);
+  }
+  input, select, textarea, button{ font-family:inherit; font-size:15px; }
+  .hidden{ display:none !important; }
+
+  /* ============================================================
+     LOGIN — Sports Tech Premium (EA Sports FC / apps de marca esportiva
+     de elite). #loginView — .field/.btn são reaproveitadas em dezenas de
+     telas do painel (produto, time, liga, loja...), então NUNCA
+     sobrescrevo essas classes soltas, só com o prefixo #loginView na frente.
+     ============================================================ */
+  #loginView{
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:24px; position:relative; overflow:hidden;
+    background-image:
+      linear-gradient(to bottom, rgba(5,5,5,0.72), rgba(5,5,5,0.94)),
+      url('https://images.unsplash.com/photo-1518605368461-1ee7c5320746?q=80&w=2000&auto=format&fit=crop');
+    background-size:cover; background-position:center; background-repeat:no-repeat;
+    font-family:'Rajdhani', 'Segoe UI', sans-serif;
+  }
+  #loginView::after{
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(circle at 0% 0%, rgba(0,255,102,0.18), transparent 32%),
+      radial-gradient(circle at 100% 0%, rgba(0,255,102,0.14), transparent 32%),
+      radial-gradient(circle at 0% 100%, rgba(0,255,102,0.11), transparent 32%),
+      radial-gradient(circle at 100% 100%, rgba(0,255,102,0.15), transparent 32%);
+    filter:blur(100px);
+  }
+
+  /* ---- Cenário: textura de tecido (mesh) + holofote diagonal de estádio ---- */
+  .stadium-mesh{
+    position:absolute; inset:0; z-index:0; pointer-events:none; opacity:0.55;
+    background-image:radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1.6px);
+    background-size:15px 15px;
+    mask-image:radial-gradient(circle at 50% 25%, black 0%, transparent 72%);
+    -webkit-mask-image:radial-gradient(circle at 50% 25%, black 0%, transparent 72%);
+  }
+  .stadium-light{
+    position:absolute; z-index:0; pointer-events:none;
+    top:-35%; left:50%; width:150%; height:95%; transform:translateX(-50%) rotate(6deg);
+    background:radial-gradient(ellipse 55% 100% at 50% 0%, rgba(0,255,102,0.20), transparent 62%);
+    filter:blur(46px); animation:holofotePulso 6s ease-in-out infinite;
+  }
+  @keyframes holofotePulso{
+    0%, 100%{ opacity:0.75; }
+    50%{ opacity:1; }
+  }
+
+  /* ---- Cartão de vidro fosco ---- */
+  .login-card{
+    width:100%; max-width:380px; position:relative; z-index:2;
+    background:rgba(15,15,20,0.4); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+    border:1px solid rgba(255,255,255,0.05);
+    border-top:1px solid rgba(0,255,102,0.3);
+    border-radius:26px; padding:40px 32px;
+    box-shadow:0 40px 90px rgba(0,0,0,0.75), 0 0 60px rgba(0,255,102,0.06);
+    animation:hudEntrada .7s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes hudEntrada{
+    from{ opacity:0; transform:translateY(28px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .login-logo{ text-align:center; margin-bottom:30px; }
+  .login-logo-img{
+    height:52px; width:auto; display:inline-block;
+    filter:drop-shadow(0 0 10px rgba(0,255,102,0.55)) drop-shadow(0 0 22px rgba(0,255,102,0.3));
+  }
+  .login-logo-fallback{ font-size:24px; font-weight:800; letter-spacing:.02em; font-family:'Rajdhani', sans-serif; text-transform:uppercase; }
+  .login-logo-fallback span{
+    color:var(--neon-green); text-shadow:0 0 10px rgba(0,255,102,0.7), 0 0 24px rgba(0,255,102,0.4);
+  }
+  .login-logo .sub{
+    font-family:'Space Mono', monospace; font-size:10.5px; letter-spacing:.15em; text-transform:uppercase;
+    color:rgba(255,255,255,0.35); margin-top:10px;
+  }
+
+  #loginView .field{ margin-bottom:22px; }
+  #loginView .field label{
+    display:block; font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+    color:rgba(255,255,255,0.45); margin-bottom:8px; font-family:'Rajdhani', sans-serif;
+  }
+  #loginView .field input{
+    width:100%; background:transparent; border:none; border-bottom:1.5px solid rgba(255,255,255,0.2);
+    border-radius:0; padding:9px 2px; color:#fff; outline:none; font-size:16px;
+    font-family:'Rajdhani', sans-serif; font-weight:500; letter-spacing:.02em;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  #loginView .field input::placeholder{ color:rgba(255,255,255,0.25); }
+  #loginView .field input:focus{
+    border-bottom-color:var(--neon-green);
+    box-shadow:0 1px 0 0 var(--neon-green), 0 4px 14px -6px rgba(0,255,102,0.7);
+  }
+  #loginView .password-field{ position:relative; }
+  #loginView .password-field input{ padding-right:30px; }
+  #loginView .password-toggle{
+    position:absolute; right:0; top:10px; background:none; border:none;
+    color:rgba(255,255,255,0.35); cursor:pointer; padding:6px; display:flex;
+  }
+  #loginView .password-toggle:active{ color:var(--neon-green); }
+
+  #loginView .btn-primary{
+    width:100%; margin-top:8px; background:var(--neon-green); color:#000000;
+    border:1px solid var(--neon-green); border-radius:14px;
+    font-family:'Rajdhani', sans-serif; font-weight:700; font-size:15px; letter-spacing:.08em; text-transform:uppercase;
+    padding:14px 18px; box-shadow:0 0 15px rgba(0,255,102,0.35); transition:box-shadow .2s;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  }
+  #loginView .btn-primary::after{ content:'➔'; font-size:15px; transition:transform .2s; }
+  #loginView .btn-primary:hover::after, #loginView .btn-primary:focus-visible::after{ transform:translateX(3px); }
+  #loginView .btn-primary:hover, #loginView .btn-primary:focus-visible{
+    box-shadow:0 0 25px rgba(0,255,102,0.6);
+  }
+  #loginView .btn-primary:disabled{ opacity:0.5; }
+
+  #loginView a{ font-family:'Rajdhani', sans-serif; font-weight:600; letter-spacing:.03em; transition:color .15s; }
+  #loginView a:hover{ color:var(--neon-green) !important; }
+  #loginView .login-footer-hint{
+    font-family:'Space Mono', monospace; font-size:10.5px; letter-spacing:.06em; text-align:center;
+    text-transform:uppercase; color:rgba(255,255,255,0.25); margin-top:22px; font-weight:400;
+  }
+  #loginView .login-error{
+    background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#FCA5A5;
+    padding:10px 12px; border-radius:4px; font-size:13px; margin-bottom:14px;
+    font-family:'Rajdhani', sans-serif; font-weight:500;
+  }
+
+  /* ---- Botões base — usados no painel inteiro (produto, time, loja...),
+     não só no login. O HUD acima só adiciona um visual por cima, escopado
+     em #loginView .btn-primary — isso aqui continua valendo pro resto. ---- */
+  .field{ margin-bottom:18px; }
+  .field label{
+    display:block; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text-dim); margin-bottom:8px; font-family:'Rajdhani', sans-serif;
+  }
+  .field input{
+    width:100%; background:transparent; border:none; border-bottom:1.5px solid var(--line); border-radius:4px 4px 0 0;
+    padding:11px 8px; color:var(--text); outline:none; font-family:'Rajdhani', sans-serif; font-weight:500; font-size:16px;
+    transition:border-color .15s, box-shadow .15s, background .15s;
+  }
+  .field input:focus{ border-bottom-color:var(--neon-green); box-shadow:0 1px 0 0 var(--neon-green); background:rgba(0,255,102,0.05); }
+  .password-field{ position:relative; }
+  .password-field input{ padding-right:34px; }
+  .password-toggle{
+    position:absolute; right:0; top:8px; background:none; border:none; color:var(--text-faint); cursor:pointer; padding:6px; display:flex;
+  }
+  .password-toggle:active{ color:var(--neon-green); }
+  .login-footer-hint{ text-align:center; font-size:11.5px; color:var(--text-faint); margin-top:22px; }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:none; border-radius:12px; padding:13px 18px; cursor:pointer;
+    font-family:'Rajdhani', sans-serif; font-weight:700; letter-spacing:.04em; text-transform:uppercase; font-size:14px;
+    transition:box-shadow .2s, border-color .2s, filter .15s, background .2s;
+  }
+  .btn:active{ filter:brightness(0.85); }
+  .btn-primary{
+    background:var(--neon-green); color:#000000; width:100%; font-weight:700;
+    border:1px solid var(--neon-green); box-shadow:0 0 15px rgba(0,255,102,0.35);
+  }
+  .btn-primary:hover{ box-shadow:0 0 25px rgba(0,255,102,0.6); }
+  .btn-secondary{ background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.22); }
+  .btn-secondary:hover{ border-color:rgba(255,255,255,0.55); background:rgba(255,255,255,0.14); box-shadow:0 0 15px rgba(255,255,255,0.15); }
+  .btn-danger{ background:rgba(239,68,68,0.14); color:#FF9B9B; border:1px solid rgba(239,68,68,0.5); }
+  .btn-danger:hover{ box-shadow:0 0 15px rgba(239,68,68,0.35); border-color:var(--red); }
+  .btn-ghost{ background:transparent; color:var(--text-dim); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .login-error{ background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#FCA5A5; padding:10px 12px; border-radius:8px; font-size:13px; margin-bottom:14px; }
+
+
+  /* ---- APP SHELL ---- */
+  #appView{ min-height:100vh; padding-bottom:40px; }
+  header{
+    position:sticky; top:0; z-index:10; background:rgba(5,5,5,0.88); backdrop-filter:blur(8px);
+    border-bottom:1px solid transparent;
+    border-image:linear-gradient(90deg, rgba(0,255,102,0.4), rgba(0,212,255,0.3), transparent) 1;
+    padding:14px 16px; display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:8px;
+  }
+  header .brand{ font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px; font-family:'Rajdhani', sans-serif; letter-spacing:.04em; text-transform:uppercase; }
+  header .brand-logo-img{ height:26px; width:auto; display:block; filter:drop-shadow(0 0 6px rgba(0,255,102,0.4)); }
+  header .brand .sutil{ color:var(--text-faint); font-weight:500; }
+  header .actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  header .user-email{ font-size:12px; color:var(--text-faint); display:none; font-family:'Space Mono', monospace; }
+  @media (min-width:520px){ header .user-email{ display:inline; } }
+
+  main{ padding:16px; max-width:900px; margin:0 auto; }
+
+  /* ---- BENTO GRID — KPIs no topo do painel ---- */
+  .bento-kpis{
+    display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:22px;
+  }
+  @media (min-width:640px){ .bento-kpis{ grid-template-columns:repeat(4, 1fr); } }
+  .kpi-card{
+    background:rgba(15,20,30,0.6); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+    border:1px solid rgba(255,255,255,0.08); border-top:1px solid rgba(0,255,102,0.4);
+    border-radius:16px; padding:16px; display:flex; align-items:center; gap:12px;
+  }
+  .kpi-icon{
+    width:42px; height:42px; border-radius:12px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+  }
+  .kpi-icon-green{ background:rgba(0,255,102,0.14); }
+  .kpi-icon-orange{ background:rgba(255,149,0,0.14); }
+  .kpi-icon-blue{ background:rgba(0,212,255,0.14); }
+  .kpi-info{ min-width:0; }
+  .kpi-valor{ font-size:22px; font-weight:700; font-family:'Rajdhani', sans-serif; color:#fff; line-height:1.1; }
+  .kpi-label{ font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+
+  .toolbar{ display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+  .toolbar-row{ display:flex; gap:8px; }
+  .search-input{
+    flex:1; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:11px 14px; color:var(--text); outline:none;
+  }
+  .search-input:focus{ border-color:var(--neon-green); }
+  .filter-chips{ display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; }
+  .chip{
+    flex-shrink:0; background:var(--panel); border:1px solid var(--line); color:var(--text-dim);
+    border-radius:999px; padding:7px 14px; font-size:13px; cursor:pointer; white-space:nowrap;
+  }
+  .chip.active{ background:var(--text); color:var(--bg); border-color:var(--text); font-weight:600; }
+
+  .product-count{ font-size:13px; color:var(--text-faint); margin-bottom:10px; }
+
+  .product-list{ display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; }
+  @media (min-width:640px){ .product-list{ grid-template-columns:repeat(3, 1fr); } }
+  @media (min-width:900px){ .product-list{ grid-template-columns:repeat(4, 1fr); } }
+
+  .product-card{
+    background:rgba(15,20,30,0.6); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+    border:1px solid rgba(255,255,255,0.08); border-top:1px solid rgba(0,255,102,0.4);
+    border-radius:16px; overflow:hidden; cursor:pointer;
+  }
+  .product-card.unavailable{ opacity:0.5; }
+  .product-card-photo{
+    position:relative; aspect-ratio:1/1; background:var(--panel-2);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .product-card-photo img{ width:100%; height:100%; object-fit:cover; }
+  .product-card-photo .placeholder{ font-size:11px; color:var(--text-faint); text-align:center; }
+  .product-card-tags{ position:absolute; top:8px; left:8px; display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
+  .product-card-actions{ position:absolute; top:8px; right:8px; display:flex; gap:6px; }
+  .icon-btn-mini{
+    background:rgba(0,0,0,0.6); border-radius:8px; width:30px; height:30px;
+    display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer; flex-shrink:0;
+  }
+  .icon-btn-mini svg{ width:14px; height:14px; }
+  .product-card-body{ padding:12px; }
+  .product-card-title{
+    font-size:13px; font-weight:600; color:#fff;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.3; min-height:2.6em;
+  }
+  .product-card-meta{ display:flex; gap:6px; align-items:center; margin-top:6px; flex-wrap:wrap; }
+  .product-card-meta span{ font-size:11px; color:var(--text-dim); }
+  .product-card-preco{ font-size:16px; font-weight:700; color:var(--neon-green); margin-top:8px; font-family:'Rajdhani', sans-serif; }
+
+  .product-info{ flex:1; min-width:0; }
+  .product-info .title{ font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .product-info .meta{ font-size:12px; color:var(--text-dim); margin-top:2px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .tag-mini{ background:var(--panel-2); border-radius:5px; padding:2px 8px; font-size:11px; font-weight:600; }
+  .tag-mini.destaque{ color:#FF9500; background:rgba(255,149,0,0.15); border:1px solid rgba(255,149,0,0.4); }
+  .tag-mini.lancamento{ color:var(--neon-blue); background:rgba(0,212,255,0.15); border:1px solid rgba(0,212,255,0.4); }
+  .tag-mini.off{ color:var(--red); background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); }
+  .product-actions{ display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+  .icon-btn{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px; width:34px; height:34px;
+    display:flex; align-items:center; justify-content:center; color:var(--text-dim); cursor:pointer;
+  }
+  .icon-btn svg{ width:16px; height:16px; }
+
+  .fab{
+    position:fixed; right:20px; bottom:20px; width:56px; height:56px; border-radius:50%;
+    background:linear-gradient(135deg,var(--neon-green),var(--neon-blue)); color:#0B0E11; border:none;
+    font-size:28px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow:0 4px 24px rgba(0,255,102,0.45), 0 0 0 1px rgba(255,255,255,0.06) inset; z-index:20;
+  }
+
+  .empty-state{ text-align:center; padding:60px 20px; color:var(--text-faint); }
+
+  /* ---- FORM OVERLAY ---- */
+  #formOverlay, #heroOverlay, #teamsOverlay, #ligasOverlay, #importOverlay, #apparenceOverlay, #precosOverlay, #lojaOverlay, #fotoStudioOverlay, #catalogoMestreOverlay, #assinaturaOverlay{
+    position:fixed; inset:0; background:var(--bg); z-index:50; overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .form-header{
+    position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--line);
+    padding:14px 16px; display:flex; align-items:center; gap:12px; z-index:5;
+  }
+  .form-header h2{ font-size:16px; flex:1; }
+  .form-body{ padding:16px; max-width:600px; margin:0 auto; padding-bottom:100px; }
+  .form-section{ margin-bottom:22px; }
+  .form-section h3{ font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-faint); margin-bottom:10px; }
+  .form-row{ display:flex; gap:10px; }
+  .form-row .field{ flex:1; }
+  .field select{
+    width:100%; background:var(--panel); border:1.5px solid var(--line); border-radius:8px;
+    padding:13px 14px; color:var(--text); outline:none; appearance:none; transition:border-color .15s, box-shadow .15s;
+  }
+  .field select:focus{ border-color:var(--neon-green); box-shadow:0 0 0 3px rgba(0,255,102,0.12); }
+  .field textarea{
+    width:100%; background:var(--panel); border:1.5px solid var(--line); border-radius:8px;
+    padding:13px 14px; color:var(--text); outline:none; resize:vertical; min-height:70px; transition:border-color .15s, box-shadow .15s;
+  }
+  .field textarea:focus{ border-color:var(--neon-green); box-shadow:0 0 0 3px rgba(0,255,102,0.12); }
+  .field-hint{ font-size:12px; color:var(--text-faint); margin-top:5px; }
+  .hero-video-tip{
+    display:flex; align-items:flex-start; gap:10px;
+    background:rgba(0,255,102,0.08); border:1px solid rgba(0,255,102,0.3);
+    border-radius:10px; padding:12px 14px; margin:10px 0 14px;
+    font-size:12.5px; color:var(--text-dim); line-height:1.5;
+  }
+  .hero-video-tip svg{ color:var(--neon-green); flex-shrink:0; margin-top:1px; }
+  .hero-video-tip strong{ color:var(--text); }
+  .toggle-row{
+    display:flex; align-items:center; justify-content:space-between; padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .toggle-row:last-child{ border-bottom:none; }
+  .toggle-row .label{ font-size:14px; }
+  .toggle-row .desc{ font-size:12px; color:var(--text-faint); margin-top:2px; }
+  .switch{ position:relative; width:44px; height:26px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .switch .track{
+    position:absolute; inset:0; background:var(--panel-2); border:1px solid var(--line); border-radius:999px;
+    cursor:pointer; transition:background .15s;
+  }
+  .switch .track::before{
+    content:''; position:absolute; width:20px; height:20px; left:2px; top:2px; background:var(--text-faint);
+    border-radius:50%; transition:transform .15s, background .15s;
+  }
+  .switch input:checked + .track{ background:rgba(0,255,102,0.2); border-color:var(--neon-green); }
+  .switch input:checked + .track::before{ transform:translateX(18px); background:var(--neon-green); }
+
+  .size-picker{ display:flex; gap:6px; flex-wrap:wrap; }
+  .size-opt{
+    background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 14px;
+    font-size:13px; cursor:pointer; color:var(--text-dim);
+  }
+  .size-opt.active{ background:var(--text); color:var(--bg); border-color:var(--text); font-weight:600; }
+
+  .image-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+  .image-slot{
+    aspect-ratio:1; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center;
+  }
+  .image-slot img{ width:100%; height:100%; object-fit:cover; }
+  .image-slot video{ width:100%; height:100%; object-fit:cover; }
+  .image-slot .media-badge{
+    position:absolute; bottom:4px; left:50%; transform:translateX(-50%);
+    background:rgba(0,0,0,0.75); color:var(--neon-green); font-size:9px;
+    padding:2px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:0.05em;
+  }
+  .image-slot .order-badge{
+    position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.7); color:var(--text); font-size:10px;
+    padding:1px 6px; border-radius:4px;
+  }
+  .image-slot .remove-btn{
+    position:absolute; top:4px; right:4px; background:rgba(239,68,68,0.85); color:#fff; border:none;
+    width:22px; height:22px; border-radius:50%; font-size:14px; line-height:1; cursor:pointer;
+  }
+  .image-slot .move-btns{
+    position:absolute; bottom:4px; left:4px; right:4px; display:flex; justify-content:space-between;
+  }
+  .image-slot .move-btn{
+    background:rgba(0,0,0,0.7); color:var(--text); border:none; width:26px; height:26px;
+    border-radius:6px; font-size:16px; line-height:1; cursor:pointer;
+  }
+  .image-slot .move-btn:disabled{ opacity:0.3; cursor:not-allowed; }
+  .image-slot.add-slot{ cursor:pointer; color:var(--text-faint); font-size:28px; border-style:dashed; }
+  .add-slot-inner{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .add-slot-plus{ font-size:26px; line-height:1; color:var(--neon-green); }
+  .add-slot-label{ font-size:9.5px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-faint); text-align:center; padding:0 4px; }
+  .image-slot .uploading{ font-size:11px; color:var(--text-dim); text-align:center; padding:0 6px; }
+
+  /* LISTA DE TIMES */
+  .team-row{
+    display:flex; align-items:center; gap:12px; padding:10px 4px;
+    border-bottom:1px solid var(--line);
+  }
+  .team-row-badge{
+    width:44px; height:44px; border-radius:50%; border:2px solid var(--neon-green);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    flex-shrink:0; font-size:12px; font-weight:700; color:var(--text-dim);
+    background:var(--panel);
+  }
+  .team-row-badge img{ width:100%; height:100%; object-fit:contain; }
+  .team-row-info{ flex:1; min-width:0; }
+  .team-row-name{ font-weight:600; color:var(--text); }
+  .team-row-tag{ font-size:12px; color:var(--text-faint); }
+
+  .form-footer{
+    position:sticky; bottom:0; background:var(--bg); border-top:1px solid var(--line);
+    padding:14px 16px; display:flex; gap:10px;
+  }
+  .form-footer .btn{ flex:1; }
+
+  .toast{
+    position:relative; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    padding:12px 20px; border-radius:10px; font-size:14px; box-shadow:0 4px 16px rgba(0,0,0,0.4);
+    max-width:90%; text-align:center;
+  }
+  .toast.error{ border-color:rgba(239,68,68,0.4); color:#FCA5A5; }
+  .toast.success{ border-color:rgba(34,197,94,0.4); color:#86EFAC; }
+  #toastContainer{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:100;
+    display:flex; flex-direction:column-reverse; gap:8px; align-items:center;
+  }
+
+  .spinner{
+    width:16px; height:16px; border:2px solid rgba(255,255,255,0.2); border-top-color:currentColor;
+    border-radius:50%; animation:spin .7s linear infinite; display:inline-block;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ============================================================
+     ESTÚDIO DE PADRONIZAÇÃO DE FOTO (foto do jogador)
+     Viewport de tamanho fixo (proporção 0.6, igual ao padrão final
+     1500x2500) — o usuário arrasta/dá zoom na foto POR BAIXO da
+     moldura, que fica fixa. O que estiver dentro da moldura na hora
+     de confirmar é exatamente o que vira o recorte final.
+     ============================================================ */
+  .foto-studio-viewport{
+    position:relative; width:100%; max-width:260px; aspect-ratio:0.6;
+    margin:0 auto; overflow:hidden; border-radius:14px;
+    background:#0a0d10; border:1px solid var(--line);
+    touch-action:none; cursor:grab;
+  }
+  .foto-studio-viewport:active{ cursor:grabbing; }
+  .foto-studio-viewport img{
+    position:absolute; top:0; left:0; transform-origin:0 0;
+    -webkit-user-drag:none; user-select:none; pointer-events:none;
+    max-width:none;
+  }
+  .foto-studio-guides{
+    position:absolute; inset:0; pointer-events:none;
+    background:
+      linear-gradient(rgba(0,255,102,0.55) 1px, transparent 1px) 0 33.33%/100% 33.34% no-repeat,
+      linear-gradient(rgba(0,255,102,0.55) 1px, transparent 1px) 0 66.66%/100% 33.34% no-repeat;
+    border:2px solid rgba(0,255,102,0.85);
+    border-radius:14px;
+  }
+  .foto-studio-hint{
+    font-size:11.5px; color:var(--text-dim); text-align:center; margin-top:10px; line-height:1.5;
+  }
+  .foto-studio-zoom-row{ display:flex; align-items:center; gap:10px; margin-top:14px; }
+  .foto-studio-zoom-row input[type="range"]{ flex:1; }
+  .foto-studio-status{ text-align:center; font-size:12.5px; color:var(--text-dim); margin-top:12px; min-height:18px; }
+
+  .confirm-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:60; display:flex; align-items:flex-end;
+    justify-content:center;
+  }
+  .confirm-box{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px 16px 0 0; padding:20px;
+    width:100%; max-width:480px;
+  }
+  .confirm-box h3{ font-size:16px; margin-bottom:8px; }
+  .confirm-box p{ font-size:14px; color:var(--text-dim); margin-bottom:18px; }
+  .confirm-box .btns{ display:flex; gap:10px; }
+  .confirm-box .btns .btn{ flex:1; }
+
+  /* ---- APARÊNCIA ---- */
+  .color-row{ display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid var(--line); }
+  .color-row:last-child{ border-bottom:none; }
+  .color-row input[type=color]{ width:52px; height:40px; padding:2px; border:1px solid var(--line); border-radius:8px; cursor:pointer; background:var(--panel); }
+  .color-row .info{ flex:1; }
+  .color-row .info .label{ font-size:14px; }
+  .color-row .info .desc{ font-size:12px; color:var(--text-faint); margin-top:2px; }
+  .preset-grid{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .preset-swatch{
+    width:36px; height:36px; border-radius:50%; border:2px solid var(--line); cursor:pointer;
+    flex-shrink:0;
+  }
+  .preview-box{
+    border-radius:14px; padding:20px; margin-top:16px; border:1px solid var(--line);
+    transition:background .15s, color .15s;
+  }
+  .preview-box .preview-brand{ font-size:18px; font-weight:800; margin-bottom:6px; }
+  .preview-box .preview-btn{
+    display:inline-block; padding:10px 18px; border-radius:8px; font-weight:700; font-size:13px; margin-top:10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- TELA DE LOGIN -->
+<!-- ============================================================ -->
+<div id="loginView">
+  <div class="stadium-light"></div>
+
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="logo.svg" alt="Manto Hub" class="login-logo-img" onerror="this.style.display='none'; document.getElementById('loginLogoFallback').style.display='block';">
+      <div id="loginLogoFallback" class="login-logo-fallback" style="display:none;">MANTO <span>HUB</span></div>
+      <div class="sub">Painel administrativo</div>
+    </div>
+
+    <!-- Formulário normal de login -->
+    <div id="loginFormView">
+      <div id="loginError" class="login-error hidden"></div>
+      <div class="field">
+        <label for="loginEmail">E-mail</label>
+        <input type="email" id="loginEmail" autocomplete="username" placeholder="seu@email.com" onkeydown="if(event.key==='Enter') document.getElementById('loginPassword').focus();">
+      </div>
+      <div class="field">
+        <label for="loginPassword">Senha</label>
+        <div class="password-field">
+          <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin();">
+          <button type="button" class="password-toggle" onclick="togglePasswordVisibility()" aria-label="Mostrar senha">
+            <svg id="pwEyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Entrar</button>
+      <div style="text-align:center; margin-top:16px;">
+        <a href="#" onclick="abrirRecuperarSenha(); return false;" style="font-size:13px; color:var(--text-dim);">Esqueceu a senha?</a>
+      </div>
+      <div class="login-footer-hint">Acesso restrito aos lojistas do Manto Hub</div>
+    </div>
+
+    <!-- Pedir e-mail pra receber o link de recuperação -->
+    <div id="recuperarSenhaView" class="hidden">
+      <div id="recuperarSenhaError" class="login-error hidden"></div>
+      <div id="recuperarSenhaSucesso" class="field-hint hidden" style="color:var(--neon-green); margin-bottom:14px;"></div>
+      <div class="field-hint" style="margin-bottom:16px;">Digite o e-mail da sua conta — vamos enviar um link pra você criar uma senha nova.</div>
+      <div class="field">
+        <label for="recuperarSenhaEmail">E-mail</label>
+        <input type="email" id="recuperarSenhaEmail" autocomplete="username" placeholder="seu@email.com" onkeydown="if(event.key==='Enter') enviarRecuperarSenha();">
+      </div>
+      <button class="btn btn-primary" id="recuperarSenhaBtn" onclick="enviarRecuperarSenha()">Enviar link de recuperação</button>
+      <div style="text-align:center; margin-top:16px;">
+        <a href="#" onclick="fecharRecuperarSenha(); return false;" style="font-size:13px; color:var(--text-dim);">‹ Voltar pro login</a>
+      </div>
+    </div>
+
+    <!-- Definir nova senha (aberto pelo link que chega por e-mail) -->
+    <div id="novaSenhaView" class="hidden">
+      <div id="novaSenhaError" class="login-error hidden"></div>
+      <div class="field-hint" style="margin-bottom:16px;">Crie uma senha nova pra sua conta.</div>
+      <div class="field">
+        <label for="novaSenhaInput">Nova senha</label>
+        <input type="password" id="novaSenhaInput" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="field">
+        <label for="novaSenhaConfirmInput">Confirmar nova senha</label>
+        <input type="password" id="novaSenhaConfirmInput" autocomplete="new-password" placeholder="Repita a senha" onkeydown="if(event.key==='Enter') salvarNovaSenha();">
+      </div>
+      <button class="btn btn-primary" id="novaSenhaBtn" onclick="salvarNovaSenha()">Salvar nova senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- APP PRINCIPAL (depois do login) -->
+<!-- ============================================================ -->
+<div id="appView" class="hidden">
+  <header>
+    <div class="brand"><img src="logo.svg" alt="Manto Hub" class="brand-logo-img"> <span class="sutil">· Painel</span></div>
+    <div class="actions">
+      <span class="user-email" id="userEmailLabel"></span>
+      <a class="btn btn-secondary" id="btnVerCatalogo" href="#" target="_blank" rel="noopener" style="text-decoration:none;">🔗 Ver Catálogo</a>
+      <button class="btn btn-secondary" onclick="openApparenceOverlay()">🎨 Aparência</button>
+      <button class="btn btn-secondary" onclick="openPrecosOverlay()">💰 Preços</button>
+      <button class="btn btn-secondary" onclick="openLojaOverlay()">🏪 Loja</button>
+      <button class="btn btn-secondary" onclick="openImportOverlay()">✨ Importar</button>
+      <button class="btn btn-secondary" id="btnCatalogoMestre" onclick="openCatalogoMestreOverlay()" style="display:none;">💲 Meus preços</button>
+      <button class="btn btn-secondary" id="btnAssinatura" onclick="openAssinaturaOverlay()" style="display:none;">💳 Assinatura</button>
+      <button class="btn btn-secondary" onclick="openLigasOverlay()">Ligas</button>
+      <button class="btn btn-secondary" onclick="openTeamsOverlay()">Times</button>
+      <button class="btn btn-secondary" onclick="openHeroOverlay()">Banner Hero</button>
+      <button class="btn btn-ghost" onclick="doLogout()">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="bento-kpis" id="bentoKpis">
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon-green">📦</div>
+        <div class="kpi-info">
+          <div class="kpi-valor" id="kpiProdutosAtivos">—</div>
+          <div class="kpi-label">Produtos ativos</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon-orange">★</div>
+        <div class="kpi-info">
+          <div class="kpi-valor" id="kpiDestaques">—</div>
+          <div class="kpi-label">Em destaque</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon-blue">🆕</div>
+        <div class="kpi-info">
+          <div class="kpi-valor" id="kpiLancamentos">—</div>
+          <div class="kpi-label">Lançamentos</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon-green">🛡️</div>
+        <div class="kpi-info">
+          <div class="kpi-valor" id="kpiTimes">—</div>
+          <div class="kpi-label">Times cadastrados</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-row">
+        <input type="text" class="search-input" id="searchInput" placeholder="Buscar produto ou time..." oninput="renderProductList()">
+      </div>
+      <div class="filter-chips" id="filterChips">
+        <div class="chip active" data-filter="todos" onclick="setFilter('todos')">Todos</div>
+        <div class="chip" data-filter="Torcedor" onclick="setFilter('Torcedor')">Torcedor</div>
+        <div class="chip" data-filter="Jogador" onclick="setFilter('Jogador')">Jogador</div>
+        <div class="chip" data-filter="Retrô" onclick="setFilter('Retrô')">Retrô</div>
+        <div class="chip" data-filter="Kit Infantil" onclick="setFilter('Kit Infantil')">Kit Infantil</div>
+        <div class="chip" data-filter="Feminina" onclick="setFilter('Feminina')">Feminina</div>
+        <div class="chip" data-filter="Kit Treino" onclick="setFilter('Kit Treino')">Kit Treino</div>
+        <div class="chip" data-filter="Conjunto de Treino" onclick="setFilter('Conjunto de Treino')">Conjunto de Treino</div>
+        <div class="chip" data-filter="destaque" onclick="setFilter('destaque')">★ Destaques</div>
+        <div class="chip" data-filter="lancamento" onclick="setFilter('lancamento')">🆕 Lançamentos</div>
+        <div class="chip" data-filter="inativo" onclick="setFilter('inativo')">Inativos</div>
+      </div>
+    </div>
+
+    <div class="product-count" id="productCount"></div>
+    <div class="product-list" id="productList"></div>
+  </main>
+
+  <button class="fab" onclick="openForm(null)" aria-label="Novo produto">+</button>
+</div>
+
+<!-- ============================================================ -->
+<!-- APARÊNCIA — cor da marca e modo dark/light, aplicados ao vivo -->
+<!-- no catálogo público via tabela store_settings.                -->
+<!-- ============================================================ -->
+<div id="apparenceOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closeApparenceOverlay()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Aparência</h2>
+  </div>
+  <div class="form-body">
+    <div class="form-section">
+      <h3>Modo</h3>
+      <div class="toggle-row">
+        <div>
+          <div class="label">Modo claro (light)</div>
+          <div class="desc">Desligado = catálogo no modo escuro (padrão)</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="apparenceModoClaro" onchange="renderApparencePreview()"><span class="track"></span></label>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Cor da marca</h3>
+      <div class="color-row">
+        <input type="color" id="apparenceCorPrimaria" value="#00E5FF" oninput="onCorPrimariaChange()">
+        <div class="info">
+          <div class="label">Cor principal</div>
+          <div class="desc">Botões, links e destaques do catálogo</div>
+        </div>
+      </div>
+
+      <div class="field-hint" style="margin-bottom:6px;">Sugestões rápidas — toque para aplicar:</div>
+      <div class="preset-grid" id="presetGrid"></div>
+
+      <div class="preview-box" id="previewBox">
+        <div class="preview-brand" id="previewBrand">Catálogo Demo</div>
+        <div style="font-size:13px;" id="previewText">É assim que o catálogo do cliente vai ficar.</div>
+        <div class="preview-btn" id="previewBtn">Comprar agora</div>
+      </div>
+    </div>
+  </div>
+  <div class="form-footer">
+    <button class="btn btn-secondary" onclick="closeApparenceOverlay()">Cancelar</button>
+    <button class="btn btn-primary" id="saveApparenceBtn" onclick="salvarApparence()">Salvar aparência</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PREÇOS DA LOJA — valor da personalização e do frete motoboy,  -->
+<!-- gravados na mesma tabela store_settings.                      -->
+<!-- ============================================================ -->
+<div id="precosOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closePrecosOverlay()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Preços da loja</h2>
+  </div>
+  <div class="form-body">
+    <div class="form-section">
+      <h3>Personalização da camisa</h3>
+      <div class="field">
+        <label for="precoPersonalizacaoInput">Valor cobrado por nome e número (R$)</label>
+        <input type="number" id="precoPersonalizacaoInput" step="0.01" min="0" placeholder="60.00">
+        <div class="field-hint">Aparece no catálogo como "+ R$ X,XX" na página do produto.</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <h3>Frete</h3>
+      <div class="field">
+        <label for="precoFreteInput">Valor do frete motoboy (R$)</label>
+        <input type="number" id="precoFreteInput" step="0.01" min="0" placeholder="15.00">
+        <div class="field-hint">A opção "Retirar no local" continua grátis, sem precisar configurar.</div>
+      </div>
+      <div class="field">
+        <label>Até onde o motoboy alcança (faixa de CEP)</label>
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="cepMotoboyInicioInput" placeholder="CEP inicial (ex: 01000000)" maxlength="8" inputmode="numeric">
+          <input type="text" id="cepMotoboyFimInput" placeholder="CEP final (ex: 09999999)" maxlength="8" inputmode="numeric">
+        </div>
+        <div class="field-hint">Opcional. Nem todo CEP do seu estado é alcance de motoboy — deixe em branco pra usar a regra simples (mesmo estado = motoboy).</div>
+      </div>
+    </div>
+    <div class="form-section" id="precosPorTipoSection" style="display:none;">
+      <h3>Preço padrão por tipo (catálogo mestre)</h3>
+      <div class="field-hint" style="margin-bottom:10px;">
+        Define de uma vez "toda camisa Retrô custa X pra mim", em vez de
+        ajustar produto por produto. Deixe em branco pra usar o preço
+        padrão de cada produto. Um preço específico em "💲 Meus preços"
+        sempre tem prioridade sobre isso.
+      </div>
+      <div id="precosPorTipoCampos"></div>
+    </div>
+  </div>
+  <div class="form-footer">
+    <button class="btn btn-secondary" onclick="closePrecosOverlay()">Cancelar</button>
+    <button class="btn btn-primary" id="savePrecosBtn" onclick="salvarPrecos()">Salvar preços</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MEUS PREÇOS (catálogo mestre) — só aparece pra loja que usa o -->
+<!-- catálogo compartilhado. Deixa colocar um preço próprio em     -->
+<!-- cima do produto da Manto Hub, sem duplicar o produto.         -->
+<!-- ============================================================ -->
+<div id="catalogoMestreOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closeCatalogoMestreOverlay()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Meus preços</h2>
+  </div>
+  <div class="form-body">
+    <div class="field-hint" style="margin-bottom:14px;">
+      Esses produtos vêm do catálogo compartilhado — você não precisa
+      cadastrar nada, só ajustar o preço se quiser vender diferente do
+      padrão. Deixe em branco pra usar o preço padrão.
+    </div>
+    <input type="text" id="catalogoMestreBusca" class="search-input" placeholder="Buscar produto ou time..." oninput="renderCatalogoMestreLista()" style="margin-bottom:14px;">
+    <div id="catalogoMestreLista"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ASSINATURA — plano atual + trocar de plano (mensal/trimestral/ -->
+<!-- anual), sem precisar falar com o suporte.                     -->
+<!-- ============================================================ -->
+<div id="assinaturaOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closeAssinaturaOverlay()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Minha assinatura</h2>
+  </div>
+  <div class="form-body">
+    <div id="assinaturaAtualBox" class="field-hint" style="margin-bottom:18px;">Carregando...</div>
+    <div id="assinaturaErro" class="field-hint" style="display:none; color:var(--red); margin-bottom:14px;"></div>
+    <div id="assinaturaPlanos"></div>
+    <div class="field-hint" style="margin-top:16px;">
+      Mudar de plano vale a partir da próxima cobrança — não cobra nada na hora nem retroage o período já pago.
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- LOJA — logo (topo e rodapé) e informações de atendimento do   -->
+<!-- rodapé, gravados na mesma tabela store_settings.               -->
+<!-- ============================================================ -->
+<div id="lojaOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closeLojaOverlay()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Loja</h2>
+  </div>
+  <div class="form-body">
+    <div class="form-section">
+      <h3>Identidade</h3>
+      <div class="field">
+        <label for="lojaNomeInput">Nome da loja</label>
+        <input type="text" id="lojaNomeInput" placeholder="Ex.: Camisa e Cabide">
+        <div class="field-hint">Aparece no catálogo, no rodapé, e na mensagem automática de "Fale no WhatsApp".</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <h3>Logo</h3>
+      <div class="image-grid" id="lojaLogoGrid"></div>
+      <input type="file" id="lojaLogoFileInput" accept="image/*" class="hidden" onchange="handleLojaLogoSelected(event)">
+      <div class="field-hint">Aparece no topo do catálogo e no rodapé. Sem logo, o catálogo mostra o nome da loja em texto.</div>
+    </div>
+    <div class="form-section">
+      <h3>Atendimento (rodapé)</h3>
+      <div class="field">
+        <label for="lojaHorarioInput">Horário de atendimento</label>
+        <input type="text" id="lojaHorarioInput" placeholder="Seg. à Sex. 09h às 18h">
+      </div>
+      <div class="field">
+        <label for="lojaTelefoneInput">Telefone / WhatsApp</label>
+        <input type="text" id="lojaTelefoneInput" placeholder="(11) 90000-0000">
+        <div class="field-hint">Esse número é usado de verdade — é pra onde vão os pedidos e as mensagens do botão "Fale no WhatsApp".</div>
+      </div>
+      <div class="field">
+        <label for="lojaEmailInput">E-mail</label>
+        <input type="text" id="lojaEmailInput" placeholder="atendimento@sualoja.com.br">
+      </div>
+      <div class="field">
+        <label for="lojaInstagramInput">Instagram</label>
+        <input type="text" id="lojaInstagramInput" placeholder="@usuario">
+        <div class="field-hint">Pode ser só o @usuário, ou colar o link do perfil — os dois funcionam. Sem preencher, o botão de Instagram fica escondido no catálogo.</div>
+      </div>
+      <div class="field-hint">Deixe em branco o que não quiser mostrar — o rodapé só exibe os campos preenchidos.</div>
+    </div>
+    <div class="form-section">
+      <h3>Formas de pagamento (rodapé)</h3>
+      <div class="field-hint" style="margin-bottom:12px;">
+        Suba a imagem oficial de cada bandeira que você aceita (baixe do site de
+        imprensa/marca de cada uma, ex.: Pix, Visa, Mastercard). Sem nenhuma
+        cadastrada, essa seção fica escondida no catálogo.
+      </div>
+      <div class="image-grid" id="lojaPaymentGrid"></div>
+      <input type="file" id="lojaPaymentFileInput" accept="image/*" multiple class="hidden" onchange="handleLojaPaymentSelected(event)">
+    </div>
+    <div class="form-section">
+      <h3>Faixas deslizantes (marquee)</h3>
+      <div class="field">
+        <label for="lojaTextoBarraInput">Texto da barra superior</label>
+        <input type="text" id="lojaTextoBarraInput" placeholder="O maior hub de mantos">
+        <div class="field-hint">Fica rodando em loop logo abaixo do menu. Em branco, mantém o texto padrão.</div>
+      </div>
+      <div class="field">
+        <label for="lojaTextoRodapeInput">Texto do rodapé em loop</label>
+        <input type="text" id="lojaTextoRodapeInput" placeholder="Frete grátis acima de R$ 299 · Compre 2 leve 3">
+        <div class="field-hint">Fica rodando em loop na faixa final da página. Em branco, a faixa fica só com o gradiente, sem texto.</div>
+      </div>
+    </div>
+  </div>
+  <div class="form-footer">
+    <button class="btn btn-secondary" onclick="closeLojaOverlay()">Cancelar</button>
+    <button class="btn btn-primary" id="saveLojaBtn" onclick="salvarLoja()">Salvar loja</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- FORMULÁRIO DE PRODUTO (criar/editar) -->
+<!-- ============================================================ -->
+<div id="formOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closeForm()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2 id="formTitle">Novo produto</h2>
+  </div>
+
+  <div class="form-body">
+    <div class="form-section">
+      <h3>Time e categoria</h3>
+      <div class="field">
+        <label for="fieldTeam">Time</label>
+        <select id="fieldTeam" onchange="checkCollisionWarning(); renderTeamCategoriaHint();"></select>
+        <div class="field-hint" id="teamCategoriaHint" style="color:var(--neon-green);"></div>
+      </div>
+      <div class="field">
+        <label for="fieldTipo">Tipo</label>
+        <select id="fieldTipo" onchange="onTipoChange()">
+          <option value="Torcedor">Torcedor</option>
+          <option value="Jogador">Jogador</option>
+          <option value="Retrô">Retrô</option>
+          <option value="Kit Infantil">Kit Infantil</option>
+          <option value="Feminina">Feminina</option>
+          <option value="Kit Treino">Kit Treino</option>
+          <option value="Conjunto de Treino">Conjunto de Treino</option>
+        </select>
+        <div class="field-hint">Você pode cadastrar quantos produtos quiser do mesmo Time + Tipo (ex.: várias camisas "Torcedor" diferentes do mesmo time).</div>
+        <div class="field-hint" id="collisionWarning" style="display:none; color:var(--amber);"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Informações do produto</h3>
+      <div class="field">
+        <label for="fieldTitulo">Título (opcional)</label>
+        <input type="text" id="fieldTitulo" placeholder="Ex.: Camisa Real Madrid Away 26/27">
+        <div class="field-hint">Se deixar em branco, usa "Nome do Time 25/26" automaticamente.</div>
+      </div>
+      <div class="field">
+        <label for="fieldSubtitulo">Subtítulo (opcional)</label>
+        <input type="text" id="fieldSubtitulo" placeholder="Ex.: Torcedor Masculina">
+      </div>
+      <div class="field">
+        <label for="fieldDescricao">Descrição (opcional)</label>
+        <textarea id="fieldDescricao" placeholder="Detalhes do produto para o cliente..."></textarea>
+      </div>
+      <div class="field">
+        <label for="fieldPreco">Preço (R$)</label>
+        <input type="number" id="fieldPreco" step="0.01" min="0" placeholder="189.90">
+      </div>
+      <div class="field">
+        <label for="fieldTags">Tags (opcional, separadas por vírgula)</label>
+        <input type="text" id="fieldTags" placeholder="Ex.: nacional, edição especial">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Tamanhos disponíveis</h3>
+      <div class="size-picker" id="sizePicker"></div>
+      <div class="field-hint">Nenhum selecionado = usa os tamanhos padrão da loja (P, M, G, GG, 2XL).</div>
+    </div>
+
+    <div class="form-section">
+      <h3>Fotos</h3>
+      <div class="image-grid" id="imageGrid"></div>
+      <input type="file" id="imageFileInput" accept="image/*" multiple class="hidden" onchange="handleImageSelected(event)">
+      <div class="field-hint">Você pode selecionar várias fotos de uma vez (até 6). A primeira é a foto principal — use as setas ‹ › em cada foto para mudar a ordem.</div>
+    </div>
+
+    <div class="form-section">
+      <h3>Visibilidade</h3>
+      <div class="toggle-row">
+        <div>
+          <div class="label">Disponível no catálogo</div>
+          <div class="desc">Desligado = escondido dos clientes, sem excluir o produto</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="fieldDisponivel" checked><span class="track"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="label">Destaque na Home</div>
+          <div class="desc">Aparece na seção "Destaques"</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="fieldDestaque"><span class="track"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="label">Lançamento</div>
+          <div class="desc">Aparece na seção "Lançamentos"</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="fieldLancamento"><span class="track"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-footer">
+    <button class="btn btn-secondary" onclick="closeForm()">Cancelar</button>
+    <button class="btn btn-primary" id="saveBtn" onclick="saveProduct()">Salvar produto</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- BANNER HERO (fotos que giram na Home) -->
+<!-- ============================================================ -->
+<div id="heroOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closeHeroOverlay()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Banner Hero</h2>
+  </div>
+  <div class="form-body">
+    <div class="form-section">
+      <h3>Fotos e vídeos do banner</h3>
+      <div class="hero-video-tip">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="5" width="15" height="14" rx="2"/><polygon points="16 9 22 5 22 19 16 15" /></svg>
+        <div>
+          <strong>Aceita vídeo também.</strong> Toque no "+" abaixo e escolha um arquivo .mp4 (até 10MB) — ele toca sozinho, sem som e em loop no banner da Home, exatamente como uma foto.
+        </div>
+      </div>
+      <div class="field-hint" style="margin-bottom:12px;">Você pode selecionar vários de uma vez. Cada ação (adicionar, mover, excluir) salva na hora — não precisa de botão "Salvar".</div>
+      <div class="image-grid" id="heroImageGrid"></div>
+      <input type="file" id="heroFileInput" accept="image/*,video/mp4,video/webm,video/quicktime" multiple class="hidden" onchange="handleHeroFileSelected(event)">
+    </div>
+  </div>
+</div>
+
+<div id="teamsOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closeTeamsOverlay()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Times</h2>
+  </div>
+  <div class="form-body">
+
+    <!-- LISTA DE TIMES -->
+    <div id="teamsListView">
+      <button class="btn btn-primary" style="width:100%;margin-bottom:14px;" onclick="openTeamForm(null)">+ Novo time</button>
+      <div class="field-hint" style="margin-bottom:12px;">Times cadastrados aqui aparecem automaticamente na navegação por escudos do catálogo e na lista de times ao cadastrar um produto — sem precisar mexer em código.</div>
+      <div id="teamsList"></div>
+    </div>
+
+    <!-- FORMULÁRIO DE TIME (criar/editar) -->
+    <div id="teamFormView" class="hidden">
+      <button class="btn btn-ghost" style="margin-bottom:10px;" onclick="closeTeamForm()">‹ Voltar</button>
+      <div class="form-section">
+        <h3 id="teamFormTitle">Novo time</h3>
+        <div class="field">
+          <label for="teamFieldNome">Nome do clube ou seleção</label>
+          <input type="text" id="teamFieldNome" placeholder="Ex.: Milan">
+        </div>
+
+        <div class="field">
+          <label for="teamFieldLiga">Categoria</label>
+          <select id="teamFieldLiga" onchange="onTeamLigaChange()">
+            <option value="Brasileirão">Brasileirão</option>
+            <option value="Europa">Times Europeus</option>
+            <option value="Seleções">Seleções</option>
+          </select>
+          <div class="field-hint">Para criar uma categoria nova, use o botão "Ligas" no topo do painel.</div>
+        </div>
+
+        <div class="field" id="teamFieldSubligaWrap" style="display:none;">
+          <label for="teamFieldSubliga">Subcategoria</label>
+          <select id="teamFieldSubliga">
+            <option value="">Nenhuma</option>
+          </select>
+        </div>
+        <div class="field" id="teamFieldContinenteWrap" style="display:none;">
+          <label for="teamFieldContinente">Continente (subcategoria)</label>
+          <select id="teamFieldContinente">
+            <option value="América do Sul">América do Sul</option>
+            <option value="Europa">Europa</option>
+            <option value="América do Norte">América do Norte</option>
+            <option value="África">África</option>
+            <option value="Ásia">Ásia</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Escudo</label>
+          <div class="image-grid" id="teamEscudoGrid"></div>
+          <input type="file" id="teamEscudoFileInput" accept="image/*" class="hidden" onchange="handleTeamEscudoSelected(event)">
+        </div>
+        <div class="field">
+          <label>Foto do jogador (busto)</label>
+          <div class="image-grid" id="teamFotoBustGrid"></div>
+          <input type="file" id="teamFotoBustFileInput" accept="image/*" class="hidden" onchange="handleTeamFotoBustSelected(event)">
+          <div class="field-hint">Usada na Fase 2 (tela de times) — ao escolher a foto, você alinha o recorte e a IA melhora a nitidez automaticamente, direto no navegador.</div>
+        </div>
+        <div class="field">
+          <label for="teamFieldCor">Cor de destaque (opcional, usada no aro do escudo)</label>
+          <input type="color" id="teamFieldCor" value="#00E5FF" style="width:60px; height:36px; padding:2px; cursor:pointer;">
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="saveTeam()">Salvar time</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ESTÚDIO DE PADRONIZAÇÃO DE FOTO — recorte (rosto/peitoral/meio
+     abdômen) + nitidez por IA (UpscalerJS/TensorFlow.js), tudo no
+     navegador. Aberto ao escolher um arquivo em "Foto do jogador".  -->
+<!-- ============================================================ -->
+<div id="fotoStudioOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="fotoStudioCancelar()" aria-label="Cancelar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Padronizar foto do jogador</h2>
+  </div>
+  <div class="form-body">
+    <div class="foto-studio-viewport" id="fotoStudioViewport">
+      <img id="fotoStudioImg" src="" alt="">
+      <div class="foto-studio-guides"></div>
+    </div>
+    <div class="foto-studio-hint">
+      Arraste a foto pra alinhar: deixe um respiro acima da cabeça e mostre
+      até a metade do abdômen dentro da moldura verde.
+    </div>
+    <div class="foto-studio-zoom-row">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="6"/><path d="M21 21l-4.35-4.35"/><path d="M8 10h4"/></svg>
+      <input type="range" id="fotoStudioZoom" min="20" max="400" value="100">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="6"/><path d="M21 21l-4.35-4.35"/><path d="M10 7v6M7 10h6"/></svg>
+    </div>
+    <div class="foto-studio-status" id="fotoStudioStatus"></div>
+    <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="fotoStudioConfirmar()" id="fotoStudioConfirmBtn">
+      Aplicar nitidez e enviar
+    </button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- LIGAS (categorias e subcategorias da navegação por escudos)   -->
+<!-- ============================================================ -->
+<div id="ligasOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closeLigasOverlay()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Ligas e categorias</h2>
+  </div>
+  <div class="form-body">
+
+    <!-- LISTA -->
+    <div id="ligasListView">
+      <button class="btn btn-primary" style="width:100%;margin-bottom:14px;" onclick="openLigaForm(null)">+ Nova categoria</button>
+      <div class="field-hint" style="margin-bottom:14px;">
+        Categorias são os ícones grandes da tela inicial (Brasileirão, Seleções, etc.).
+        Dentro de cada uma você pode criar subcategorias (ex.: Liga Mexicana), que viram
+        os grupos de escudos. Depois, é só cadastrar os times em "Times".
+      </div>
+      <div id="ligasList"></div>
+    </div>
+
+    <!-- FORMULÁRIO DE CATEGORIA -->
+    <div id="ligaFormView" class="hidden">
+      <button class="btn btn-ghost" style="margin-bottom:10px;" onclick="showLigasList()">‹ Voltar</button>
+      <div class="form-section">
+        <h3 id="ligaFormTitle">Nova categoria</h3>
+        <div class="field">
+          <label for="ligaFieldNome">Nome da categoria</label>
+          <input type="text" id="ligaFieldNome" placeholder="Ex.: Concacaf Champions League">
+        </div>
+        <div class="field">
+          <label for="ligaFieldOrdem">Ordem de exibição</label>
+          <input type="number" id="ligaFieldOrdem" placeholder="Ex.: 1" min="0" step="1">
+          <div class="field-hint">Quem tem número menor aparece primeiro no carrossel "escolha a liga" da home. Deixe em branco pra ir pro fim da fila.</div>
+        </div>
+        <div class="field">
+          <label>Ícone (aparece na tela inicial)</label>
+          <div class="image-grid" id="ligaFormIconGrid"></div>
+          <input type="file" id="ligaFormIconInput" accept="image/*" class="hidden" onchange="handleLigaFormIcon(event)">
+        </div>
+        <div class="field">
+          <label>Foto de atleta destaque (carrossel da home)</label>
+          <div class="image-grid" id="ligaFormFotoGrid"></div>
+          <input type="file" id="ligaFormFotoInput" accept="image/*" class="hidden" onchange="handleLigaFormFoto(event)">
+          <div class="field-hint">Aparece embaixo do ícone, no carrossel "escolha a liga" da tela inicial. Sem essa foto, o card mostra só o ícone e o nome.</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="saveLiga()">Salvar categoria</button>
+    </div>
+
+    <!-- SUBCATEGORIAS DE UMA CATEGORIA -->
+    <div id="subligasView" class="hidden">
+      <button class="btn btn-ghost" style="margin-bottom:10px;" onclick="showLigasList()">‹ Voltar</button>
+      <h3 id="subligasTitle" style="margin-bottom:12px;">Subcategorias</h3>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:14px;" onclick="openSubligaForm(null)">+ Nova subcategoria</button>
+      <div id="subligasList"></div>
+    </div>
+
+    <!-- FORMULÁRIO DE SUBCATEGORIA -->
+    <div id="subligaFormView" class="hidden">
+      <button class="btn btn-ghost" style="margin-bottom:10px;" onclick="backToSubligas()">‹ Voltar</button>
+      <div class="form-section">
+        <h3 id="subligaFormTitle">Nova subcategoria</h3>
+        <div class="field-hint" id="subligaFormParent" style="margin-bottom:12px;"></div>
+        <div class="field">
+          <label for="subligaFieldNome">Nome da subcategoria</label>
+          <input type="text" id="subligaFieldNome" placeholder="Ex.: Liga Mexicana">
+        </div>
+        <div class="field">
+          <label>Ícone (aparece no cabeçalho do grupo de escudos)</label>
+          <div class="image-grid" id="subligaFormIconGrid"></div>
+          <input type="file" id="subligaFormIconInput" accept="image/*" class="hidden" onchange="handleSubligaFormIcon(event)">
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="saveSubliga()">Salvar subcategoria</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- IMPORTAR PRODUTO — cola o link do fornecedor, extrai os dados  -->
+<!-- ============================================================ -->
+<div id="importOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closeImportOverlay()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>✨ Importar produto</h2>
+  </div>
+  <div class="form-body">
+
+    <div class="field-hint" style="margin-bottom:16px;">
+      Cola o link da página do produto no site do fornecedor. A gente busca o título,
+      o preço e as fotos automaticamente. Depois você confere, ajusta o que precisar,
+      escolhe o time/tipo/tamanho e salva normal — igual ao cadastro manual.
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button class="chip active" id="importModeUrlBtn" onclick="setImportMode('url')" style="flex:1; text-align:center;">Colar link</button>
+      <button class="chip" id="importModeHtmlBtn" onclick="setImportMode('html')" style="flex:1; text-align:center;">Colar código da página</button>
+    </div>
+
+    <div id="importModeUrl">
+      <div class="field">
+        <label for="importUrlInput">Link do produto no fornecedor</label>
+        <input type="text" id="importUrlInput" placeholder="https://fornecedor.com/produto/camisa-xyz">
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="buscarDadosImportacao()" id="importUrlBtn">Buscar dados</button>
+    </div>
+
+    <div id="importModeHtml" class="hidden">
+      <div class="field-hint" style="margin-bottom:12px;">
+        Use isso se o "Colar link" der erro de acesso recusado. Abra a página do fornecedor no
+        Chrome → toque nos ⋮ (três pontinhos) → "Ver código-fonte da página" (ou "Compartilhar" →
+        "Ver fonte") → selecione tudo → copie → cole abaixo.
+      </div>
+      <div class="field">
+        <label for="importBaseUrlInput">Link da página (só pra referência das fotos)</label>
+        <input type="text" id="importBaseUrlInput" placeholder="https://fornecedor.com/produto/camisa-xyz">
+      </div>
+      <div class="field">
+        <label for="importHtmlInput">Código-fonte da página</label>
+        <textarea id="importHtmlInput" rows="6" placeholder="Cole aqui o código-fonte (Ctrl+V)"></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="extrairDoHtmlColado()" id="importHtmlBtn">Extrair dados</button>
+    </div>
+
+    <div id="importPreview" class="hidden" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--line);">
+      <h3 style="margin-bottom:14px;">Confira os dados</h3>
+      <div class="field">
+        <label for="importFieldTitulo">Título</label>
+        <input type="text" id="importFieldTitulo" placeholder="Título do produto">
+      </div>
+      <div class="field">
+        <label for="importFieldPreco">Preço (R$)</label>
+        <input type="number" id="importFieldPreco" step="0.01" placeholder="0.00">
+      </div>
+
+      <div id="importTeamNotice" class="field-hint" style="margin-bottom:14px; padding:12px; border-radius:10px; background:rgba(0,255,102,0.08); border:1px solid rgba(0,255,102,0.3);"></div>
+
+      <div class="field">
+        <label>Fotos encontradas e já enviadas pro Storage</label>
+        <div class="image-grid" id="importImageGrid"></div>
+        <div class="field-hint" id="importImageCount"></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="usarDadosNoCadastro()">Usar esses dados no cadastro →</button>
+    </div>
+
+  </div>
+</div>
+
+<div id="confirmOverlay" class="confirm-overlay hidden">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">Excluir produto?</h3>
+    <p id="confirmText">Essa ação não pode ser desfeita.</p>
+    <div class="btns">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-danger" id="confirmActionBtn">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Padronização de foto do jogador: IA de nitidez/upscale 100% no navegador
+     (UpscalerJS + TensorFlow.js), sem servidor próprio, sem custo por foto
+     depois de carregado. -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@upscalerjs/default-model@latest/dist/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/upscaler@latest/dist/browser/umd/upscaler.min.js"></script>
+<!-- Remoção de fundo (qualquer cor) — MediaPipe Selfie Segmenter, Apache 2.0
+     (licença segura pra uso comercial, diferente da @imgly/background-removal
+     que é AGPL). Carregado como módulo ESM e exposto em window.* pro resto
+     do script (clássico) conseguir usar. -->
+<script type="module">
+  import { FilesetResolver, ImageSegmenter } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm';
+  window.__mpFilesetResolver = FilesetResolver;
+  window.__mpImageSegmenter = ImageSegmenter;
+</script>
+<script>
+  // ============================================================
+  // 🔌 CONEXÃO COM O BANCO (projeto Supabase "catalogo-demo")
+  // ============================================================
+  const SUPABASE_CONFIG = {
+    url: "https://qqoepslbisxpswabrkqe.supabase.co",
+    publishableKey: "sb_publishable_t-LqIKyLqCT4Kx8Hgi7JcA_tvk3gjsy"
+  };
+  const supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
+
+  const SIZES = ["P","M","G","GG","2XL","3XL","4XL"];
+  const KID_SIZES = ["16","18","20","22","24","26","28"];
+  const KID_SIZE_LABELS = {
+    "16": "16 (2 anos)", "18": "18 (3 anos)", "20": "20 (4 anos)",
+    "22": "22 (6 anos)", "24": "24 (8 anos)", "26": "26 (10 anos)", "28": "28 (12 anos)"
+  };
+  const STORAGE_BUCKET = "produtos";
+
+  let currentUser = null;
+  let TEAMS_CACHE = [];
+  let PRODUCTS_CACHE = [];
+  let currentFilter = "todos";
+  let editingProductId = null;
+  let formImages = [];
+  let selectedSizes = [];
+
+  // ============================================================
+  // COMPRESSÃO DE IMAGEM (antes de subir pro Storage)
+  // Reduz drasticamente o consumo de banda (egress) — sem isso, uma foto de
+  // celular de vários MB sobe do jeito que veio, e é baixada inteira toda
+  // vez que alguém visita o catálogo. Redimensiona pro tamanho máximo real
+  // de exibição e comprime em WebP (mantém transparência, muito mais leve
+  // que PNG). Usada em todo upload de banner/escudo/foto daqui pra frente.
+  // Recorta o espaço vazio (transparente ou quase-branco) ao redor da marca
+  // de uma logo. Sem isso, uma logo com bastante "respiro"/padding no
+  // arquivo original aparece pequena mesmo com altura de CSS grande — a
+  // marca em si ocupa só uma fração do quadro. Acha o retângulo real do
+  // conteúdo e recorta nele, com uma margem pequena.
+  async function recortarEspacoVazio(file){
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if(!w || !h){ resolve(file); return; }
+
+        const analiseCanvas = document.createElement('canvas');
+        analiseCanvas.width = w; analiseCanvas.height = h;
+        const actx = analiseCanvas.getContext('2d');
+        actx.drawImage(img, 0, 0);
+
+        let minX = w, minY = h, maxX = 0, maxY = 0, achouConteudo = false;
+        try {
+          const dados = actx.getImageData(0, 0, w, h).data;
+          for(let y = 0; y < h; y++){
+            for(let x = 0; x < w; x++){
+              const i = (y * w + x) * 4;
+              const alpha = dados[i + 3];
+              const ehQuaseBranco = dados[i] > 248 && dados[i+1] > 248 && dados[i+2] > 248;
+              if(alpha > 15 && !ehQuaseBranco){
+                achouConteudo = true;
+                if(x < minX) minX = x;
+                if(x > maxX) maxX = x;
+                if(y < minY) minY = y;
+                if(y > maxY) maxY = y;
+              }
+            }
+          }
+        } catch(e){
+          console.error('Não consegui analisar a logo pra recorte automático, seguindo com a original', e);
+          resolve(file); return;
+        }
+
+        if(!achouConteudo){ resolve(file); return; } // não achou nada reconhecível — mantém original, sem arriscar
+
+        const contentW = maxX - minX, contentH = maxY - minY;
+        // Se o conteúdo já ocupa quase o quadro inteiro, recortar não ajuda em nada.
+        if(contentW > w * 0.92 && contentH > h * 0.92){ resolve(file); return; }
+
+        const margemX = contentW * 0.04, margemY = contentH * 0.04;
+        const recorteX = Math.max(0, minX - margemX);
+        const recorteY = Math.max(0, minY - margemY);
+        const recorteW = Math.min(w - recorteX, contentW + margemX * 2);
+        const recorteH = Math.min(h - recorteY, contentH + margemY * 2);
+
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = recorteW; finalCanvas.height = recorteH;
+        finalCanvas.getContext('2d').drawImage(img, recorteX, recorteY, recorteW, recorteH, 0, 0, recorteW, recorteH);
+        finalCanvas.toBlob(blob => resolve(blob || file), 'image/png');
+      };
+      img.onerror = () => resolve(file);
+      img.src = url;
+    });
+  }
+
+  async function comprimirImagem(file, maxDim = 1200, qualidade = 0.82){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { naturalWidth: width, naturalHeight: height } = img;
+        if(width > maxDim || height > maxDim){
+          const escala = maxDim / Math.max(width, height);
+          width = Math.round(width * escala);
+          height = Math.round(height * escala);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => {
+          if(blob) resolve(blob); else reject(new Error('Falha ao comprimir imagem'));
+        }, 'image/webp', qualidade);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Não consegui abrir essa imagem')); };
+      img.src = url;
+    });
+  }
+  // Cache de 1 ano — seguro porque cada upload gera um nome de arquivo novo
+  // (timestamp + sufixo aleatório), nunca reaproveita o mesmo nome.
+  const CACHE_CONTROL_LONGO = '31536000';
+
+  // ============================================================
+  // AUTENTICAÇÃO
+  // ============================================================
+  function showToast(msg, type){
+    const el = document.createElement('div');
+    el.className = 'toast' + (type ? ' ' + type : '');
+    el.textContent = msg;
+    document.getElementById('toastContainer').appendChild(el);
+    const duration = type === 'error' ? 8000 : 3500;
+    setTimeout(() => el.remove(), duration);
+  }
+
+  // ============================================================
+  // RECUPERAÇÃO DE SENHA
+  // Fluxo padrão do Supabase Auth: (1) pede o e-mail e chama
+  // resetPasswordForEmail — o Supabase manda o e-mail com o link; (2) a
+  // pessoa clica no link, volta pra essa mesma página, e o Supabase dispara
+  // o evento PASSWORD_RECOVERY sozinho; (3) a gente mostra o formulário de
+  // nova senha e chama updateUser({ password }).
+  // ============================================================
+  function mostrarSubtelaLogin(id){
+    ['loginFormView', 'recuperarSenhaView', 'novaSenhaView'].forEach(v => {
+      document.getElementById(v).classList.toggle('hidden', v !== id);
+    });
+  }
+
+  function abrirRecuperarSenha(){
+    document.getElementById('recuperarSenhaEmail').value = document.getElementById('loginEmail').value.trim();
+    document.getElementById('recuperarSenhaError').classList.add('hidden');
+    document.getElementById('recuperarSenhaSucesso').classList.add('hidden');
+    mostrarSubtelaLogin('recuperarSenhaView');
+  }
+  function fecharRecuperarSenha(){
+    mostrarSubtelaLogin('loginFormView');
+  }
+
+  async function enviarRecuperarSenha(){
+    const email = document.getElementById('recuperarSenhaEmail').value.trim();
+    const errBox = document.getElementById('recuperarSenhaError');
+    const sucessoBox = document.getElementById('recuperarSenhaSucesso');
+    errBox.classList.add('hidden');
+    sucessoBox.classList.add('hidden');
+
+    if(!email){
+      errBox.textContent = 'Preencha o e-mail.';
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    const btn = document.getElementById('recuperarSenhaBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    // redirectTo aponta pra essa mesma página — é aqui que o Supabase
+    // devolve a pessoa depois de clicar no link do e-mail, já com o token
+    // de recuperação, que dispara o PASSWORD_RECOVERY lá embaixo.
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.href.split('#')[0].split('?')[0]
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Enviar link de recuperação';
+
+    if(error){
+      errBox.textContent = 'Não consegui enviar o e-mail: ' + error.message;
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    sucessoBox.textContent = 'Link enviado! Confere sua caixa de entrada (e o spam) em ' + email + '.';
+    sucessoBox.classList.remove('hidden');
+  }
+
+  async function salvarNovaSenha(){
+    const novaSenha = document.getElementById('novaSenhaInput').value;
+    const confirmSenha = document.getElementById('novaSenhaConfirmInput').value;
+    const errBox = document.getElementById('novaSenhaError');
+    errBox.classList.add('hidden');
+
+    if(!novaSenha || novaSenha.length < 6){
+      errBox.textContent = 'A senha precisa ter pelo menos 6 caracteres.';
+      errBox.classList.remove('hidden');
+      return;
+    }
+    if(novaSenha !== confirmSenha){
+      errBox.textContent = 'As duas senhas não são iguais.';
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    const btn = document.getElementById('novaSenhaBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    const { error } = await supabaseClient.auth.updateUser({ password: novaSenha });
+
+    btn.disabled = false;
+    btn.textContent = 'Salvar nova senha';
+
+    if(error){
+      errBox.textContent = 'Não consegui salvar: ' + error.message;
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    showToast('Senha atualizada! Entrando...', 'success');
+    // A sessão de recuperação já autentica a pessoa — segue direto pro app,
+    // sem precisar logar de novo com a senha recém-criada.
+    const { data } = await supabaseClient.auth.getSession();
+    if(data && data.session && data.session.user){
+      currentUser = data.session.user;
+      await enterApp();
+    }
+  }
+
+  // Detecta a chegada pelo link de recuperação (o Supabase dispara esse
+  // evento sozinho ao processar o token que vem na URL/hash do e-mail).
+  supabaseClient.auth.onAuthStateChange((event) => {
+    if(event === 'PASSWORD_RECOVERY'){
+      mostrarSubtelaLogin('novaSenhaView');
+    }
+  });
+
+  function togglePasswordVisibility(){
+    const input = document.getElementById('loginPassword');
+    const icon = document.getElementById('pwEyeIcon');
+    const mostrando = input.type === 'text';
+    input.type = mostrando ? 'password' : 'text';
+    icon.innerHTML = mostrando
+      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/>'
+      : '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.6 18.6 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.6 18.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  }
+
+  async function doLogin(){
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errBox = document.getElementById('loginError');
+    const btn = document.getElementById('loginBtn');
+    errBox.classList.add('hidden');
+
+    if(!email || !password){
+      errBox.textContent = 'Preencha e-mail e senha.';
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+
+    if(error){
+      errBox.textContent = 'E-mail ou senha incorretos.';
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    currentUser = data.user;
+    await enterApp();
+  }
+
+  async function doLogout(){
+    await supabaseClient.auth.signOut();
+    currentUser = null;
+    document.getElementById('appView').classList.add('hidden');
+    document.getElementById('loginView').classList.remove('hidden');
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+  }
+
+  // Qual loja este login controla — resolvido via a função minha_loja_id()
+  // (SaaS multi-loja, Etapa 2). Toda inserção nova passa a levar isso junto,
+  // pra bater com o RLS que já exige loja_id = minha_loja_id() no banco.
+  // Endereço onde o catalogo-template.html está publicado. Ajuste aqui se o
+  // domínio/hospedagem mudar — o resto do código não precisa ser tocado.
+  const CATALOGO_BASE_URL = "https://thiagosgrdev.github.io/catalogo-demo/catalogo-template.html";
+
+  let ADMIN_LOJA_ID = null;
+  let ADMIN_USA_MESTRE = false;
+  let ADMIN_LOJA_SLUG = null;
+
+  async function enterApp(){
+    document.getElementById('loginView').classList.add('hidden');
+    document.getElementById('appView').classList.remove('hidden');
+    document.getElementById('userEmailLabel').textContent = currentUser.email;
+
+    const { data: lojaIdData, error: lojaIdError } = await supabaseClient.rpc('minha_loja_id');
+    if(lojaIdError || !lojaIdData){
+      console.error('Não consegui identificar a loja deste login', lojaIdError);
+      showToast('Sua conta não está vinculada a nenhuma loja ainda. Fale com o suporte.', 'error');
+      return;
+    }
+    ADMIN_LOJA_ID = lojaIdData;
+
+    const { data: lojaInfo } = await supabaseClient.from('lojas').select('usa_catalogo_mestre, slug').eq('id', ADMIN_LOJA_ID).single();
+    ADMIN_USA_MESTRE = !!(lojaInfo && lojaInfo.usa_catalogo_mestre);
+    ADMIN_LOJA_SLUG = lojaInfo ? lojaInfo.slug : null;
+    const btnMestre = document.getElementById('btnCatalogoMestre');
+    if(btnMestre) btnMestre.style.display = ADMIN_USA_MESTRE ? '' : 'none';
+
+    // Botão "Assinatura" só aparece pra quem tem uma assinatura de verdade
+    // (veio pelo checkout da landing page) — a Manto Hub, por exemplo, foi
+    // criada direto no banco, sem assinatura, então não vê esse botão.
+    const { data: assinaturaExistente } = await supabaseClient.from('assinaturas').select('id').eq('loja_id', ADMIN_LOJA_ID).maybeSingle();
+    const btnAssinatura = document.getElementById('btnAssinatura');
+    if(btnAssinatura) btnAssinatura.style.display = assinaturaExistente ? '' : 'none';
+
+    const btnVerCatalogo = document.getElementById('btnVerCatalogo');
+    if(btnVerCatalogo && ADMIN_LOJA_SLUG){
+      btnVerCatalogo.href = CATALOGO_BASE_URL + '?loja=' + encodeURIComponent(ADMIN_LOJA_SLUG);
+    }
+
+    await Promise.all([loadTeams(), loadProducts()]);
+    renderBentoKpis();
+    renderProductList();
+  }
+
+  function renderBentoKpis(){
+    const ativos = PRODUCTS_CACHE.filter(p => p.disponivel).length;
+    const destaques = PRODUCTS_CACHE.filter(p => p.destaque).length;
+    const lancamentos = PRODUCTS_CACHE.filter(p => p.lancamento).length;
+    document.getElementById('kpiProdutosAtivos').textContent = ativos;
+    document.getElementById('kpiDestaques').textContent = destaques;
+    document.getElementById('kpiLancamentos').textContent = lancamentos;
+    document.getElementById('kpiTimes').textContent = TEAMS_CACHE.length;
+  }
+
+  async function checkExistingSession(){
+    // Se a pessoa chegou aqui por um link de recuperação de senha, a URL
+    // traz "type=recovery" no hash — nesse caso, NÃO entra direto no app
+    // (mesmo que já exista uma sessão temporária): deixa o evento
+    // PASSWORD_RECOVERY mostrar a tela de nova senha primeiro.
+    if(window.location.hash.includes('type=recovery')) return;
+
+    const { data } = await supabaseClient.auth.getSession();
+    if(data && data.session && data.session.user){
+      currentUser = data.session.user;
+      await enterApp();
+    }
+  }
+  checkExistingSession();
+
+  // ============================================================
+  // CARREGAMENTO DE DADOS
+  // ============================================================
+  async function loadTeams(){
+    const { data, error } = await supabaseClient
+      .from('teams')
+      .select('id, nome, liga, subliga, continente')
+      .order('nome', { ascending: true });
+    if(error){ showToast('Erro ao carregar times: ' + error.message, 'error'); return; }
+    TEAMS_CACHE = data || [];
+    const select = document.getElementById('fieldTeam');
+    select.innerHTML = TEAMS_CACHE.map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
+    renderTeamCategoriaHint();
+  }
+
+  function renderTeamCategoriaHint(){
+    const hintEl = document.getElementById('teamCategoriaHint');
+    if(!hintEl) return;
+    const teamId = document.getElementById('fieldTeam').value;
+    const team = TEAMS_CACHE.find(t => String(t.id) === String(teamId));
+    if(!team){ hintEl.textContent = ''; return; }
+    const partes = [team.liga, team.subliga, team.continente].filter(Boolean);
+    hintEl.textContent = partes.length ? `Categoria: ${partes.join(' · ')}` : 'Sem categoria definida — configure em "Ligas".';
+  }
+
+  async function loadProducts(){
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('*, teams(id, nome), product_images(id, url, ordem)')
+      .order('created_at', { ascending: false });
+    if(error){ showToast('Erro ao carregar produtos: ' + error.message, 'error'); return; }
+    PRODUCTS_CACHE = data || [];
+  }
+
+  // ============================================================
+  // LISTAGEM / FILTROS
+  // ============================================================
+  function setFilter(f){
+    currentFilter = f;
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
+    renderProductList();
+  }
+
+  function renderProductList(){
+    const query = document.getElementById('searchInput').value.trim().toLowerCase();
+    let list = PRODUCTS_CACHE.slice();
+
+    if(currentFilter === 'destaque') list = list.filter(p => p.destaque);
+    else if(currentFilter === 'lancamento') list = list.filter(p => p.lancamento);
+    else if(currentFilter === 'inativo') list = list.filter(p => !p.disponivel);
+    else if(currentFilter !== 'todos') list = list.filter(p => p.tipo === currentFilter);
+
+    if(query){
+      list = list.filter(p =>
+        p.titulo.toLowerCase().includes(query) ||
+        (p.teams && p.teams.nome.toLowerCase().includes(query))
+      );
+    }
+
+    document.getElementById('productCount').textContent = list.length + (list.length === 1 ? ' produto' : ' produtos');
+    const container = document.getElementById('productList');
+
+    if(list.length === 0){
+      container.innerHTML = '<div class="empty-state">Nenhum produto encontrado.<br>Toque em "+" para cadastrar o primeiro.</div>';
+      return;
+    }
+
+    container.innerHTML = list.map(p => {
+      const photo = (p.product_images && p.product_images.length)
+        ? p.product_images.slice().sort((a,b)=>a.ordem-b.ordem)[0].url
+        : null;
+      const thumb = photo
+        ? `<img src="${photo}" alt="">`
+        : `<div class="placeholder">sem foto</div>`;
+      const tags = [];
+      if(!p.disponivel) tags.push('<span class="tag-mini off">Inativo</span>');
+      if(p.destaque) tags.push('<span class="tag-mini destaque">★ Destaque</span>');
+      if(p.lancamento) tags.push('<span class="tag-mini lancamento">🆕 Lançamento</span>');
+      return `
+        <div class="product-card ${!p.disponivel ? 'unavailable' : ''}">
+          <div class="product-card-photo" onclick="openForm('${p.id}')">
+            ${thumb}
+            <div class="product-card-tags">${tags.join('')}</div>
+            <div class="product-card-actions">
+              <div class="icon-btn-mini" onclick="event.stopPropagation(); duplicateProduct('${p.id}')" aria-label="Duplicar" title="Duplicar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </div>
+              <div class="icon-btn-mini" onclick="event.stopPropagation(); confirmDelete('${p.id}')" aria-label="Excluir" title="Excluir">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="product-card-body" onclick="openForm('${p.id}')">
+            <div class="product-card-title">${p.titulo}</div>
+            <div class="product-card-meta">
+              <span>${p.teams ? p.teams.nome : '—'}</span>
+              <span class="tag-mini">${p.tipo}</span>
+            </div>
+            <div class="product-card-preco">${fmt(p.preco)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function fmt(v){ return "R$ " + parseFloat(v).toFixed(2).replace(".", ","); }
+
+  // ============================================================
+  // FORMULÁRIO (criar / editar)
+  // ============================================================
+  function renderSizePicker(){
+    const picker = document.getElementById('sizePicker');
+    const tipo = document.getElementById('fieldTipo').value;
+    const isKid = tipo === "Kit Infantil";
+    const list = isKid ? KID_SIZES : SIZES;
+    picker.innerHTML = list.map(s =>
+      `<div class="size-opt ${selectedSizes.includes(s) ? 'active' : ''}" onclick="toggleSize('${s}')">${isKid ? KID_SIZE_LABELS[s] : s}</div>`
+    ).join('');
+  }
+  function toggleSize(s){
+    if(selectedSizes.includes(s)) selectedSizes = selectedSizes.filter(x => x !== s);
+    else selectedSizes.push(s);
+    renderSizePicker();
+  }
+
+  function onTipoChange(){
+    const tipo = document.getElementById('fieldTipo').value;
+    const validList = tipo === "Kit Infantil" ? KID_SIZES : SIZES;
+    selectedSizes = selectedSizes.filter(s => validList.includes(s));
+    renderSizePicker();
+    checkCollisionWarning();
+  }
+
+  function renderImageGrid(){
+    const grid = document.getElementById('imageGrid');
+    let html = formImages.map((img, i) => `
+      <div class="image-slot">
+        <span class="order-badge">${i === 0 ? 'Principal' : i + 1}</span>
+        ${img.uploading
+          ? '<div class="uploading"><span class="spinner"></span></div>'
+          : `<img src="${img.url}" alt=""><button class="remove-btn" onclick="removeImage(${i})">×</button>
+             <div class="move-btns">
+               <button class="move-btn" onclick="moveImage(${i}, -1)" ${i === 0 ? 'disabled' : ''} aria-label="Mover para a esquerda">‹</button>
+               <button class="move-btn" onclick="moveImage(${i}, 1)" ${i === formImages.length - 1 ? 'disabled' : ''} aria-label="Mover para a direita">›</button>
+             </div>`}
+      </div>
+    `).join('');
+    if(formImages.length < 6){
+      html += `<div class="image-slot add-slot" onclick="document.getElementById('imageFileInput').click()">+</div>`;
+    }
+    grid.innerHTML = html;
+  }
+
+  function openForm(productId){
+    editingProductId = productId;
+    const product = productId ? PRODUCTS_CACHE.find(p => p.id === productId) : null;
+
+    document.getElementById('formTitle').textContent = product ? 'Editar produto' : 'Novo produto';
+    document.getElementById('fieldTeam').value = product ? product.teams.id : (TEAMS_CACHE[0] ? TEAMS_CACHE[0].id : '');
+    document.getElementById('fieldTipo').value = product ? product.tipo : 'Torcedor';
+    document.getElementById('fieldTitulo').value = product ? (product.titulo || '') : '';
+    document.getElementById('fieldSubtitulo').value = product ? (product.subtitulo || '') : '';
+    document.getElementById('fieldDescricao').value = product ? (product.descricao || '') : '';
+    document.getElementById('fieldPreco').value = product ? product.preco : '';
+    document.getElementById('fieldTags').value = product && product.tags ? product.tags.join(', ') : '';
+    document.getElementById('fieldDisponivel').checked = product ? product.disponivel : true;
+    document.getElementById('fieldDestaque').checked = product ? !!product.destaque : false;
+    document.getElementById('fieldLancamento').checked = product ? !!product.lancamento : false;
+
+    selectedSizes = (product && product.tamanhos) ? product.tamanhos.slice() : [];
+    renderSizePicker();
+
+    formImages = (product && product.product_images)
+      ? product.product_images.slice().sort((a,b)=>a.ordem-b.ordem).map(img => ({ url: img.url, ordem: img.ordem, isNew: false, id: img.id }))
+      : [];
+    renderImageGrid();
+
+    document.getElementById('formOverlay').classList.remove('hidden');
+    window.scrollTo(0,0);
+    checkCollisionWarning();
+    renderTeamCategoriaHint();
+  }
+
+  function checkCollisionWarning(){
+    const warningEl = document.getElementById('collisionWarning');
+    if(editingProductId){ warningEl.style.display = "none"; return; }
+
+    const teamId = document.getElementById('fieldTeam').value;
+    const team = TEAMS_CACHE.find(t => t.id === teamId);
+    const tipo = document.getElementById('fieldTipo').value;
+    if(!team){ warningEl.style.display = "none"; return; }
+
+    const prefix = team.nome + "||" + tipo;
+    const count = PRODUCTS_CACHE.filter(p => p.id === prefix || p.id.startsWith(prefix + "||")).length;
+    if(count > 0){
+      warningEl.textContent = `ℹ Já existem ${count} produto(s) "${tipo}" para ${team.nome}. Salvar aqui cadastra mais um (não substitui os outros).`;
+      warningEl.style.display = "block";
+    } else {
+      warningEl.style.display = "none";
+    }
+  }
+
+  function closeForm(){
+    document.getElementById('formOverlay').classList.add('hidden');
+    editingProductId = null;
+  }
+
+  function buildProductId(teamNome, tipo){
+    const prefix = teamNome + "||" + tipo;
+    const jaExiste = (id) => PRODUCTS_CACHE.some(p => p.id === id);
+    if(!jaExiste(prefix)) return prefix;
+    let n = 2;
+    while(jaExiste(prefix + "||" + n)) n++;
+    return prefix + "||" + n;
+  }
+
+  async function saveProduct(){
+    const teamId = document.getElementById('fieldTeam').value;
+    const team = TEAMS_CACHE.find(t => t.id === teamId);
+    const tipo = document.getElementById('fieldTipo').value;
+    const preco = parseFloat(document.getElementById('fieldPreco').value);
+
+    if(!team){ showToast('Selecione um time.', 'error'); return; }
+    if(isNaN(preco) || preco <= 0){ showToast('Informe um preço válido.', 'error'); return; }
+
+    const titulo = document.getElementById('fieldTitulo').value.trim() || (team.nome + ' 25/26');
+    const subtitulo = document.getElementById('fieldSubtitulo').value.trim() || null;
+    const descricao = document.getElementById('fieldDescricao').value.trim() || null;
+    const tagsRaw = document.getElementById('fieldTags').value.trim();
+    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const disponivel = document.getElementById('fieldDisponivel').checked;
+    const destaque = document.getElementById('fieldDestaque').checked;
+    const lancamento = document.getElementById('fieldLancamento').checked;
+    const tamanhos = selectedSizes.length ? selectedSizes : null;
+
+    const id = editingProductId || buildProductId(team.nome, tipo);
+
+    await commitSaveProduct(id, team, tipo, titulo, subtitulo, descricao, preco, tamanhos, tags, disponivel, destaque, lancamento);
+  }
+
+  async function commitSaveProduct(id, team, tipo, titulo, subtitulo, descricao, preco, tamanhos, tags, disponivel, destaque, lancamento){
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="spinner"></span>';
+
+    const { error } = await supabaseClient
+      .from('products')
+      .upsert({
+        id, team_id: team.id, tipo, titulo, subtitulo, descricao, preco,
+        tamanhos, tags, disponivel, destaque, lancamento, loja_id: ADMIN_LOJA_ID
+      });
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Salvar produto';
+
+    if(error){
+      showToast('Erro ao salvar: ' + error.message, 'error');
+      return;
+    }
+
+    if(formImages.length > 0 || editingProductId){
+      await supabaseClient.from('product_images').delete().eq('product_id', id);
+    }
+    for(let i = 0; i < formImages.length; i++){
+      const img = formImages[i];
+      if(img.isNew && img.file){
+        await uploadImageFile(id, img.file, i);
+      } else {
+        await supabaseClient.from('product_images').insert({ product_id: id, url: img.url, ordem: i, loja_id: ADMIN_LOJA_ID });
+      }
+    }
+
+    showToast('Produto salvo com sucesso!', 'success');
+    closeForm();
+    await loadProducts();
+    renderProductList();
+    renderBentoKpis();
+  }
+
+  // ============================================================
+  // IMAGENS
+  // ============================================================
+  function handleImageSelected(event){
+    const files = Array.from(event.target.files || []);
+    if(files.length === 0) return;
+    const espacoLivre = 6 - formImages.length;
+    if(files.length > espacoLivre){
+      showToast(`Só cabem mais ${espacoLivre} foto(s) neste produto (máximo 6). As ${files.length - espacoLivre} última(s) selecionada(s) foram ignoradas.`, 'error');
+    }
+    files.slice(0, espacoLivre).forEach(file => {
+      const localUrl = URL.createObjectURL(file);
+      formImages.push({ url: localUrl, ordem: formImages.length, isNew: true, file });
+    });
+    renderImageGrid();
+    event.target.value = '';
+  }
+
+  function moveImage(index, direction){
+    const newIndex = index + direction;
+    if(newIndex < 0 || newIndex >= formImages.length) return;
+    const temp = formImages[index];
+    formImages[index] = formImages[newIndex];
+    formImages[newIndex] = temp;
+    renderImageGrid();
+  }
+
+  function removeImage(index){
+    const img = formImages[index];
+    formImages.splice(index, 1);
+    renderImageGrid();
+    if(img && !img.isNew && img.id){
+      supabaseClient.from('product_images').delete().eq('id', img.id);
+    }
+  }
+
+  function slugifyForStorage(texto){
+    return (texto || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase() || 'produto';
+  }
+
+  async function uploadImageFile(productId, file, ordem){
+    const path = `${slugifyForStorage(productId)}-${ordem}-${Date.now()}.webp`;
+
+    let arquivoParaEnviar = file;
+    try { arquivoParaEnviar = await comprimirImagem(file, 1400, 0.85); }
+    catch(e){ console.error('Não consegui comprimir a foto do produto, enviando original', e); }
+
+    const { error: uploadError } = await supabaseClient.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, arquivoParaEnviar, { upsert: true, contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+
+    if(uploadError){
+      showToast('Erro ao enviar foto: ' + uploadError.message, 'error');
+      return;
+    }
+
+    const { data: publicUrlData } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+    const publicUrl = publicUrlData.publicUrl;
+
+    const { error: dbError } = await supabaseClient.from('product_images')
+      .insert({ product_id: productId, url: publicUrl, ordem, loja_id: ADMIN_LOJA_ID });
+
+    if(dbError){
+      showToast('Foto enviada, mas erro ao salvar no banco: ' + dbError.message, 'error');
+    }
+  }
+
+  // ============================================================
+  // DUPLICAR / EXCLUIR
+  // ============================================================
+  async function duplicateProduct(id){
+    const product = PRODUCTS_CACHE.find(p => p.id === id);
+    if(!product) return;
+    openForm(id);
+    editingProductId = null;
+    document.getElementById('formTitle').textContent = 'Duplicar produto';
+    checkCollisionWarning();
+  }
+
+  function confirmDelete(id){
+    const product = PRODUCTS_CACHE.find(p => p.id === id);
+    document.getElementById('confirmTitle').textContent = 'Excluir produto?';
+    document.getElementById('confirmText').textContent = `"${product ? product.titulo : id}" será excluído permanentemente, junto com as fotos associadas. Essa ação não pode ser desfeita.`;
+    document.getElementById('confirmActionBtn').onclick = () => deleteProduct(id);
+    document.getElementById('confirmOverlay').classList.remove('hidden');
+  }
+  function closeConfirm(){
+    document.getElementById('confirmOverlay').classList.add('hidden');
+  }
+  async function deleteProduct(id){
+    const { error } = await supabaseClient.from('products').delete().eq('id', id);
+    closeConfirm();
+    if(error){ showToast('Erro ao excluir: ' + error.message, 'error'); return; }
+    showToast('Produto excluído.', 'success');
+    await loadProducts();
+    renderProductList();
+    renderBentoKpis();
+  }
+
+  // ============================================================
+  // BANNER HERO
+  // ============================================================
+  const HERO_BUCKET = "banners";
+  let HERO_BANNERS = [];
+
+  async function loadHeroBanners(){
+    const { data, error } = await supabaseClient
+      .from('hero_banners')
+      .select('id, url, ordem')
+      .order('ordem', { ascending: true });
+    if(error){ showToast('Erro ao carregar banner: ' + error.message, 'error'); return; }
+    HERO_BANNERS = data || [];
+  }
+
+  function isHeroVideo(url){
+    return /\.(mp4|webm|mov)(\?.*)?$/i.test(url || '');
+  }
+
+  function renderHeroGrid(){
+    const grid = document.getElementById('heroImageGrid');
+    let html = HERO_BANNERS.map((banner, i) => {
+      const midia = isHeroVideo(banner.url)
+        ? `<video src="${banner.url}" muted loop playsinline autoplay></video><span class="media-badge">vídeo</span>`
+        : `<img src="${banner.url}" alt="">`;
+      return `
+      <div class="image-slot">
+        <span class="order-badge">${i + 1}</span>
+        ${midia}
+        <button class="remove-btn" onclick="removeHeroBanner('${banner.id}')">×</button>
+        <div class="move-btns">
+          <button class="move-btn" onclick="moveHeroBanner(${i}, -1)" ${i === 0 ? 'disabled' : ''} aria-label="Mover para a esquerda">‹</button>
+          <button class="move-btn" onclick="moveHeroBanner(${i}, 1)" ${i === HERO_BANNERS.length - 1 ? 'disabled' : ''} aria-label="Mover para a direita">›</button>
+        </div>
+      </div>
+    `;
+    }).join('');
+    html += `
+      <div class="image-slot add-slot" onclick="document.getElementById('heroFileInput').click()">
+        <div class="add-slot-inner">
+          <span class="add-slot-plus">+</span>
+          <span class="add-slot-label">Foto ou vídeo</span>
+        </div>
+      </div>`;
+    grid.innerHTML = html;
+  }
+
+  async function openHeroOverlay(){
+    document.getElementById('heroOverlay').classList.remove('hidden');
+    document.getElementById('heroImageGrid').innerHTML = '<div class="no-results">Carregando…</div>';
+    await loadHeroBanners();
+    renderHeroGrid();
+    window.scrollTo(0,0);
+  }
+
+  function closeHeroOverlay(){
+    document.getElementById('heroOverlay').classList.add('hidden');
+  }
+
+  const HERO_VIDEO_MAX_MB = 10;
+
+  async function handleHeroFileSelected(event){
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if(files.length === 0) return;
+
+    let proximaOrdem = HERO_BANNERS.length > 0 ? Math.max(...HERO_BANNERS.map(b => b.ordem)) + 1 : 0;
+    let enviados = 0;
+
+    for(const file of files){
+      const ehVideo = file.type.startsWith('video/');
+      const tamanhoMB = file.size / (1024 * 1024);
+
+      if(ehVideo && tamanhoMB > HERO_VIDEO_MAX_MB){
+        showToast(`"${file.name}" tem ${tamanhoMB.toFixed(1)}MB. Vídeos do banner devem ter até ${HERO_VIDEO_MAX_MB}MB para não deixar o catálogo lento.`, 'error');
+        continue;
+      }
+
+      const ext = ehVideo ? (file.name.split('.').pop() || 'mp4').replace(/[^a-zA-Z0-9]/g, '') : 'webp';
+      const path = `hero-${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+
+      let arquivoParaEnviar = file;
+      let contentTypeFinal = file.type || undefined;
+      if(!ehVideo){
+        try {
+          arquivoParaEnviar = await comprimirImagem(file, 1600, 0.82); // banner pode ser mais largo que crest/produto
+          contentTypeFinal = 'image/webp';
+        } catch(e){
+          console.error('Não consegui comprimir o banner, enviando original', e);
+        }
+      }
+
+      const { error: uploadError } = await supabaseClient.storage.from(HERO_BUCKET).upload(path, arquivoParaEnviar, { upsert: true, contentType: contentTypeFinal, cacheControl: CACHE_CONTROL_LONGO });
+      if(uploadError){
+        showToast('Erro ao enviar arquivo do banner: ' + uploadError.message, 'error');
+        continue;
+      }
+      const { data: publicUrlData } = supabaseClient.storage.from(HERO_BUCKET).getPublicUrl(path);
+      const { error: dbError } = await supabaseClient.from('hero_banners').insert({ url: publicUrlData.publicUrl, ordem: proximaOrdem, loja_id: ADMIN_LOJA_ID });
+      if(dbError){ showToast('Erro ao salvar no banco: ' + dbError.message, 'error'); continue; }
+      proximaOrdem++;
+      enviados++;
+    }
+
+    if(enviados > 0) showToast('Banner atualizado.', 'success');
+    await loadHeroBanners();
+    renderHeroGrid();
+  }
+
+  async function moveHeroBanner(index, direction){
+    const newIndex = index + direction;
+    if(newIndex < 0 || newIndex >= HERO_BANNERS.length) return;
+    const a = HERO_BANNERS[index], b = HERO_BANNERS[newIndex];
+    await supabaseClient.from('hero_banners').update({ ordem: b.ordem }).eq('id', a.id);
+    await supabaseClient.from('hero_banners').update({ ordem: a.ordem }).eq('id', b.id);
+    await loadHeroBanners();
+    renderHeroGrid();
+  }
+
+  async function removeHeroBanner(id){
+    const { error } = await supabaseClient.from('hero_banners').delete().eq('id', id);
+    if(error){ showToast('Erro ao excluir: ' + error.message, 'error'); return; }
+    await loadHeroBanners();
+    renderHeroGrid();
+  }
+
+  // ============================================================
+  // TIMES
+  // ============================================================
+  const TEAMS_BUCKET = "escudos";
+  let TEAMS_LIST_CACHE = [];
+  let LIGAS_CACHE = [];
+  let SUBLIGAS_CACHE = [];
+  let editingTeamId = null;
+  let teamEscudoUrl = null;
+  let teamFotoBustUrl = null;
+
+  const SUBLIGAS_CONHECIDAS_EUROPA = ["Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1"];
+
+  async function openTeamsOverlay(){
+    document.getElementById('teamsOverlay').classList.remove('hidden');
+    showTeamsList();
+    await loadLigasESubligas();
+    await loadTeamsList();
+  }
+  function closeTeamsOverlay(){
+    document.getElementById('teamsOverlay').classList.add('hidden');
+  }
+
+  async function loadTeamsList(){
+    const { data, error } = await supabaseClient
+      .from('teams')
+      .select('*')
+      .order('nome', { ascending: true });
+    if(error){ showToast('Erro ao carregar times: ' + error.message, 'error'); return; }
+    TEAMS_LIST_CACHE = data || [];
+    renderTeamsList();
+  }
+
+  async function loadLigasESubligas(){
+    try {
+      const [ligasRes, subligasRes] = await Promise.all([
+        supabaseClient.from('ligas').select('*').order('nome', { ascending: true }),
+        supabaseClient.from('subligas').select('*').order('nome', { ascending: true })
+      ]);
+      LIGAS_CACHE = (ligasRes && ligasRes.data) ? ligasRes.data : [];
+      SUBLIGAS_CACHE = (subligasRes && subligasRes.data) ? subligasRes.data : [];
+    } catch(e){
+      console.error('Tabelas ligas/subligas ainda não existem.', e);
+      LIGAS_CACHE = [];
+      SUBLIGAS_CACHE = [];
+    }
+  }
+
+  function renderTeamsList(){
+    const el = document.getElementById('teamsList');
+    if(TEAMS_LIST_CACHE.length === 0){
+      el.innerHTML = '<div class="field-hint">Nenhum time cadastrado ainda.</div>';
+      return;
+    }
+    el.innerHTML = TEAMS_LIST_CACHE.map(t => {
+      const tags = [t.liga || 'Sem categoria', t.subliga, t.continente].filter(Boolean).join(' · ');
+      const badge = t.escudo_url
+        ? `<img src="${t.escudo_url}" alt="">`
+        : (t.sigla || (t.nome || '?').slice(0,3).toUpperCase());
+      return `
+        <div class="team-row">
+          <div class="team-row-badge" style="border-color:${t.cor || 'var(--neon-green)'}">${badge}</div>
+          <div class="team-row-info">
+            <div class="team-row-name">${t.nome}</div>
+            <div class="team-row-tag">${tags}</div>
+          </div>
+          <button class="icon-btn" onclick="openTeamForm('${t.id}')" aria-label="Editar time">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="icon-btn" onclick="confirmDeleteTeam('${t.id}')" aria-label="Excluir time">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function showTeamsList(){
+    document.getElementById('teamsListView').classList.remove('hidden');
+    document.getElementById('teamFormView').classList.add('hidden');
+  }
+
+  function renderLigaFieldOptions(selecionado){
+    const select = document.getElementById('teamFieldLiga');
+    const opcoes = LIGAS_CACHE.map(l => `<option value="${l.nome}">${l.nome}</option>`);
+    select.innerHTML = opcoes.join('');
+    const primeiraOpcao = LIGAS_CACHE[0] ? LIGAS_CACHE[0].nome : '';
+    select.value = selecionado && LIGAS_CACHE.some(l => l.nome === selecionado)
+      ? selecionado
+      : primeiraOpcao;
+  }
+
+  function renderSubligaFieldOptions(liga, selecionado){
+    const select = document.getElementById('teamFieldSubliga');
+    const conhecidas = liga === 'Europa' ? SUBLIGAS_CONHECIDAS_EUROPA.slice() : [];
+    const customizadas = SUBLIGAS_CACHE
+      .filter(s => s.liga_nome === liga && !conhecidas.includes(s.nome))
+      .map(s => s.nome);
+    const todas = [...conhecidas, ...customizadas];
+    const opcoes = [
+      `<option value="">Nenhuma</option>`,
+      ...todas.map(nome => `<option value="${nome}">${nome}</option>`)
+    ];
+    select.innerHTML = opcoes.join('');
+    select.value = selecionado && todas.includes(selecionado) ? selecionado : '';
+  }
+
+  function openTeamForm(teamId){
+    editingTeamId = teamId;
+    const team = teamId ? TEAMS_LIST_CACHE.find(t => t.id === teamId) : null;
+
+    document.getElementById('teamsListView').classList.add('hidden');
+    document.getElementById('teamFormView').classList.remove('hidden');
+
+    try {
+      document.getElementById('teamFormTitle').textContent = team ? 'Editar time' : 'Novo time';
+      document.getElementById('teamFieldNome').value = team ? (team.nome || '') : '';
+      document.getElementById('teamFieldCor').value = (team && team.cor) ? team.cor : '#00E5FF';
+      teamEscudoUrl = team ? (team.escudo_url || null) : null;
+      teamFotoBustUrl = team ? (team.imagem_url || null) : null;
+
+      const ligaAtual = team ? (team.liga || 'Brasileirão') : 'Brasileirão';
+      renderLigaFieldOptions(ligaAtual);
+      renderSubligaFieldOptions(ligaAtual, team ? team.subliga : null);
+      document.getElementById('teamFieldContinente').value = (team && team.continente) ? team.continente : 'América do Sul';
+
+      onTeamLigaChange();
+      renderTeamEscudoGrid();
+      renderTeamFotoBustGrid();
+    } catch(e){
+      console.error('Erro ao preencher formulário de time:', e);
+      showToast('Parte do formulário não carregou. As opções básicas ainda funcionam.', 'error');
+    }
+  }
+
+  function closeTeamForm(){
+    showTeamsList();
+  }
+
+  function onTeamLigaChange(){
+    const liga = document.getElementById('teamFieldLiga').value;
+    document.getElementById('teamFieldContinenteWrap').style.display = liga === 'Seleções' ? 'block' : 'none';
+    const mostraSubliga = liga !== 'Brasileirão' && liga !== 'Seleções';
+    document.getElementById('teamFieldSubligaWrap').style.display = mostraSubliga ? 'block' : 'none';
+    if(mostraSubliga) renderSubligaFieldOptions(liga, null);
+  }
+
+  // ============================================================
+  // LIGAS
+  // ============================================================
+  let editingLigaId = null;
+  let editingLigaNomeOriginal = null;
+  let ligaFormIconUrl = null;
+  let ligaFormFotoUrl = null;
+  let editingSubligaId = null;
+  let subligaFormIconUrl = null;
+  let subligaParentNome = null;
+
+  async function openLigasOverlay(){
+    document.getElementById('ligasOverlay').classList.remove('hidden');
+    showLigasList();
+    await loadLigasESubligas();
+    renderLigasList();
+  }
+  function closeLigasOverlay(){
+    document.getElementById('ligasOverlay').classList.add('hidden');
+  }
+
+  function showLigasList(){
+    document.getElementById('ligasListView').classList.remove('hidden');
+    document.getElementById('ligaFormView').classList.add('hidden');
+    document.getElementById('subligasView').classList.add('hidden');
+    document.getElementById('subligaFormView').classList.add('hidden');
+    renderLigasList();
+  }
+
+  function renderLigasList(){
+    const el = document.getElementById('ligasList');
+    if(LIGAS_CACHE.length === 0){
+      el.innerHTML = '<div class="field-hint">Nenhuma categoria cadastrada ainda.</div>';
+      return;
+    }
+    el.innerHTML = LIGAS_CACHE.slice().sort((a,b) => (a.ordem ?? 99) - (b.ordem ?? 99)).map(l => {
+      const qtdSub = SUBLIGAS_CACHE.filter(s => s.liga_nome === l.nome).length;
+      const badge = l.icone_url ? `<img src="${l.icone_url}" alt="">` : l.nome.slice(0,3).toUpperCase();
+      return `
+        <div class="team-row">
+          <div class="team-row-badge" style="border-color:var(--neon-green)">${badge}</div>
+          <div class="team-row-info">
+            <div class="team-row-name">${l.nome}</div>
+            <div class="team-row-tag">Ordem: ${l.ordem ?? '—'} · ${qtdSub} subcategoria(s)</div>
+          </div>
+          <button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openSubligas('${l.nome.replace(/'/g, "\\'")}')">Sub</button>
+          <button class="icon-btn" onclick="openLigaForm('${l.id}')" aria-label="Editar categoria">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="icon-btn" onclick="confirmDeleteLiga('${l.id}')" aria-label="Excluir categoria">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  function openLigaForm(ligaId){
+    editingLigaId = ligaId;
+    const liga = ligaId ? LIGAS_CACHE.find(l => l.id === ligaId) : null;
+    editingLigaNomeOriginal = liga ? liga.nome : null;
+    document.getElementById('ligaFormTitle').textContent = liga ? 'Editar categoria' : 'Nova categoria';
+    document.getElementById('ligaFieldNome').value = liga ? liga.nome : '';
+    document.getElementById('ligaFieldOrdem').value = (liga && liga.ordem != null) ? liga.ordem : '';
+    ligaFormIconUrl = liga ? (liga.icone_url || null) : null;
+    ligaFormFotoUrl = liga ? (liga.foto_atleta_url || null) : null;
+    renderLigaFormIcon();
+    renderLigaFormFoto();
+    document.getElementById('ligasListView').classList.add('hidden');
+    document.getElementById('ligaFormView').classList.remove('hidden');
+  }
+
+  function renderLigaFormIcon(){
+    const grid = document.getElementById('ligaFormIconGrid');
+    grid.innerHTML = ligaFormIconUrl
+      ? `<div class="image-slot"><img src="${ligaFormIconUrl}" alt=""><button class="remove-btn" onclick="ligaFormIconUrl=null; renderLigaFormIcon();">×</button></div>`
+      : `<div class="image-slot add-slot" onclick="document.getElementById('ligaFormIconInput').click()"><div class="add-slot-inner"><span class="add-slot-plus">+</span><span class="add-slot-label">Ícone</span></div></div>`;
+  }
+
+  async function handleLigaFormIcon(event){
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+    const path = `liga-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+    document.getElementById('ligaFormIconGrid').innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
+    let arquivoParaEnviar = file;
+    try { arquivoParaEnviar = await comprimirImagem(file, 400, 0.85); }
+    catch(e){ console.error('Não consegui comprimir o ícone, enviando original', e); }
+    const { error } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, arquivoParaEnviar, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+    if(error){ showToast('Erro ao enviar ícone: ' + error.message, 'error'); renderLigaFormIcon(); return; }
+    const { data } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
+    ligaFormIconUrl = data.publicUrl;
+    renderLigaFormIcon();
+  }
+
+  function renderLigaFormFoto(){
+    const grid = document.getElementById('ligaFormFotoGrid');
+    grid.innerHTML = ligaFormFotoUrl
+      ? `<div class="image-slot"><img src="${ligaFormFotoUrl}" alt=""><button class="remove-btn" onclick="ligaFormFotoUrl=null; renderLigaFormFoto();">×</button></div>`
+      : `<div class="image-slot add-slot" onclick="document.getElementById('ligaFormFotoInput').click()"><div class="add-slot-inner"><span class="add-slot-plus">+</span><span class="add-slot-label">Foto</span></div></div>`;
+  }
+
+  async function handleLigaFormFoto(event){
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+    const path = `liga-atleta-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+    document.getElementById('ligaFormFotoGrid').innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
+    let arquivoParaEnviar = file;
+    try { arquivoParaEnviar = await comprimirImagem(file, 1000, 0.85); }
+    catch(e){ console.error('Não consegui comprimir a foto, enviando original', e); }
+    const { error } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, arquivoParaEnviar, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+    if(error){ showToast('Erro ao enviar foto: ' + error.message, 'error'); renderLigaFormFoto(); return; }
+    const { data } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
+    ligaFormFotoUrl = data.publicUrl;
+    renderLigaFormFoto();
+  }
+
+  async function saveLiga(){
+    const nome = document.getElementById('ligaFieldNome').value.trim();
+    if(!nome){ showToast('Preencha o nome da categoria.', 'error'); return; }
+    const ordemRaw = document.getElementById('ligaFieldOrdem').value.trim();
+    const ordem = ordemRaw === '' ? 99 : parseInt(ordemRaw, 10);
+
+    let error;
+    if(editingLigaId){
+      ({ error } = await supabaseClient.from('ligas').update({ nome, icone_url: ligaFormIconUrl, foto_atleta_url: ligaFormFotoUrl, ordem }).eq('id', editingLigaId));
+      if(!error && editingLigaNomeOriginal && editingLigaNomeOriginal !== nome){
+        await supabaseClient.from('teams').update({ liga: nome }).eq('liga', editingLigaNomeOriginal);
+        await supabaseClient.from('subligas').update({ liga_nome: nome }).eq('liga_nome', editingLigaNomeOriginal);
+      }
+    } else {
+      ({ error } = await supabaseClient.from('ligas').insert({ nome, icone_url: ligaFormIconUrl, foto_atleta_url: ligaFormFotoUrl, ordem, loja_id: ADMIN_LOJA_ID }));
+    }
+    if(error){ showToast('Erro ao salvar categoria: ' + error.message, 'error'); return; }
+
+    showToast('Categoria salva.', 'success');
+    await loadLigasESubligas();
+    showLigasList();
+  }
+
+  function confirmDeleteLiga(ligaId){
+    const liga = LIGAS_CACHE.find(l => l.id === ligaId);
+    const qtdTimes = TEAMS_LIST_CACHE.filter(t => t.liga === (liga ? liga.nome : '')).length;
+    document.getElementById('confirmTitle').textContent = 'Excluir categoria?';
+    document.getElementById('confirmText').textContent = qtdTimes > 0
+      ? `"${liga ? liga.nome : ''}" tem ${qtdTimes} time(s) cadastrado(s). Eles não serão apagados, mas ficarão sem categoria e somem da navegação até você reatribuí-los.`
+      : `Isso remove "${liga ? liga.nome : ''}" e suas subcategorias.`;
+    document.getElementById('confirmOverlay').classList.remove('hidden');
+    document.getElementById('confirmActionBtn').onclick = async () => {
+      if(liga) await supabaseClient.from('subligas').delete().eq('liga_nome', liga.nome);
+      const { error } = await supabaseClient.from('ligas').delete().eq('id', ligaId);
+      if(error) showToast('Erro ao excluir: ' + error.message, 'error');
+      else { showToast('Categoria excluída.', 'success'); await loadLigasESubligas(); showLigasList(); }
+      closeConfirm();
+    };
+  }
+
+  function openSubligas(ligaNome){
+    subligaParentNome = ligaNome;
+    document.getElementById('subligasTitle').textContent = `Subcategorias de ${ligaNome}`;
+    renderSubligasList();
+    document.getElementById('ligasListView').classList.add('hidden');
+    document.getElementById('ligaFormView').classList.add('hidden');
+    document.getElementById('subligaFormView').classList.add('hidden');
+    document.getElementById('subligasView').classList.remove('hidden');
+  }
+  function backToSubligas(){ openSubligas(subligaParentNome); }
+
+  function renderSubligasList(){
+    const el = document.getElementById('subligasList');
+    const lista = SUBLIGAS_CACHE.filter(s => s.liga_nome === subligaParentNome);
+    if(lista.length === 0){
+      el.innerHTML = '<div class="field-hint">Nenhuma subcategoria ainda. Times cadastrados direto nesta categoria aparecem sem agrupamento.</div>';
+      return;
+    }
+    el.innerHTML = lista.map(s => {
+      const qtd = TEAMS_LIST_CACHE.filter(t => t.subliga === s.nome).length;
+      const badge = s.icone_url ? `<img src="${s.icone_url}" alt="">` : s.nome.slice(0,3).toUpperCase();
+      return `
+        <div class="team-row">
+          <div class="team-row-badge" style="border-color:var(--neon-green)">${badge}</div>
+          <div class="team-row-info">
+            <div class="team-row-name">${s.nome}</div>
+            <div class="team-row-tag">${qtd} time(s)</div>
+          </div>
+          <button class="icon-btn" onclick="openSubligaForm('${s.id}')" aria-label="Editar subcategoria">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="icon-btn" onclick="confirmDeleteSubliga('${s.id}')" aria-label="Excluir subcategoria">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  function openSubligaForm(subligaId){
+    editingSubligaId = subligaId;
+    const sub = subligaId ? SUBLIGAS_CACHE.find(s => s.id === subligaId) : null;
+    document.getElementById('subligaFormTitle').textContent = sub ? 'Editar subcategoria' : 'Nova subcategoria';
+    document.getElementById('subligaFormParent').textContent = `Dentro de: ${subligaParentNome}`;
+    document.getElementById('subligaFieldNome').value = sub ? sub.nome : '';
+    subligaFormIconUrl = sub ? (sub.icone_url || null) : null;
+    renderSubligaFormIcon();
+    document.getElementById('subligasView').classList.add('hidden');
+    document.getElementById('subligaFormView').classList.remove('hidden');
+  }
+
+  function renderSubligaFormIcon(){
+    const grid = document.getElementById('subligaFormIconGrid');
+    grid.innerHTML = subligaFormIconUrl
+      ? `<div class="image-slot"><img src="${subligaFormIconUrl}" alt=""><button class="remove-btn" onclick="subligaFormIconUrl=null; renderSubligaFormIcon();">×</button></div>`
+      : `<div class="image-slot add-slot" onclick="document.getElementById('subligaFormIconInput').click()"><div class="add-slot-inner"><span class="add-slot-plus">+</span><span class="add-slot-label">Ícone</span></div></div>`;
+  }
+
+  async function handleSubligaFormIcon(event){
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+    const path = `subliga-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+    document.getElementById('subligaFormIconGrid').innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
+    let arquivoParaEnviar = file;
+    try { arquivoParaEnviar = await comprimirImagem(file, 400, 0.85); }
+    catch(e){ console.error('Não consegui comprimir o ícone, enviando original', e); }
+    const { error } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, arquivoParaEnviar, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+    if(error){ showToast('Erro ao enviar ícone: ' + error.message, 'error'); renderSubligaFormIcon(); return; }
+    const { data } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
+    subligaFormIconUrl = data.publicUrl;
+    renderSubligaFormIcon();
+  }
+
+  async function saveSubliga(){
+    const nome = document.getElementById('subligaFieldNome').value.trim();
+    if(!nome){ showToast('Preencha o nome da subcategoria.', 'error'); return; }
+
+    let error;
+    if(editingSubligaId){
+      const antiga = SUBLIGAS_CACHE.find(s => s.id === editingSubligaId);
+      ({ error } = await supabaseClient.from('subligas').update({ nome, icone_url: subligaFormIconUrl }).eq('id', editingSubligaId));
+      if(!error && antiga && antiga.nome !== nome){
+        await supabaseClient.from('teams').update({ subliga: nome }).eq('subliga', antiga.nome);
+      }
+    } else {
+      ({ error } = await supabaseClient.from('subligas').insert({ liga_nome: subligaParentNome, nome, icone_url: subligaFormIconUrl, ordem: 99, loja_id: ADMIN_LOJA_ID }));
+    }
+    if(error){ showToast('Erro ao salvar subcategoria: ' + error.message, 'error'); return; }
+
+    showToast('Subcategoria salva.', 'success');
+    await loadLigasESubligas();
+    openSubligas(subligaParentNome);
+  }
+
+  function confirmDeleteSubliga(subligaId){
+    const sub = SUBLIGAS_CACHE.find(s => s.id === subligaId);
+    const qtd = TEAMS_LIST_CACHE.filter(t => t.subliga === (sub ? sub.nome : '')).length;
+    document.getElementById('confirmTitle').textContent = 'Excluir subcategoria?';
+    document.getElementById('confirmText').textContent = qtd > 0
+      ? `"${sub ? sub.nome : ''}" tem ${qtd} time(s). Eles continuam na categoria, mas sem agrupamento.`
+      : 'Essa ação não pode ser desfeita.';
+    document.getElementById('confirmOverlay').classList.remove('hidden');
+    document.getElementById('confirmActionBtn').onclick = async () => {
+      const { error } = await supabaseClient.from('subligas').delete().eq('id', subligaId);
+      if(error) showToast('Erro ao excluir: ' + error.message, 'error');
+      else { showToast('Subcategoria excluída.', 'success'); await loadLigasESubligas(); openSubligas(subligaParentNome); }
+      closeConfirm();
+    };
+  }
+
+  function renderTeamEscudoGrid(){
+    const grid = document.getElementById('teamEscudoGrid');
+    if(teamEscudoUrl){
+      grid.innerHTML = `
+        <div class="image-slot">
+          <img src="${teamEscudoUrl}" alt="">
+          <button class="remove-btn" onclick="removeTeamEscudo()" aria-label="Remover escudo">×</button>
+        </div>`;
+    } else {
+      grid.innerHTML = `
+        <div class="image-slot add-slot" onclick="document.getElementById('teamEscudoFileInput').click()">
+          <div class="add-slot-inner">
+            <span class="add-slot-plus">+</span>
+            <span class="add-slot-label">Escudo</span>
+          </div>
+        </div>`;
+    }
+  }
+
+  function removeTeamEscudo(){
+    teamEscudoUrl = null;
+    renderTeamEscudoGrid();
+  }
+
+  async function handleTeamEscudoSelected(event){
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+
+    const path = `escudo-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+
+    document.getElementById('teamEscudoGrid').innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
+
+    let arquivoParaEnviar = file;
+    try { arquivoParaEnviar = await comprimirImagem(file, 500, 0.85); }
+    catch(e){ console.error('Não consegui comprimir o escudo, enviando original', e); }
+
+    const { error: uploadError } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, arquivoParaEnviar, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+    if(uploadError){
+      showToast('Erro ao enviar escudo: ' + uploadError.message, 'error');
+      renderTeamEscudoGrid();
+      return;
+    }
+    const { data: publicUrlData } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
+    teamEscudoUrl = publicUrlData.publicUrl;
+    renderTeamEscudoGrid();
+  }
+
+  // Foto de busto (imagem_url) — usada na Fase 2. Mesmo padrão de upload do
+  // escudo (mesmo bucket "escudos"), só muda o prefixo do arquivo e a var.
+  function renderTeamFotoBustGrid(){
+    const grid = document.getElementById('teamFotoBustGrid');
+    if(teamFotoBustUrl){
+      grid.innerHTML = `
+        <div class="image-slot">
+          <img src="${teamFotoBustUrl}" alt="">
+          <button class="remove-btn" onclick="removeTeamFotoBust()" aria-label="Remover foto do jogador">×</button>
+        </div>`;
+    } else {
+      grid.innerHTML = `
+        <div class="image-slot add-slot" onclick="document.getElementById('teamFotoBustFileInput').click()">
+          <div class="add-slot-inner">
+            <span class="add-slot-plus">+</span>
+            <span class="add-slot-label">Foto</span>
+          </div>
+        </div>`;
+    }
+  }
+
+  function removeTeamFotoBust(){
+    teamFotoBustUrl = null;
+    renderTeamFotoBustGrid();
+  }
+
+  // Em vez de subir o arquivo direto, abre o estúdio de recorte/nitidez —
+  // o upload de verdade só acontece quando o usuário confirmar lá.
+  function handleTeamFotoBustSelected(event){
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+    fotoStudioAbrir(file);
+  }
+
+  // ============================================================
+  // ESTÚDIO DE PADRONIZAÇÃO DE FOTO
+  // Recorte por arraste/zoom (moldura fixa, proporção 0.6 = 1500x2500) +
+  // nitidez por IA (UpscalerJS/TensorFlow.js), tudo no navegador — sem
+  // servidor próprio, sem custo por foto depois de carregado uma vez.
+  // ============================================================
+  const FOTO_STUDIO_TARGET_W = 1500;
+  const FOTO_STUDIO_TARGET_H = 2500; // proporção 0.6, igual ao padrão já usado nas fotos existentes
+
+  let fotoStudioImgEl = null;      // <img> visível no viewport (arraste/zoom)
+  let fotoStudioNatural = { w: 0, h: 0 };
+  let fotoStudioPos = { x: 0, y: 0, scale: 1 };
+  let fotoStudioDrag = null;       // estado do arraste em andamento (ou null)
+  let fotoStudioUpscaler = null;   // instância do UpscalerJS, criada uma vez só
+
+  async function fotoStudioAbrir(file){
+    const url = URL.createObjectURL(file);
+    fotoStudioBlobUrlOriginal = url;
+    const imgOriginal = new Image();
+    imgOriginal.onload = async () => {
+      // Abre o overlay já, com status de carregamento — a remoção de fundo
+      // (quando necessária) pode levar alguns segundos na primeira vez
+      // (baixando o modelo).
+      document.getElementById('fotoStudioOverlay').classList.remove('hidden');
+      const status = document.getElementById('fotoStudioStatus');
+
+      let imgParaUsar = imgOriginal;
+      if(!fotoStudioJaTemTransparencia(imgOriginal)){
+        status.textContent = 'Removendo fundo (IA)...';
+        try {
+          const semFundo = await fotoStudioRemoverFundo(imgOriginal);
+          if(semFundo) imgParaUsar = semFundo;
+          else status.textContent = 'IA de fundo indisponível agora — recorte manualmente.';
+        } catch(e){
+          console.error('Erro ao remover fundo', e);
+          status.textContent = 'Não consegui remover o fundo automaticamente — recorte manualmente.';
+        }
+      }
+
+      fotoStudioNatural = { w: imgParaUsar.naturalWidth, h: imgParaUsar.naturalHeight };
+      fotoStudioImgEl = document.getElementById('fotoStudioImg');
+      fotoStudioImgEl.src = imgParaUsar.src;
+      fotoStudioImgEl.style.width = imgParaUsar.naturalWidth + 'px';
+      fotoStudioImgEl.style.height = imgParaUsar.naturalHeight + 'px';
+
+      fotoStudioSugerirEnquadramento(imgParaUsar);
+      fotoStudioAplicarTransform();
+      if(status.textContent.indexOf('indisponível') === -1 && status.textContent.indexOf('Não consegui') === -1){
+        status.textContent = '';
+      }
+      document.getElementById('fotoStudioZoom').value = Math.round(fotoStudioPos.scale * 100);
+    };
+    imgOriginal.onerror = () => showToast('Não consegui abrir essa imagem.', 'error');
+    imgOriginal.src = url;
+  }
+
+  // Se a foto já vem sem fundo (fluxo Canva de sempre), não faz sentido
+  // rodar a IA de segmentação de novo — só quando a foto tem fundo de
+  // verdade (branco, preto, qualquer cor) é que essa etapa entra.
+  function fotoStudioJaTemTransparencia(img){
+    const w = 64, h = Math.max(1, Math.round(64 * img.naturalHeight / img.naturalWidth));
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    const data = c.getContext('2d').getImageData(0, 0, w, h).data;
+    let transparentes = 0;
+    for(let i = 3; i < data.length; i += 4){ if(data[i] < 250) transparentes++; }
+    return (transparentes / (w * h)) > 0.02;
+  }
+
+  // Remoção de fundo via MediaPipe Selfie Segmenter (Apache 2.0). Roda a
+  // segmentação numa cópia reduzida (mais rápido), depois estica a máscara
+  // suavemente pro tamanho real da foto e usa isso como canal alfa.
+  let fotoStudioSegmenter = null;
+  async function fotoStudioGetSegmenter(){
+    if(fotoStudioSegmenter) return fotoStudioSegmenter;
+    if(!window.__mpFilesetResolver || !window.__mpImageSegmenter) return null;
+    const vision = await window.__mpFilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+    );
+    fotoStudioSegmenter = await window.__mpImageSegmenter.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
+      },
+      outputCategoryMask: false,
+      outputConfidenceMasks: true,
+      runningMode: 'IMAGE',
+    });
+    return fotoStudioSegmenter;
+  }
+
+  async function fotoStudioRemoverFundo(img){
+    const segmenter = await fotoStudioGetSegmenter();
+    if(!segmenter) return null;
+
+    const anW = 512, anH = Math.max(1, Math.round(512 * img.naturalHeight / img.naturalWidth));
+    const anCanvas = document.createElement('canvas');
+    anCanvas.width = anW; anCanvas.height = anH;
+    anCanvas.getContext('2d').drawImage(img, 0, 0, anW, anH);
+
+    const result = segmenter.segment(anCanvas);
+    const mask = result.confidenceMasks[0];
+    const maskArr = mask.getAsFloat32Array();
+    if(typeof mask.close === 'function') mask.close();
+
+    // Máscara pequena (cinza) -> deixa o navegador redimensionar suavemente
+    // pro tamanho real da foto, em vez de fazer isso manualmente pixel a
+    // pixel (mais rápido e com borda mais suave).
+    const maskSmall = document.createElement('canvas');
+    maskSmall.width = anW; maskSmall.height = anH;
+    const maskSmallCtx = maskSmall.getContext('2d');
+    const maskImgData = maskSmallCtx.createImageData(anW, anH);
+    for(let i = 0; i < maskArr.length; i++){
+      const v = Math.max(0, Math.min(255, Math.round(maskArr[i] * 255)));
+      maskImgData.data[i*4] = v; maskImgData.data[i*4+1] = v; maskImgData.data[i*4+2] = v; maskImgData.data[i*4+3] = 255;
+    }
+    maskSmallCtx.putImageData(maskImgData, 0, 0);
+
+    const maskFull = document.createElement('canvas');
+    maskFull.width = img.naturalWidth; maskFull.height = img.naturalHeight;
+    const maskFullCtx = maskFull.getContext('2d');
+    maskFullCtx.imageSmoothingQuality = 'high';
+    maskFullCtx.drawImage(maskSmall, 0, 0, img.naturalWidth, img.naturalHeight);
+    const maskFullData = maskFullCtx.getImageData(0, 0, img.naturalWidth, img.naturalHeight).data;
+
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = img.naturalWidth; outCanvas.height = img.naturalHeight;
+    const outCtx = outCanvas.getContext('2d');
+    outCtx.drawImage(img, 0, 0);
+    const outData = outCtx.getImageData(0, 0, outCanvas.width, outCanvas.height);
+    for(let i = 3; i < outData.data.length; i += 4){
+      outData.data[i] = maskFullData[i - 3]; // canal R da máscara (=G=B) vira o alfa
+    }
+    outCtx.putImageData(outData, 0, 0);
+
+    const resultImg = new Image();
+    await new Promise((resolve, reject) => {
+      resultImg.onload = resolve;
+      resultImg.onerror = reject;
+      resultImg.src = outCanvas.toDataURL('image/png');
+    });
+    return resultImg;
+  }
+
+  let fotoStudioBlobUrlOriginal = null;
+
+  function fotoStudioCancelar(){
+    document.getElementById('fotoStudioOverlay').classList.add('hidden');
+    if(fotoStudioBlobUrlOriginal) URL.revokeObjectURL(fotoStudioBlobUrlOriginal);
+    fotoStudioBlobUrlOriginal = null;
+    fotoStudioImgEl = null;
+  }
+
+  // Sugestão inicial de enquadramento: acha a "massa" da foto (pixels não-
+  // transparentes — a foto já vem sem fundo do Canva) e posiciona a moldura
+  // pra mostrar do topo da cabeça (com uma folga) até a metade do abdômen,
+  // como ponto de partida. O usuário ainda pode ajustar arrastando/dando zoom.
+  function fotoStudioSugerirEnquadramento(img){
+    const analiseW = 200; // escala reduzida só pra achar a massa rápido
+    const analiseH = Math.round(analiseW * (img.naturalHeight / img.naturalWidth));
+    const c = document.createElement('canvas');
+    c.width = analiseW; c.height = analiseH;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, analiseW, analiseH);
+
+    let minX = analiseW, maxX = 0, minY = analiseH, maxY = 0, achou = false;
+    try {
+      const data = ctx.getImageData(0, 0, analiseW, analiseH).data;
+      for(let y = 0; y < analiseH; y++){
+        for(let x = 0; x < analiseW; x++){
+          const alpha = data[(y * analiseW + x) * 4 + 3];
+          if(alpha > 10){
+            achou = true;
+            if(x < minX) minX = x;
+            if(x > maxX) maxX = x;
+            if(y < minY) minY = y;
+            if(y > maxY) maxY = y;
+          }
+        }
+      }
+    } catch(e){
+      // getImageData pode falhar por CORS se a imagem vier de outra origem
+      // (não deveria acontecer aqui, é um arquivo local) — se falhar, cai
+      // no enquadramento padrão (centralizado) abaixo.
+      achou = false;
+    }
+
+    const viewport = document.getElementById('fotoStudioViewport');
+    const vw = viewport.clientWidth, vh = viewport.clientHeight;
+
+    if(!achou){
+      // Sem detecção de massa (raro): centraliza a foto inteira, tamanho
+      // que cobre a moldura, e deixa o usuário ajustar manualmente.
+      const scaleCover = Math.max(vw / fotoStudioNatural.w, vh / fotoStudioNatural.h);
+      fotoStudioPos.scale = scaleCover;
+      fotoStudioPos.x = (vw - fotoStudioNatural.w * scaleCover) / 2;
+      fotoStudioPos.y = (vh - fotoStudioNatural.h * scaleCover) / 2;
+      return;
+    }
+
+    // Converte a bounding box (em pixels da análise reduzida) pra pixels
+    // reais da imagem.
+    const fatorX = fotoStudioNatural.w / analiseW;
+    const fatorY = fotoStudioNatural.h / analiseH;
+    const bbox = {
+      minX: minX * fatorX, maxX: maxX * fatorX,
+      minY: minY * fatorY, maxY: maxY * fatorY
+    };
+    const bboxW = bbox.maxX - bbox.minX;
+    const bboxH = bbox.maxY - bbox.minY;
+    const centroX = (bbox.minX + bbox.maxX) / 2;
+
+    // Enquadramento alvo: começa um pouco acima do topo da "massa" (folga
+    // pra cabeça) e mostra ~55% da altura total — cabeça + peitoral + meio
+    // do abdômen, num corpo inteiro típico.
+    const folga = bboxH * 0.06;
+    const cropTop = Math.max(0, bbox.minY - folga);
+    const cropH = bboxH * 0.55;
+    const cropW = cropH * 0.6; // mesma proporção da moldura
+
+    // Escala: a altura do recorte sugerido precisa caber exatamente na
+    // altura do viewport.
+    const scale = vh / cropH;
+    fotoStudioPos.scale = scale;
+    fotoStudioPos.x = vw / 2 - centroX * scale;
+    fotoStudioPos.y = -cropTop * scale;
+  }
+
+  function fotoStudioAplicarTransform(){
+    if(!fotoStudioImgEl) return;
+    fotoStudioImgEl.style.transform =
+      `translate(${fotoStudioPos.x}px, ${fotoStudioPos.y}px) scale(${fotoStudioPos.scale})`;
+  }
+
+  // ---- Arraste (mouse e touch) ----
+  (function initFotoStudioDragHandlers(){
+    const viewport = document.getElementById('fotoStudioViewport');
+    if(!viewport) return;
+
+    viewport.addEventListener('pointerdown', (e) => {
+      if(!fotoStudioImgEl) return;
+      fotoStudioDrag = { startX: e.clientX, startY: e.clientY, origX: fotoStudioPos.x, origY: fotoStudioPos.y };
+      viewport.setPointerCapture(e.pointerId);
+    });
+    viewport.addEventListener('pointermove', (e) => {
+      if(!fotoStudioDrag) return;
+      fotoStudioPos.x = fotoStudioDrag.origX + (e.clientX - fotoStudioDrag.startX);
+      fotoStudioPos.y = fotoStudioDrag.origY + (e.clientY - fotoStudioDrag.startY);
+      fotoStudioAplicarTransform();
+    });
+    const soltarArrasto = () => { fotoStudioDrag = null; };
+    viewport.addEventListener('pointerup', soltarArrasto);
+    viewport.addEventListener('pointercancel', soltarArrasto);
+  })();
+
+  // ---- Zoom (slider) — mantém o centro do viewport fixo ao mudar a escala ----
+  (function initFotoStudioZoomHandler(){
+    const slider = document.getElementById('fotoStudioZoom');
+    if(!slider) return;
+    slider.addEventListener('input', () => {
+      if(!fotoStudioImgEl) return;
+      const viewport = document.getElementById('fotoStudioViewport');
+      const vw = viewport.clientWidth, vh = viewport.clientHeight;
+      const novaScale = Number(slider.value) / 100;
+      const centroXImg = (vw / 2 - fotoStudioPos.x) / fotoStudioPos.scale;
+      const centroYImg = (vh / 2 - fotoStudioPos.y) / fotoStudioPos.scale;
+      fotoStudioPos.scale = novaScale;
+      fotoStudioPos.x = vw / 2 - centroXImg * novaScale;
+      fotoStudioPos.y = vh / 2 - centroYImg * novaScale;
+      fotoStudioAplicarTransform();
+    });
+  })();
+
+  // Garante que a instância do UpscalerJS só é criada uma vez (carregar o
+  // modelo tem um custo — reaproveita entre fotos da mesma sessão).
+  function fotoStudioGetUpscaler(){
+    if(fotoStudioUpscaler) return fotoStudioUpscaler;
+    if(typeof Upscaler === 'undefined' || typeof DefaultUpscalerJSModel === 'undefined'){
+      return null; // bibliotecas não carregaram (offline, CDN bloqueado, etc.)
+    }
+    fotoStudioUpscaler = new Upscaler({ model: DefaultUpscalerJSModel });
+    return fotoStudioUpscaler;
+  }
+
+  async function fotoStudioConfirmar(){
+    if(!fotoStudioImgEl) return;
+    const btn = document.getElementById('fotoStudioConfirmBtn');
+    const status = document.getElementById('fotoStudioStatus');
+    btn.disabled = true;
+
+    try {
+      const viewport = document.getElementById('fotoStudioViewport');
+      const vw = viewport.clientWidth, vh = viewport.clientHeight;
+
+      // Ponto do viewport (0,0)-(vw,vh) convertido pra coordenadas da
+      // imagem original (antes do translate/scale de arraste): é
+      // exatamente o retângulo que o usuário está vendo dentro da moldura.
+      const s = fotoStudioPos.scale;
+      const srcX = -fotoStudioPos.x / s;
+      const srcY = -fotoStudioPos.y / s;
+      const srcW = vw / s;
+      const srcH = vh / s;
+
+      // 1) Canal alfa em resolução final — direto da imagem original, pra
+      //    manter a borda do recorte nítida (transparência final).
+      status.textContent = 'Recortando...';
+      const alphaCanvas = document.createElement('canvas');
+      alphaCanvas.width = FOTO_STUDIO_TARGET_W;
+      alphaCanvas.height = FOTO_STUDIO_TARGET_H;
+      const alphaCtx = alphaCanvas.getContext('2d');
+      alphaCtx.imageSmoothingQuality = 'high';
+      alphaCtx.drawImage(fotoStudioImgEl, srcX, srcY, srcW, srcH, 0, 0, FOTO_STUDIO_TARGET_W, FOTO_STUDIO_TARGET_H);
+      const alphaData = alphaCtx.getImageData(0, 0, FOTO_STUDIO_TARGET_W, FOTO_STUDIO_TARGET_H);
+
+      // 2) Recorte em MEIA resolução, opaco (alpha forçado a 255) — vira a
+      //    entrada da IA. O modelo padrão do UpscalerJS aumenta 2x, então
+      //    meia resolução na entrada = resolução final exata na saída,
+      //    sem processar pixel a mais que o necessário.
+      const metadeW = FOTO_STUDIO_TARGET_W / 2, metadeH = FOTO_STUDIO_TARGET_H / 2;
+      const entradaCanvas = document.createElement('canvas');
+      entradaCanvas.width = metadeW; entradaCanvas.height = metadeH;
+      const entradaCtx = entradaCanvas.getContext('2d');
+      entradaCtx.imageSmoothingQuality = 'high';
+      entradaCtx.drawImage(fotoStudioImgEl, srcX, srcY, srcW, srcH, 0, 0, metadeW, metadeH);
+      const entradaData = entradaCtx.getImageData(0, 0, metadeW, metadeH);
+      for(let i = 3; i < entradaData.data.length; i += 4) entradaData.data[i] = 255; // opaco pra IA
+      entradaCtx.putImageData(entradaData, 0, 0);
+
+      // 3) IA (nitidez + upscale) — se as bibliotecas não carregarem por
+      //    algum motivo (offline, CDN bloqueado), segue sem travar: usa o
+      //    recorte simples, só sem o ganho extra de nitidez.
+      let finalCtx;
+      const upscaler = fotoStudioGetUpscaler();
+      if(upscaler){
+        status.textContent = 'Aplicando nitidez (IA)...';
+        const resultadoSrc = await upscaler.upscale(entradaCanvas, { patchSize: 64, padding: 2 });
+        const resultadoImg = new Image();
+        await new Promise((resolve, reject) => {
+          resultadoImg.onload = resolve;
+          resultadoImg.onerror = reject;
+          resultadoImg.src = resultadoSrc;
+        });
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = FOTO_STUDIO_TARGET_W; finalCanvas.height = FOTO_STUDIO_TARGET_H;
+        finalCtx = finalCanvas.getContext('2d');
+        finalCtx.drawImage(resultadoImg, 0, 0, FOTO_STUDIO_TARGET_W, FOTO_STUDIO_TARGET_H);
+      } else {
+        status.textContent = 'IA indisponível agora — salvando sem nitidez extra...';
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = FOTO_STUDIO_TARGET_W; finalCanvas.height = FOTO_STUDIO_TARGET_H;
+        finalCtx = finalCanvas.getContext('2d');
+        finalCtx.imageSmoothingQuality = 'high';
+        finalCtx.drawImage(fotoStudioImgEl, srcX, srcY, srcW, srcH, 0, 0, FOTO_STUDIO_TARGET_W, FOTO_STUDIO_TARGET_H);
+      }
+
+      // 4) Recompõe a transparência: a IA só entende RGB (por isso forçamos
+      //    opaco antes), então devolve o canal alfa de verdade agora, por
+      //    cima do resultado nítido.
+      const finalData = finalCtx.getImageData(0, 0, FOTO_STUDIO_TARGET_W, FOTO_STUDIO_TARGET_H);
+      for(let i = 3; i < finalData.data.length; i += 4) finalData.data[i] = alphaData.data[i];
+      finalCtx.putImageData(finalData, 0, 0);
+
+      status.textContent = 'Enviando...';
+      const blob = await new Promise(resolve => finalCtx.canvas.toBlob(resolve, 'image/webp', 0.92));
+      await fotoStudioEnviar(blob);
+
+      fotoStudioCancelar();
+    } catch(e){
+      console.error('Erro ao processar foto do jogador', e);
+      status.textContent = '';
+      showToast('Não consegui processar essa foto: ' + (e && e.message ? e.message : 'erro desconhecido'), 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function fotoStudioEnviar(blob){
+    const path = `busto-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+    document.getElementById('teamFotoBustGrid').innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
+
+    const { error: uploadError } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, blob, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+    if(uploadError){
+      showToast('Erro ao enviar foto do jogador: ' + uploadError.message, 'error');
+      renderTeamFotoBustGrid();
+      return;
+    }
+    const { data: publicUrlData } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
+    teamFotoBustUrl = publicUrlData.publicUrl;
+    renderTeamFotoBustGrid();
+  }
+
+  async function saveTeam(){
+    const nome = document.getElementById('teamFieldNome').value.trim();
+    if(!nome){ showToast('Preencha o nome do time.', 'error'); return; }
+
+    const liga = document.getElementById('teamFieldLiga').value;
+    let subliga = null, continente = null;
+
+    if(liga === 'Seleções'){
+      continente = document.getElementById('teamFieldContinente').value;
+    } else if(liga !== 'Brasileirão'){
+      const selSubliga = document.getElementById('teamFieldSubliga').value;
+      if(selSubliga) subliga = selSubliga;
+    }
+
+    const cor = document.getElementById('teamFieldCor').value;
+    const sigla = nome.replace(/[^\p{L}]/gu, '').slice(0,3).toUpperCase() || 'TIM';
+
+    const payload = { nome, liga, subliga, continente, cor, sigla, escudo_url: teamEscudoUrl, imagem_url: teamFotoBustUrl, loja_id: ADMIN_LOJA_ID };
+
+    let error;
+    if(editingTeamId){
+      ({ error } = await supabaseClient.from('teams').update(payload).eq('id', editingTeamId));
+    } else {
+      ({ error } = await supabaseClient.from('teams').insert(payload));
+    }
+    if(error){ showToast('Erro ao salvar time: ' + error.message, 'error'); return; }
+
+    showToast('Time salvo.', 'success');
+    await loadTeamsList();
+    await loadLigasESubligas();
+    await loadTeams();
+    showTeamsList();
+  }
+
+  function confirmDeleteTeam(teamId){
+    const team = TEAMS_LIST_CACHE.find(t => t.id === teamId);
+    document.getElementById('confirmTitle').textContent = 'Excluir time?';
+    document.getElementById('confirmText').textContent = `Isso remove "${team ? team.nome : ''}" da lista de times. Produtos já cadastrados com esse time não são apagados, mas podem ficar sem time associado — confira antes de excluir.`;
+    document.getElementById('confirmOverlay').classList.remove('hidden');
+    document.getElementById('confirmActionBtn').onclick = async () => {
+      const { error } = await supabaseClient.from('teams').delete().eq('id', teamId);
+      if(error){ showToast('Erro ao excluir: ' + error.message, 'error'); }
+      else {
+        showToast('Time excluído.', 'success');
+        await loadTeamsList();
+        await loadTeams();
+      }
+      closeConfirm();
+    };
+  }
+
+  // ============================================================
+  // IMPORTAR PRODUTO
+  // ============================================================
+  let importData = null;
+
+  function openImportOverlay(){
+    document.getElementById('importOverlay').classList.remove('hidden');
+    document.getElementById('importPreview').classList.add('hidden');
+    document.getElementById('importUrlInput').value = '';
+    document.getElementById('importBaseUrlInput').value = '';
+    document.getElementById('importHtmlInput').value = '';
+    setImportMode('url');
+  }
+  function closeImportOverlay(){
+    document.getElementById('importOverlay').classList.add('hidden');
+  }
+
+  function setImportMode(mode){
+    const isUrl = mode === 'url';
+    document.getElementById('importModeUrl').classList.toggle('hidden', !isUrl);
+    document.getElementById('importModeHtml').classList.toggle('hidden', isUrl);
+    document.getElementById('importModeUrlBtn').classList.toggle('active', isUrl);
+    document.getElementById('importModeHtmlBtn').classList.toggle('active', !isUrl);
+  }
+
+  async function chamarImportacao(payload, btnId){
+    const btn = document.getElementById(btnId);
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Buscando…';
+
+    try {
+      const { data, error } = await supabaseClient.functions.invoke('importar-produto', { body: payload });
+
+      if(error){
+        showToast('Erro ao importar: ' + error.message, 'error');
+        return;
+      }
+      if(data?.error){
+        showToast(data.error, 'error');
+        return;
+      }
+
+      importData = {
+        titulo: data.titulo || '',
+        preco: data.preco || null,
+        imagens: data.imagens || [],
+        tamanhosDetectados: data.tamanhosDetectados || [],
+        tipoDetectado: data.tipoDetectado || 'Torcedor',
+        generoDetectado: data.generoDetectado || 'Masculina',
+        clubeDetectado: data.clubeDetectado || null
+      };
+      mostrarPreviaImportacao(data);
+    } catch(e){
+      showToast('Não consegui contatar o servidor de importação. Confira se a Edge Function "importar-produto" está publicada no Supabase.', 'error');
+      console.error(e);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = textoOriginal;
+    }
+  }
+
+  function buscarDadosImportacao(){
+    const url = document.getElementById('importUrlInput').value.trim();
+    if(!url){ showToast('Cola o link do produto primeiro.', 'error'); return; }
+    chamarImportacao({ url }, 'importUrlBtn');
+  }
+
+  function extrairDoHtmlColado(){
+    const html = document.getElementById('importHtmlInput').value;
+    const baseUrl = document.getElementById('importBaseUrlInput').value.trim();
+    if(!html.trim()){ showToast('Cola o código-fonte da página primeiro.', 'error'); return; }
+    if(!baseUrl){ showToast('Preenche o link da página, mesmo colando o código — é só pra resolver as fotos certinho.', 'error'); return; }
+    chamarImportacao({ html, baseUrl }, 'importHtmlBtn');
+  }
+
+  function mostrarPreviaImportacao(data){
+    document.getElementById('importFieldTitulo').value = data.titulo || '';
+    document.getElementById('importFieldPreco').value = data.preco || '';
+
+    const grid = document.getElementById('importImageGrid');
+    grid.innerHTML = (data.imagens || []).map(url => `
+      <div class="image-slot"><img src="${url}" alt=""></div>
+    `).join('') || '<div class="field-hint">Nenhuma foto encontrada — você pode adicionar manualmente depois.</div>';
+
+    const encontradas = data.imagensEncontradas ?? (data.imagens || []).length;
+    const enviadas = data.imagensEnviadas ?? (data.imagens || []).length;
+    const countEl = document.getElementById('importImageCount');
+    countEl.textContent = encontradas > enviadas
+      ? `${enviadas} de ${encontradas} foto(s) encontrada(s) foram enviadas com sucesso pro Storage (algumas podem ter falhado — sem problema, dá pra completar manualmente).`
+      : `${enviadas} foto(s) enviada(s) com sucesso pro Storage.`;
+
+    renderImportTeamNotice(data.titulo || '', data.clubeDetectado || null);
+
+    document.getElementById('importPreview').classList.remove('hidden');
+    document.getElementById('importPreview').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function renderImportTeamNotice(titulo, clubeDetectado){
+    const el = document.getElementById('importTeamNotice');
+    const timeExistente = acharTimePeloTitulo(titulo);
+
+    if(timeExistente){
+      el.innerHTML = `✅ Time reconhecido: <strong>${timeExistente.nome}</strong> (já cadastrado no seu catálogo).`;
+      return;
+    }
+
+    if(clubeDetectado){
+      const destino = clubeDetectado.liga === 'Seleções'
+        ? `Seleções → ${clubeDetectado.continente}`
+        : (clubeDetectado.subliga ? `Times Europeus → ${clubeDetectado.subliga}` : clubeDetectado.liga);
+      const nomeFormatado = clubeDetectado.nome.replace(/\b\w/g, c => c.toUpperCase());
+      el.innerHTML = `
+        🆕 Time "<strong>${nomeFormatado}</strong>" ainda não está no seu catálogo.
+        Detectamos a categoria certa: <strong>${destino}</strong>.<br>
+        <label style="display:flex; align-items:center; gap:8px; margin-top:8px; cursor:pointer;">
+          <input type="checkbox" id="importCriarTimeCheckbox" checked style="width:16px; height:16px;">
+          Criar esse time automaticamente ao salvar
+        </label>`;
+      return;
+    }
+
+    el.innerHTML = `⚠️ Não consegui identificar o time pelo título. Escolha manualmente no campo "Time" depois de abrir o formulário.`;
+  }
+
+  function acharTimePeloTitulo(titulo){
+    if(!titulo) return null;
+    const tituloNorm = titulo.toLowerCase();
+    let melhor = null;
+    for(const t of TEAMS_CACHE){
+      if(!t.nome) continue;
+      const nomeNorm = t.nome.toLowerCase();
+      if(tituloNorm.includes(nomeNorm)){
+        if(!melhor || nomeNorm.length > melhor.nome.toLowerCase().length) melhor = t;
+      }
+    }
+    return melhor;
+  }
+
+  async function criarTimeAutomaticamente(clube){
+    const nome = clube.nome.replace(/\b\w/g, c => c.toUpperCase());
+    const sigla = nome.replace(/[^\p{L}]/gu, '').slice(0,3).toUpperCase() || 'TIM';
+    const payload = {
+      nome,
+      liga: clube.liga,
+      subliga: clube.subliga || null,
+      continente: clube.continente || null,
+      cor: '#00E5FF',
+      sigla,
+      escudo_url: null,
+      loja_id: ADMIN_LOJA_ID
+    };
+    const { data, error } = await supabaseClient.from('teams').insert(payload).select().single();
+    if(error){
+      showToast('Não consegui criar o time automaticamente: ' + error.message, 'error');
+      return null;
+    }
+    return data;
+  }
+
+  async function usarDadosNoCadastro(){
+    const tituloEditado = document.getElementById('importFieldTitulo').value.trim();
+    const precoEditado = parseFloat(document.getElementById('importFieldPreco').value);
+    const criarTimeCheckbox = document.getElementById('importCriarTimeCheckbox');
+    const deveCriarTime = criarTimeCheckbox ? criarTimeCheckbox.checked : false;
+    const clubeParaCriar = importData?.clubeDetectado;
+
+    closeImportOverlay();
+
+    editingProductId = null;
+    document.getElementById('formTitle').textContent = 'Novo produto (importado)';
+
+    let timeParaUsar = acharTimePeloTitulo(tituloEditado);
+    if(!timeParaUsar && deveCriarTime && clubeParaCriar){
+      const novoTime = await criarTimeAutomaticamente(clubeParaCriar);
+      if(novoTime){
+        await loadTeams();
+        timeParaUsar = TEAMS_CACHE.find(t => t.id === novoTime.id);
+        showToast(`Time "${novoTime.nome}" criado automaticamente.`, 'success');
+      }
+    }
+    document.getElementById('fieldTeam').value = timeParaUsar ? timeParaUsar.id : (TEAMS_CACHE[0] ? TEAMS_CACHE[0].id : '');
+    renderTeamCategoriaHint();
+
+    const tipoDetectado = importData?.tipoDetectado || 'Torcedor';
+    const generoDetectado = importData?.generoDetectado || 'Masculina';
+    document.getElementById('fieldTipo').value = tipoDetectado;
+    document.getElementById('fieldTitulo').value = tituloEditado || '';
+    document.getElementById('fieldSubtitulo').value = `${tipoDetectado} ${generoDetectado}`;
+    document.getElementById('fieldDescricao').value = '';
+    document.getElementById('fieldPreco').value = isNaN(precoEditado) ? '' : precoEditado;
+    document.getElementById('fieldTags').value = '';
+    document.getElementById('fieldDisponivel').checked = true;
+    document.getElementById('fieldDestaque').checked = false;
+    document.getElementById('fieldLancamento').checked = false;
+
+    selectedSizes = (importData?.tamanhosDetectados || []).slice();
+    renderSizePicker();
+
+    formImages = (importData?.imagens || []).map((url, i) => ({ url, ordem: i, isNew: false }));
+    renderImageGrid();
+
+    document.getElementById('formOverlay').classList.remove('hidden');
+    window.scrollTo(0,0);
+    checkCollisionWarning();
+
+    showToast('Dados carregados! Confira Time, Tipo e Tamanho antes de salvar.', 'success');
+  }
+
+  // ============================================================
+  // 🎨 APARÊNCIA — cor da marca e modo dark/light. Grava direto na
+  // tabela store_settings (uma linha por loja), filtrada pela loja do login atual
+  // ao carregar (função aplicarAparencia() no catalogo-template.html).
+  // ============================================================
+  const CORES_PRESET = [
+    { nome: "Ciano (padrão)", cor: "#00E5FF", clara: "#7DF9FF" },
+    { nome: "Verde neon",     cor: "#39FF14", clara: "#9CFF7A" },
+    { nome: "Menta Manto Hub", cor: "#35FFC0", clara: "#86FFD9" },
+    { nome: "Azul Tiffany neon", cor: "#00E5D4", clara: "#66EFE5" },
+    { nome: "Amarelo",        cor: "#FFD400", clara: "#FFE873" },
+    { nome: "Vermelho",       cor: "#FF3B3B", clara: "#FF8A8A" },
+    { nome: "Roxo",           cor: "#A855F7", clara: "#D4A6FF" },
+    { nome: "Laranja",        cor: "#FF7A1A", clara: "#FFB066" },
+    { nome: "Azul royal",     cor: "#1D4ED8", clara: "#3B82F6" },
+    { nome: "Rosa",           cor: "#E844C4", clara: "#FF7FE0" }
+  ];
+
+  function renderPresetGrid(){
+    const grid = document.getElementById('presetGrid');
+    grid.innerHTML = CORES_PRESET.map(p => `
+      <div class="preset-swatch" style="background:${p.cor};" title="${p.nome}"
+           onclick="aplicarPreset('${p.cor}','${p.clara}')"></div>
+    `).join('');
+  }
+
+  function aplicarPreset(cor, clara){
+    document.getElementById('apparenceCorPrimaria').value = cor;
+    document.getElementById('apparenceCorPrimaria').dataset.clara = clara;
+    renderApparencePreview();
+  }
+
+  function onCorPrimariaChange(){
+    // Cor clara é derivada automaticamente (mistura com branco) quando o
+    // lojista escolhe uma cor livre no seletor, em vez de usar um preset.
+    const cor = document.getElementById('apparenceCorPrimaria').value;
+    document.getElementById('apparenceCorPrimaria').dataset.clara = clarearCor(cor, 0.4);
+    renderApparencePreview();
+  }
+
+  function clarearCor(hex, fator){
+    const num = parseInt(hex.replace('#',''), 16);
+    const r = Math.min(255, Math.round(((num >> 16) & 255) + (255 - ((num >> 16) & 255)) * fator));
+    const g = Math.min(255, Math.round(((num >> 8) & 255) + (255 - ((num >> 8) & 255)) * fator));
+    const b = Math.min(255, Math.round((num & 255) + (255 - (num & 255)) * fator));
+    return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+  }
+
+  function renderApparencePreview(){
+    const cor = document.getElementById('apparenceCorPrimaria').value;
+    const claro = document.getElementById('apparenceModoClaro').checked;
+    const box = document.getElementById('previewBox');
+    box.style.background = claro ? '#FFFFFF' : '#0A0D10';
+    box.style.color = claro ? '#12161C' : '#F4F6F7';
+    document.getElementById('previewBrand').style.color = cor;
+    document.getElementById('previewBtn').style.background = cor;
+    document.getElementById('previewBtn').style.color = claro ? '#FFFFFF' : '#0A0D10';
+  }
+
+  async function openApparenceOverlay(){
+    document.getElementById('apparenceOverlay').classList.remove('hidden');
+    renderPresetGrid();
+    const { data, error } = await supabaseClient
+      .from('store_settings')
+      .select('modo, cor_primaria, cor_primaria_clara')
+      .eq('loja_id', ADMIN_LOJA_ID)
+      .single();
+    if(!error && data){
+      document.getElementById('apparenceModoClaro').checked = data.modo === 'light';
+      document.getElementById('apparenceCorPrimaria').value = data.cor_primaria || '#00E5FF';
+      document.getElementById('apparenceCorPrimaria').dataset.clara = data.cor_primaria_clara || '#7DF9FF';
+    }
+    renderApparencePreview();
+    window.scrollTo(0,0);
+  }
+  function closeApparenceOverlay(){
+    document.getElementById('apparenceOverlay').classList.add('hidden');
+  }
+
+  async function salvarApparence(){
+    const btn = document.getElementById('saveApparenceBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    const cor = document.getElementById('apparenceCorPrimaria').value;
+    const clara = document.getElementById('apparenceCorPrimaria').dataset.clara || clarearCor(cor, 0.4);
+    const modo = document.getElementById('apparenceModoClaro').checked ? 'light' : 'dark';
+
+    const { error } = await supabaseClient
+      .from('store_settings')
+      .update({ modo, cor_primaria: cor, cor_primaria_clara: clara, updated_at: new Date().toISOString() })
+      .eq('loja_id', ADMIN_LOJA_ID);
+
+    btn.disabled = false;
+    btn.textContent = 'Salvar aparência';
+
+    if(error){
+      showToast('Erro ao salvar aparência: ' + error.message, 'error');
+      return;
+    }
+    showToast('Aparência salva! O catálogo já reflete a mudança.', 'success');
+    closeApparenceOverlay();
+  }
+
+  // ============================================================
+  // 💰 PREÇOS DA LOJA — personalização e frete motoboy, gravados na
+  // mesma tabela store_settings (uma linha por loja). O catálogo público já lê essas
+  // colunas em aplicarAparencia() e atualiza o texto na hora.
+  // ============================================================
+  const TIPOS_PRECO = ["Torcedor","Jogador","Retrô","Kit Infantil","Feminina","Kit Treino","Conjunto de Treino"];
+
+  async function openPrecosOverlay(){
+    document.getElementById('precosOverlay').classList.remove('hidden');
+    const { data, error } = await supabaseClient
+      .from('store_settings')
+      .select('preco_personalizacao, preco_frete, cep_motoboy_inicio, cep_motoboy_fim')
+      .eq('loja_id', ADMIN_LOJA_ID)
+      .single();
+    if(!error && data){
+      document.getElementById('precoPersonalizacaoInput').value = data.preco_personalizacao ?? 60;
+      document.getElementById('precoFreteInput').value = data.preco_frete ?? 15;
+      document.getElementById('cepMotoboyInicioInput').value = data.cep_motoboy_inicio || '';
+      document.getElementById('cepMotoboyFimInput').value = data.cep_motoboy_fim || '';
+    }
+
+    const secao = document.getElementById('precosPorTipoSection');
+    if(ADMIN_USA_MESTRE){
+      secao.style.display = '';
+      const { data: precosTipo } = await supabaseClient
+        .from('loja_precos_por_tipo')
+        .select('tipo, preco')
+        .eq('loja_id', ADMIN_LOJA_ID);
+      const mapaTipo = new Map((precosTipo || []).map(p => [p.tipo, p.preco]));
+      document.getElementById('precosPorTipoCampos').innerHTML = TIPOS_PRECO.map(tipo => `
+        <div class="field">
+          <label for="precoTipo_${tipo.replace(/\s/g,'_')}">${tipo}</label>
+          <input type="number" step="0.01" min="0" id="precoTipo_${tipo.replace(/\s/g,'_')}"
+            data-tipo="${tipo}" placeholder="Padrão do produto" value="${mapaTipo.has(tipo) ? mapaTipo.get(tipo) : ''}">
+        </div>
+      `).join('');
+    } else {
+      secao.style.display = 'none';
+    }
+    window.scrollTo(0,0);
+  }
+  function closePrecosOverlay(){
+    document.getElementById('precosOverlay').classList.add('hidden');
+  }
+
+  // ============================================================
+  // MEUS PREÇOS (catálogo mestre)
+  // Lista os produtos disponíveis da loja mestre (Manto Hub) e deixa essa
+  // loja colocar um preço próprio em cima, sem duplicar produto nenhum —
+  // só grava um override em loja_precos_customizados. Sem override = usa
+  // o preço padrão do produto normalmente.
+  // ============================================================
+  let CATALOGO_MESTRE_PRODUTOS = [];
+  let CATALOGO_MESTRE_PRECOS = new Map(); // product_id -> preço customizado já salvo
+
+  async function openCatalogoMestreOverlay(){
+    document.getElementById('catalogoMestreOverlay').classList.remove('hidden');
+    document.getElementById('catalogoMestreLista').innerHTML = '<div class="empty-state">Carregando...</div>';
+    window.scrollTo(0,0);
+
+    const { data: mestre, error: mestreError } = await supabaseClient
+      .from('lojas').select('id').eq('eh_catalogo_mestre', true).single();
+    if(mestreError || !mestre){
+      document.getElementById('catalogoMestreLista').innerHTML = '<div class="empty-state">Não consegui encontrar o catálogo mestre agora.</div>';
+      return;
+    }
+
+    const [{ data: produtos, error: produtosError }, { data: precos }] = await Promise.all([
+      supabaseClient.from('products')
+        .select('id, titulo, preco, tipo, teams!inner(nome)')
+        .eq('loja_id', mestre.id)
+        .eq('disponivel', true)
+        .order('titulo', { ascending: true }),
+      supabaseClient.from('loja_precos_customizados')
+        .select('product_id, preco')
+        .eq('loja_id', ADMIN_LOJA_ID)
+    ]);
+
+    if(produtosError){
+      document.getElementById('catalogoMestreLista').innerHTML = '<div class="empty-state">Erro ao carregar o catálogo mestre.</div>';
+      return;
+    }
+
+    CATALOGO_MESTRE_PRODUTOS = produtos || [];
+    CATALOGO_MESTRE_PRECOS = new Map((precos || []).map(p => [p.product_id, p.preco]));
+    document.getElementById('catalogoMestreBusca').value = '';
+    renderCatalogoMestreLista();
+  }
+
+  function closeCatalogoMestreOverlay(){
+    document.getElementById('catalogoMestreOverlay').classList.add('hidden');
+  }
+
+  // ============================================================
+  // MINHA ASSINATURA — mostra o plano atual e deixa trocar sozinho
+  // (mensal/trimestral/anual), sem precisar falar com o suporte.
+  // ============================================================
+  const PLANOS_ASSINATURA = [
+    { id: 'mensal',     nome: 'Mensal',     valor: 49.90,  descricao: 'Cobrado todo mês' },
+    { id: 'trimestral', nome: 'Trimestral', valor: 134.90, descricao: 'Cobrado a cada 3 meses (R$ 44,97/mês)' },
+    { id: 'anual',      nome: 'Anual',      valor: 419.90, descricao: 'Cobrado 1x por ano (R$ 34,99/mês)' },
+  ];
+
+  async function openAssinaturaOverlay(){
+    document.getElementById('assinaturaOverlay').classList.remove('hidden');
+    document.getElementById('assinaturaErro').style.display = 'none';
+    document.getElementById('assinaturaAtualBox').textContent = 'Carregando...';
+    window.scrollTo(0,0);
+
+    const { data: assinatura, error } = await supabaseClient
+      .from('assinaturas').select('status, valor, proximo_vencimento').eq('loja_id', ADMIN_LOJA_ID).maybeSingle();
+
+    if(error || !assinatura){
+      document.getElementById('assinaturaAtualBox').textContent = 'Não encontrei sua assinatura agora.';
+      document.getElementById('assinaturaPlanos').innerHTML = '';
+      return;
+    }
+
+    const statusTexto = { active: 'Ativa', pending: 'Aguardando primeiro pagamento', overdue: 'Em atraso', cancelled: 'Cancelada' }[assinatura.status] || assinatura.status;
+    const planoAtualId = PLANOS_ASSINATURA.find(p => Math.abs(p.valor - Number(assinatura.valor)) < 0.01)?.id || null;
+    const vencimentoTexto = assinatura.proximo_vencimento ? new Date(assinatura.proximo_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+
+    document.getElementById('assinaturaAtualBox').innerHTML = `
+      <strong style="color:var(--text);">Status:</strong> ${statusTexto}<br>
+      <strong style="color:var(--text);">Valor atual:</strong> R$ ${Number(assinatura.valor).toFixed(2).replace('.', ',')}<br>
+      <strong style="color:var(--text);">Próximo vencimento:</strong> ${vencimentoTexto}
+    `;
+
+    renderAssinaturaPlanos(planoAtualId);
+  }
+
+  function closeAssinaturaOverlay(){
+    document.getElementById('assinaturaOverlay').classList.add('hidden');
+  }
+
+  function renderAssinaturaPlanos(planoAtualId){
+    const el = document.getElementById('assinaturaPlanos');
+    el.innerHTML = PLANOS_ASSINATURA.map(p => `
+      <div class="team-row" style="align-items:center;">
+        <div class="team-row-info" style="flex:1;">
+          <div class="team-row-name">${p.nome}${p.id === planoAtualId ? ' <span style="color:var(--neon-green); font-size:11px;">(plano atual)</span>' : ''}</div>
+          <div class="team-row-tag">R$ ${p.valor.toFixed(2).replace('.', ',')} · ${p.descricao}</div>
+        </div>
+        ${p.id === planoAtualId
+          ? ''
+          : `<button class="btn btn-secondary" id="btnTrocarPlano_${p.id}" onclick="trocarDePlano('${p.id}')" style="flex-shrink:0;">Trocar</button>`}
+      </div>
+    `).join('');
+  }
+
+  async function trocarDePlano(novoPlano){
+    const btn = document.getElementById('btnTrocarPlano_' + novoPlano);
+    const errBox = document.getElementById('assinaturaErro');
+    errBox.style.display = 'none';
+    if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
+
+    const { data, error } = await supabaseClient.functions.invoke('mudar-plano', { body: { plano: novoPlano } });
+
+    if(error || !data || data.erro || !data.sucesso){
+      errBox.textContent = (data && data.erro) || 'Não consegui trocar seu plano agora. Tenta de novo em instantes.';
+      errBox.style.display = 'block';
+      if(btn){ btn.disabled = false; btn.textContent = 'Trocar'; }
+      return;
+    }
+
+    showToast('Plano atualizado! Vale a partir da próxima cobrança.', 'success');
+    await openAssinaturaOverlay(); // recarrega a tela com o plano novo
+  }
+
+  function renderCatalogoMestreLista(){
+    const el = document.getElementById('catalogoMestreLista');
+    const busca = document.getElementById('catalogoMestreBusca').value.trim().toLowerCase();
+    const filtrados = CATALOGO_MESTRE_PRODUTOS.filter(p =>
+      !busca || p.titulo.toLowerCase().includes(busca) || (p.teams?.nome || '').toLowerCase().includes(busca)
+    );
+
+    if(filtrados.length === 0){
+      el.innerHTML = '<div class="empty-state">Nenhum produto encontrado.</div>';
+      return;
+    }
+
+    el.innerHTML = filtrados.map(p => {
+      const precoCustom = CATALOGO_MESTRE_PRECOS.get(p.id);
+      return `
+        <div class="team-row" style="align-items:center;">
+          <div class="team-row-info" style="flex:1;">
+            <div class="team-row-name">${p.titulo}</div>
+            <div class="team-row-tag">${p.teams?.nome || ''} · padrão: R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+          </div>
+          <input type="number" step="0.01" min="0" placeholder="Padrão"
+            style="width:110px;" value="${precoCustom != null ? precoCustom : ''}"
+            onchange="salvarPrecoCustomizado('${p.id}', this.value)">
+        </div>`;
+    }).join('');
+  }
+
+  async function salvarPrecoCustomizado(productId, valor){
+    const precoLimpo = valor.trim();
+
+    if(!precoLimpo){
+      // Campo esvaziado: remove o override e volta pro preço padrão.
+      const { error } = await supabaseClient.from('loja_precos_customizados')
+        .delete().eq('loja_id', ADMIN_LOJA_ID).eq('product_id', productId);
+      if(error){ showToast('Erro ao remover preço customizado: ' + error.message, 'error'); return; }
+      CATALOGO_MESTRE_PRECOS.delete(productId);
+      showToast('Voltou a usar o preço padrão.', 'success');
+      return;
+    }
+
+    const preco = parseFloat(precoLimpo);
+    if(isNaN(preco) || preco < 0){ showToast('Preço inválido.', 'error'); return; }
+
+    const { error } = await supabaseClient.from('loja_precos_customizados')
+      .upsert({ loja_id: ADMIN_LOJA_ID, product_id: productId, preco, updated_at: new Date().toISOString() });
+    if(error){ showToast('Erro ao salvar preço: ' + error.message, 'error'); return; }
+
+    CATALOGO_MESTRE_PRECOS.set(productId, preco);
+    showToast('Preço salvo!', 'success');
+  }
+
+  async function salvarPrecos(){
+    const btn = document.getElementById('savePrecosBtn');
+    const precoPersonalizacao = parseFloat(document.getElementById('precoPersonalizacaoInput').value);
+    const precoFrete = parseFloat(document.getElementById('precoFreteInput').value);
+
+    if(isNaN(precoPersonalizacao) || precoPersonalizacao < 0){
+      showToast('Informe um valor válido pra personalização.', 'error');
+      return;
+    }
+    if(isNaN(precoFrete) || precoFrete < 0){
+      showToast('Informe um valor válido pro frete.', 'error');
+      return;
+    }
+    const cepInicio = document.getElementById('cepMotoboyInicioInput').value.replace(/\D/g, '');
+    const cepFim = document.getElementById('cepMotoboyFimInput').value.replace(/\D/g, '');
+    if((cepInicio && !cepFim) || (!cepInicio && cepFim)){
+      showToast('Preencha os dois CEPs da faixa (inicial e final), ou deixe os dois em branco.', 'error');
+      return;
+    }
+    if(cepInicio && cepFim && cepInicio.length !== 8){
+      showToast('CEP inválido — precisa ter 8 dígitos.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    const { error } = await supabaseClient
+      .from('store_settings')
+      .update({
+        preco_personalizacao: precoPersonalizacao,
+        preco_frete: precoFrete,
+        cep_motoboy_inicio: cepInicio || null,
+        cep_motoboy_fim: cepFim || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('loja_id', ADMIN_LOJA_ID);
+
+    btn.disabled = false;
+    btn.textContent = 'Salvar preços';
+
+    if(error){
+      showToast('Erro ao salvar preços: ' + error.message, 'error');
+      return;
+    }
+
+    if(ADMIN_USA_MESTRE){
+      const linhas = TIPOS_PRECO.map(tipo => {
+        const input = document.getElementById('precoTipo_' + tipo.replace(/\s/g,'_'));
+        const valor = input.value.trim();
+        return valor ? { loja_id: ADMIN_LOJA_ID, tipo, preco: parseFloat(valor), updated_at: new Date().toISOString() } : null;
+      }).filter(Boolean);
+
+      const tiposParaRemover = TIPOS_PRECO.filter(tipo => {
+        const input = document.getElementById('precoTipo_' + tipo.replace(/\s/g,'_'));
+        return !input.value.trim();
+      });
+
+      if(linhas.length){
+        const { error: erroTipo } = await supabaseClient.from('loja_precos_por_tipo').upsert(linhas);
+        if(erroTipo){ showToast('Preços salvos, mas houve erro nos preços por tipo: ' + erroTipo.message, 'error'); }
+      }
+      if(tiposParaRemover.length){
+        await supabaseClient.from('loja_precos_por_tipo').delete().eq('loja_id', ADMIN_LOJA_ID).in('tipo', tiposParaRemover);
+      }
+    }
+
+    showToast('Preços salvos! O catálogo já reflete a mudança.', 'success');
+    closePrecosOverlay();
+  }
+
+  // ============================================================
+  // 🏪 LOJA — logo (topo e rodapé) e atendimento do rodapé, gravados
+  // na mesma tabela store_settings (uma linha por loja). O catálogo já lê essas
+  // colunas em aplicarAparencia() e atualiza a tela na hora.
+  // ============================================================
+  let lojaLogoUrl = null;
+  let lojaPaymentIcons = [];
+
+  async function openLojaOverlay(){
+    document.getElementById('lojaOverlay').classList.remove('hidden');
+
+    const { data: lojaData } = await supabaseClient.from('lojas').select('nome').eq('id', ADMIN_LOJA_ID).single();
+    document.getElementById('lojaNomeInput').value = (lojaData && lojaData.nome) || '';
+
+    const { data, error } = await supabaseClient
+      .from('store_settings')
+      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop')
+      .eq('loja_id', ADMIN_LOJA_ID)
+      .single();
+    if(!error && data){
+      lojaLogoUrl = data.logo_url || null;
+      lojaPaymentIcons = Array.isArray(data.payment_icons) ? data.payment_icons.slice() : [];
+      document.getElementById('lojaHorarioInput').value = data.horario_atendimento || '';
+      document.getElementById('lojaTelefoneInput').value = data.telefone_contato || '';
+      document.getElementById('lojaEmailInput').value = data.email_contato || '';
+      document.getElementById('lojaInstagramInput').value = data.instagram || '';
+      document.getElementById('lojaTextoBarraInput').value = data.texto_barra_superior || '';
+      document.getElementById('lojaTextoRodapeInput').value = data.texto_rodape_loop || '';
+    }
+    renderLojaLogoGrid();
+    renderLojaPaymentGrid();
+    window.scrollTo(0,0);
+  }
+  function closeLojaOverlay(){
+    document.getElementById('lojaOverlay').classList.add('hidden');
+  }
+
+  function renderLojaLogoGrid(){
+    const grid = document.getElementById('lojaLogoGrid');
+    if(lojaLogoUrl){
+      grid.innerHTML = `
+        <div class="image-slot">
+          <img src="${lojaLogoUrl}" alt="">
+          <button class="remove-btn" onclick="removeLojaLogo()" aria-label="Remover logo">×</button>
+        </div>`;
+    } else {
+      grid.innerHTML = `
+        <div class="image-slot add-slot" onclick="document.getElementById('lojaLogoFileInput').click()">
+          <div class="add-slot-inner">
+            <span class="add-slot-plus">+</span>
+            <span class="add-slot-label">Logo</span>
+          </div>
+        </div>`;
+    }
+  }
+
+  function removeLojaLogo(){
+    lojaLogoUrl = null;
+    renderLojaLogoGrid();
+  }
+
+  async function handleLojaLogoSelected(event){
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+
+    const path = `logo-loja-${Date.now()}.webp`;
+
+    document.getElementById('lojaLogoGrid').innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
+
+    let arquivoParaEnviar = file;
+    try {
+      const recortado = await recortarEspacoVazio(file);
+      arquivoParaEnviar = await comprimirImagem(recortado, 600, 0.9);
+    }
+    catch(e){ console.error('Não consegui processar o logo, enviando original', e); }
+
+    const { error: uploadError } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, arquivoParaEnviar, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+    if(uploadError){
+      showToast('Erro ao enviar logo: ' + uploadError.message, 'error');
+      renderLojaLogoGrid();
+      return;
+    }
+    const { data: publicUrlData } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
+    lojaLogoUrl = publicUrlData.publicUrl;
+    renderLojaLogoGrid();
+  }
+
+  // ---- Formas de pagamento (múltiplas imagens, mesmo padrão do Banner Hero) ----
+  function renderLojaPaymentGrid(){
+    const grid = document.getElementById('lojaPaymentGrid');
+    let html = lojaPaymentIcons.map((p, i) => `
+      <div class="image-slot">
+        <img src="${p.url}" alt="${p.nome || ''}">
+        <button class="remove-btn" onclick="removeLojaPayment(${i})">×</button>
+      </div>
+    `).join('');
+    html += `
+      <div class="image-slot add-slot" onclick="document.getElementById('lojaPaymentFileInput').click()">
+        <div class="add-slot-inner">
+          <span class="add-slot-plus">+</span>
+          <span class="add-slot-label">Bandeira</span>
+        </div>
+      </div>`;
+    grid.innerHTML = html;
+  }
+
+  function removeLojaPayment(index){
+    lojaPaymentIcons.splice(index, 1);
+    renderLojaPaymentGrid();
+  }
+
+  async function handleLojaPaymentSelected(event){
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if(files.length === 0) return;
+
+    for(const file of files){
+      const nomeArquivo = file.name.replace(/\.[^.]+$/, '');
+      const path = `pagamento-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+
+      let arquivoParaEnviar = file;
+      try { arquivoParaEnviar = await comprimirImagem(file, 200, 0.9); }
+      catch(e){ console.error('Não consegui comprimir o ícone de pagamento, enviando original', e); }
+
+      const { error: uploadError } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, arquivoParaEnviar, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+      if(uploadError){
+        showToast(`Erro ao enviar "${file.name}": ` + uploadError.message, 'error');
+        continue;
+      }
+      const { data: publicUrlData } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
+      lojaPaymentIcons.push({ nome: nomeArquivo, url: publicUrlData.publicUrl });
+    }
+    renderLojaPaymentGrid();
+  }
+
+  // Aceita @usuario, usuario, ou o link completo colado por engano
+  // (instagram.com/usuario, com ou sem https://, com ou sem barra no final).
+  function extrairUsuarioInstagram(valorDigitado){
+    let v = (valorDigitado || '').trim();
+    if(!v) return '';
+    v = v.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/^instagram\.com\//i, '');
+    v = v.split('/')[0].split('?')[0];
+    return v.replace(/^@/, '').trim();
+  }
+
+  async function salvarLoja(){
+    const nomeLoja = document.getElementById('lojaNomeInput').value.trim();
+    if(!nomeLoja){
+      showToast('Preencha o nome da loja.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('saveLojaBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    const { error: erroNome } = await supabaseClient.from('lojas').update({ nome: nomeLoja }).eq('id', ADMIN_LOJA_ID);
+    if(erroNome){
+      btn.disabled = false;
+      btn.textContent = 'Salvar loja';
+      showToast('Erro ao salvar o nome da loja: ' + erroNome.message, 'error');
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from('store_settings')
+      .update({
+        logo_url: lojaLogoUrl,
+        horario_atendimento: document.getElementById('lojaHorarioInput').value.trim() || null,
+        telefone_contato: document.getElementById('lojaTelefoneInput').value.trim() || null,
+        email_contato: document.getElementById('lojaEmailInput').value.trim() || null,
+        instagram: extrairUsuarioInstagram(document.getElementById('lojaInstagramInput').value) || null,
+        payment_icons: lojaPaymentIcons,
+        texto_barra_superior: document.getElementById('lojaTextoBarraInput').value.trim() || null,
+        texto_rodape_loop: document.getElementById('lojaTextoRodapeInput').value.trim() || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('loja_id', ADMIN_LOJA_ID);
+
+    btn.disabled = false;
+    btn.textContent = 'Salvar loja';
+
+    if(error){
+      showToast('Erro ao salvar loja: ' + error.message, 'error');
+      return;
+    }
+    showToast('Loja salva! O catálogo já reflete a mudança.', 'success');
+    closeLojaOverlay();
+  }
+</script>
+</body>
+</html>
