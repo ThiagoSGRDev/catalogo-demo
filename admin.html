@@ -58,7 +58,7 @@
      escolhe "claro" no botao do topo. A escolha manual vence o sistema. */
   @media (prefers-color-scheme: light){
     :root:not([data-tema="escuro"]){
-      --bg:#F4F6F8;
+      --bg:#EEF1F6;
       --panel:rgba(255,255,255,0.9);
       --panel-solid:#FFFFFF;
       --panel-2:rgba(0,0,0,0.04);
@@ -78,7 +78,7 @@
     }
   }
   :root[data-tema="claro"]{
-    --bg:#F4F6F8;
+    --bg:#EEF1F6;
     --panel:rgba(255,255,255,0.9);
     --panel-solid:#FFFFFF;
     --panel-2:rgba(0,0,0,0.04);
@@ -261,6 +261,10 @@
   }
   .topbar .brand{ color:var(--text); display:flex; align-items:center; gap:10px; min-width:0; font-family:'Anton', sans-serif; font-size:17px; letter-spacing:.04em; text-transform:uppercase; }
   .topbar .brand-logo-img{ height:26px; width:auto; display:block; }
+  /* Logo de letra clara sobre fundo claro: ganha selo escuro (ver ajustarFundoDaLogo) */
+  :root[data-tema="claro"] .brand-logo-img.logo-clara{
+    background:#12161C; padding:5px 10px; border-radius:10px; height:34px;
+  }
   @media (max-width:420px){ .topbar .brand .sutil{ display:none; } }
   .topbar .brand .sutil{ color:var(--text-faint); font-weight:600; font-size:13px; font-family:'Plus Jakarta Sans', sans-serif; text-transform:none; letter-spacing:0; }
 
@@ -581,8 +585,8 @@
     }
     /* O rotulo invisivel ainda ocupava largura e empurrava o icone pro lado. */
     .rail:not(.open) .rail-label{ display:none; }
-    .rail:not(.open) .rail-ico{ border-radius:50%; }
-    :root[data-tema="claro"] .rail:not(.open) .rail-ico{ background:var(--btn-bg); color:var(--btn-text); }
+    .rail:not(.open) .rail-ico{ border-radius:50%; background:var(--btn-bg); color:var(--btn-text); }
+    .rail:not(.open) .rail-item.active .rail-ico{ box-shadow:0 0 0 2px var(--rail-bg), 0 0 0 4px var(--btn-bg); }
     :root[data-tema="claro"] .rail:not(.open) .rail-item.active .rail-ico{ background:var(--btn-text); color:var(--btn-bg); }
     :root[data-tema="claro"] .rail:not(.open) .rail-item.rail-sair .rail-ico{ background:transparent; border:1.5px solid var(--line); color:var(--text-dim); }
   }
@@ -591,6 +595,11 @@
 
   /* No fundo claro, cores vivas (lima, ciano) somem. Tudo que e texto usa
      --cor-leitura: a mesma cor escolhida, escurecida ate ficar legivel. */
+  :root[data-tema="claro"] .team-pick-btn{ color:var(--cor-leitura); border-color:var(--cor-leitura); }
+  :root[data-tema="claro"] .team-pick-btn .tp-ico{ background:var(--cor-leitura); color:#FFFFFF; }
+  :root[data-tema="claro"] .team-pick-btn.selected{ background:var(--cor-leitura); color:#FFFFFF; border-color:var(--cor-leitura); }
+  :root[data-tema="claro"] .team-pick-btn.selected .tp-ico{ background:#FFFFFF; color:var(--cor-leitura); }
+
   :root[data-tema="claro"] .product-card-preco,
   :root[data-tema="claro"] .atv-valor,
   :root[data-tema="claro"] .atv-qtd,
@@ -614,7 +623,16 @@
 
   /* Um pouco menos sem graca: barra lateral e cartoes ganham leve tom da cor. */
   :root[data-tema="claro"] .rail{ background:linear-gradient(180deg, var(--cor-tenue) 0%, var(--rail-bg) 45%); }
-  :root[data-tema="claro"] .product-card{ box-shadow:0 8px 24px rgba(15,23,42,0.08); }
+  :root[data-tema="claro"] .product-card,
+  :root[data-tema="claro"] .form-section,
+  :root[data-tema="claro"] .atv-card{
+    background:#FFFFFF; box-shadow:0 10px 28px rgba(15,23,42,0.10); border-color:rgba(15,23,42,0.07);
+  }
+  :root[data-tema="claro"] .search-input{ background:#FFFFFF; box-shadow:0 6px 18px rgba(15,23,42,0.08); }
+  /* Um fio da cor da loja no alto da tela e nas seções, pra não ficar branco chapado */
+  :root[data-tema="claro"] .topbar{ box-shadow:0 2px 0 var(--cor-tenue), 0 6px 20px rgba(15,23,42,0.06); }
+  :root[data-tema="claro"] .form-section h3{ border-left:3px solid var(--cor-leitura); padding-left:10px; }
+  :root[data-tema="claro"] .product-card-photo{ background:#F7F9FC; }
   :root[data-tema="claro"] .topbar{ border-bottom:1px solid var(--cor-tenue); }
   .product-card-preco{ font-size: 20px; font-weight: 400; color: var(--neon-green); margin-top: 12px; font-family: 'Anton', sans-serif; letter-spacing: 0.02em; text-shadow: 0 0 15px rgba(198,241,53,0.25); }
 
@@ -737,8 +755,8 @@
     padding:2px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:0.05em;
   }
   .image-slot .order-badge{
-    position:absolute; top:4px; left:4px; background:rgba(0,0,0,0.7); color:var(--text); font-size:10px;
-    padding:1px 6px; border-radius:4px;
+    position:absolute; top:4px; left:4px; background:rgba(10,12,16,0.82); color:#FFFFFF; font-size:10px;
+    font-weight:700; padding:2px 7px; border-radius:6px;
   }
   .image-slot .remove-btn{
     position:absolute; top:4px; right:4px; background:rgba(239,68,68,0.85); color:#fff; border:none;
@@ -748,8 +766,8 @@
     position:absolute; bottom:4px; left:4px; right:4px; display:flex; justify-content:space-between;
   }
   .image-slot .move-btn{
-    background:rgba(0,0,0,0.7); color:var(--text); border:none; width:26px; height:26px;
-    border-radius:6px; font-size:16px; line-height:1; cursor:pointer;
+    background:rgba(10,12,16,0.82); color:#FFFFFF; border:none; width:26px; height:26px;
+    border-radius:6px; font-size:16px; line-height:1; cursor:pointer; font-weight:700;
   }
   .image-slot .move-btn:disabled{ opacity:0.3; cursor:not-allowed; }
   .image-slot.add-slot{ cursor:pointer; color:var(--text-faint); font-size:28px; border-style:dashed; }
@@ -2601,6 +2619,38 @@
       await enterApp();
     }
   }
+  // ---- LOGO ----
+  // Mede o brilho médio da logo carregada. Se ela for clara (letra branca),
+  // ganha um selo escuro atrás no tema claro — senão fica solta, sem caixa.
+  function ajustarFundoDaLogo(img){
+    if(!img) return;
+    const medir = () => {
+      try {
+        const c = document.createElement('canvas');
+        const l = Math.min(img.naturalWidth || 64, 64), a = Math.min(img.naturalHeight || 64, 64);
+        if(!l || !a) return;
+        c.width = l; c.height = a;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, l, a);
+        const d = ctx.getImageData(0, 0, l, a).data;
+        let soma = 0, visiveis = 0;
+        for(let i = 0; i < d.length; i += 4){
+          if(d[i+3] < 40) continue; // ignora o fundo transparente do PNG
+          soma += (d[i]*299 + d[i+1]*587 + d[i+2]*114) / 1000;
+          visiveis++;
+        }
+        if(!visiveis) return;
+        if((soma / visiveis) > 150) img.classList.add('logo-clara');
+      } catch(e){
+        // imagem de outro domínio sem permissão de leitura: por segurança,
+        // assume clara (o selo escuro nunca deixa a logo pior).
+        img.classList.add('logo-clara');
+      }
+    };
+    if(img.complete && img.naturalWidth) medir();
+    else img.addEventListener('load', medir, { once:true });
+  }
+
   // ---- TEMA ----
   // Segue o sistema por padrao; a escolha manual fica salva neste aparelho.
   const ICONE_LUA = '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
@@ -2622,6 +2672,7 @@
     aplicarTema(novo);
   }
   aplicarTema(temaAtual());
+  document.querySelectorAll('.brand-logo-img').forEach(ajustarFundoDaLogo);
 
   checkExistingSession();
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeRail(); });
@@ -4409,6 +4460,8 @@
     { nome: "Roxo escuro",    cor: "#6D28D9", clara: "#A78BFA" },
     { nome: "Uva",            cor: "#4C1D95", clara: "#8B5CF6" },
     { nome: "Grafite",        cor: "#334155", clara: "#64748B" },
+    { nome: "Branco",         cor: "#FFFFFF", clara: "#F1F5F9" },
+    { nome: "Preto",          cor: "#111827", clara: "#374151" },
     { nome: "Laranja",        cor: "#FF7A1A", clara: "#FFB066" },
     { nome: "Azul royal",     cor: "#1D4ED8", clara: "#3B82F6" },
     { nome: "Rosa",           cor: "#E844C4", clara: "#FF7FE0" }

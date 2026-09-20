@@ -98,9 +98,9 @@
   /* A logo do lojista costuma ser PNG de letra branca. No tema claro ela
      ganha um selo escuro discreto atrás — no topo, na home e no menu —
      em vez de tingir a barra inteira, que escondia os ícones. */
-  html[data-theme="clean-light"] #headerLogoImg,
-  html[data-theme="clean-light"] #homeLogoImg,
-  html[data-theme="clean-light"] .drawer-header img{
+  /* Só a logo de letra clara ganha selo escuro no tema claro — medido em
+     tempo real pelo brilho da imagem (ver ajustarFundoDaLogo no JS). */
+  html[data-theme="clean-light"] img.logo-clara{
     background:#12161C; padding:6px 12px; border-radius:12px;
   }
 
@@ -173,6 +173,12 @@
     }
   }
   html{scroll-behavior:smooth;}
+  /* O conteúdo empurra o rodapé pro fim da tela: antes, em páginas curtas
+     (um produto só), sobrava uma faixa do fundo do body depois da faixa
+     do rodapé. */
+  body{ min-height:100vh; }
+  #appShell{ display:flex; flex-direction:column; min-height:100vh; }
+  #appShell > footer{ margin-top:auto; }
   body{
     background:var(--pitch-dark);
     color:var(--chalk);
@@ -1053,7 +1059,10 @@
     white-space:nowrap; padding:0 24px;
     font-family:'Anton', sans-serif; font-weight:700; font-size:10.5px;
     text-transform:uppercase; letter-spacing:.05em; color:#FFFFFF;
-    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+    /* Contorno escuro: em cores claras (lima, amarelo) o branco puro
+       ficava ilegível sobre a faixa. */
+    text-shadow:0 0 2px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.75), 0 1px 2px rgba(0,0,0,0.9);
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
   }
   @keyframes footerStripeTextoScroll{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
   .footer-stripe-track{
@@ -1068,7 +1077,7 @@
       #0A0D10 0%,
       rgba(var(--gold-rgb),0.06) 18%,
       rgba(var(--gold-rgb),0.22) 38%,
-      rgba(var(--gold-rgb),0.55) 50%,
+      rgba(var(--gold-rgb),0.45) 50%,
       rgba(var(--gold-rgb),0.22) 62%,
       rgba(var(--gold-rgb),0.06) 82%,
       #0A0D10 100%
@@ -2374,6 +2383,40 @@
   // nome da loja em texto — assim o catálogo nunca fica com logo de outra
   // marca nem com um espaço quebrado. Função nomeada (não roda só uma vez)
   // porque a logo real chega depois, do banco (ver aplicarAparencia).
+  // Mede o brilho médio da logo: letra clara ganha selo escuro no tema claro.
+  function ajustarFundoDaLogo(img){
+    if(!img) return;
+    const medir = () => {
+      try {
+        const c = document.createElement('canvas');
+        const l = Math.min(img.naturalWidth || 64, 64), a = Math.min(img.naturalHeight || 64, 64);
+        if(!l || !a) return;
+        c.width = l; c.height = a;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, l, a);
+        const d = ctx.getImageData(0, 0, l, a).data;
+        let soma = 0, visiveis = 0;
+        for(let i = 0; i < d.length; i += 4){
+          if(d[i+3] < 40) continue;
+          soma += (d[i]*299 + d[i+1]*587 + d[i+2]*114) / 1000;
+          visiveis++;
+        }
+        if(visiveis && (soma / visiveis) > 150) img.classList.add('logo-clara');
+        else img.classList.remove('logo-clara');
+      } catch(e){
+        img.classList.add('logo-clara');
+      }
+    };
+    img.crossOrigin = 'anonymous';
+    if(img.complete && img.naturalWidth) medir();
+    else img.addEventListener('load', medir, { once:true });
+  }
+
+  function marcarLogos(){
+    ['headerLogoImg','homeLogoImg'].forEach(id => ajustarFundoDaLogo(document.getElementById(id)));
+    document.querySelectorAll('.drawer-header img').forEach(ajustarFundoDaLogo);
+  }
+
   function aplicarLogo(){
     const url = (STORE_CONFIG.logoUrl || '').trim();
     const spots = [
@@ -2395,6 +2438,7 @@
         padrao.style.display = 'inline-flex';
       }
     });
+    marcarLogos();
   }
   aplicarLogo();
 
