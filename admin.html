@@ -1452,6 +1452,11 @@
       </div>
     </div>
     <div class="form-section">
+      <h3>Descrição padrão por tipo</h3>
+      <div class="field-hint" id="descTipoAviso" style="margin:0 0 14px;"></div>
+      <div id="descTipoCampos"></div>
+    </div>
+    <div class="form-section">
       <h3>Logo</h3>
       <div class="image-grid" id="lojaLogoGrid"></div>
       <input type="file" id="lojaLogoFileInput" accept="image/*" class="hidden" onchange="handleLojaLogoSelected(event)">
@@ -5953,7 +5958,55 @@
   let lojaLogoUrl = null;
   let lojaPaymentIcons = [];
 
+  // ---- Descrição padrão por tipo (tela Loja) ----
+  const TIPOS_DESCRICAO = ['Torcedor', 'Jogador', 'Retrô', 'Feminina', 'Kit Treino', 'Kit Infantil'];
+  const descTipoId = tipo => 'descTipo_' + tipo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_');
+
+  async function preencherDescricoesTipo(proprias){
+    // 1) Campos na tela na hora, já com os textos da loja (salvar logo em
+    //    seguida nunca apaga nada).
+    document.getElementById('descTipoAviso').textContent = ADMIN_EH_MESTRE
+      ? 'Aparece em todo produto desse tipo que não tiver descrição própria, em todas as lojas que usam o seu catálogo (a loja pode trocar).'
+      : 'Aparece em todo produto desse tipo que não tiver descrição própria. Em branco = usa o texto padrão.';
+    const box = document.getElementById('descTipoCampos');
+    box.innerHTML = TIPOS_DESCRICAO.map(tipo => `
+      <div class="field">
+        <label for="${descTipoId(tipo)}">${escHtml(tipo)}</label>
+        <textarea id="${descTipoId(tipo)}" rows="3"></textarea>
+      </div>`).join('');
+    TIPOS_DESCRICAO.forEach(tipo => {
+      document.getElementById(descTipoId(tipo)).value = (proprias && proprias[tipo]) || '';
+    });
+
+    // 2) Depois, o texto do mestre como dica dentro dos campos vazios.
+    if(!ADMIN_USA_MESTRE || ADMIN_EH_MESTRE) return;
+    try {
+      const { data: mestre } = await supabaseClient.from('lojas').select('id').eq('eh_catalogo_mestre', true).single();
+      if(!mestre) return;
+      const { data } = await supabaseClient.from('store_settings')
+        .select('descricoes_por_tipo').eq('loja_id', mestre.id).maybeSingle();
+      const doMestre = (data && data.descricoes_por_tipo) || {};
+      TIPOS_DESCRICAO.forEach(tipo => {
+        const el = document.getElementById(descTipoId(tipo));
+        if(el && doMestre[tipo]) el.placeholder = 'Padrão: ' + doMestre[tipo];
+      });
+    } catch(e){ console.error('Nao consegui ler as descricoes do mestre', e); }
+  }
+
+  // Devolve null se os campos não chegaram a ser montados (aí o salvar não
+  // mexe nas descrições, em vez de apagar tudo).
+  function lerDescricoesTipo(){
+    if(!document.getElementById(descTipoId(TIPOS_DESCRICAO[0]))) return null;
+    const out = {};
+    TIPOS_DESCRICAO.forEach(tipo => {
+      const v = document.getElementById(descTipoId(tipo)).value.trim();
+      if(v) out[tipo] = v;
+    });
+    return out;
+  }
+
   async function openLojaOverlay(){
+    document.getElementById('descTipoCampos').innerHTML = '';
     document.getElementById('lojaOverlay').classList.remove('hidden');
 
     const { data: lojaData } = await supabaseClient.from('lojas').select('nome').eq('id', ADMIN_LOJA_ID).single();
@@ -5961,12 +6014,13 @@
 
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, usa_estoque, estoque_alerta_limite')
+      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, usa_estoque, estoque_alerta_limite, descricoes_por_tipo')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     if(!error && data){
       document.getElementById('lojaUsaEstoque').checked = !!data.usa_estoque;
       document.getElementById('lojaEstoqueAlerta').value = String(data.estoque_alerta_limite ?? 2);
+      preencherDescricoesTipo(data.descricoes_por_tipo || {});
       lojaLogoUrl = data.logo_url || null;
       lojaPaymentIcons = Array.isArray(data.payment_icons) ? data.payment_icons.slice() : [];
       document.getElementById('lojaHorarioInput').value = data.horario_atendimento || '';
@@ -6125,6 +6179,7 @@
         texto_rodape_loop: document.getElementById('lojaTextoRodapeInput').value.trim() || null,
         usa_estoque: document.getElementById('lojaUsaEstoque').checked,
         estoque_alerta_limite: Number(document.getElementById('lojaEstoqueAlerta').value) || 0,
+        ...(lerDescricoesTipo() ? { descricoes_por_tipo: lerDescricoesTipo() } : {}),
         updated_at: new Date().toISOString()
       })
       .eq('loja_id', ADMIN_LOJA_ID);

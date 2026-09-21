@@ -643,6 +643,21 @@
   }
   .delivery-note svg{width:16px; height:16px; flex-shrink:0; color:var(--gold-text);}
 
+  /* Descrição do produto (própria ou texto padrão do tipo) */
+  .product-desc{
+    margin-top:22px; padding:16px 18px; border:1.5px solid var(--line);
+    border-radius:18px; background:var(--pitch-deep);
+  }
+  .product-desc[hidden]{ display:none; }
+  .product-desc-label{
+    font-family:'Space Mono', monospace; font-size:11px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--gold-text); margin-bottom:8px;
+  }
+  .product-desc-text{
+    margin:0; font-size:14px; line-height:1.6; white-space:pre-line;
+    color:rgba(var(--muted-rgb),0.85);
+  }
+
   /* VIEWS (home / team list / product) */
   #homeView, #leagueTeamsView, #teamListView, #productView, #favoritesView, #categoryView, #timesView{display:none;}
   #homeView.active, #leagueTeamsView.active, #teamListView.active, #productView.active, #favoritesView.active, #categoryView.active, #timesView.active{
@@ -1772,6 +1787,11 @@
       <span>Entrega em até 5-6 dias úteis para São Paulo e região</span>
     </div>
 
+    <div class="product-desc" id="productDescBox" hidden>
+      <div class="product-desc-label">Detalhes</div>
+      <p class="product-desc-text" id="productDescText"></p>
+    </div>
+
     <div class="product-buy-bar">
       <button class="add-btn" id="addToCartBtn" onclick="addToCart()">+ Adicionar ao carrinho</button>
     </div>
@@ -1977,6 +1997,9 @@
   const LOJA_SLUG = new URLSearchParams(location.search).get('loja') || 'manto-hub';
   let LOJA_ID = null;
   let LOJAS_VISIVEIS = []; // [minha loja] + [loja mestre, se essa loja usar o catálogo compartilhado]
+  // Texto padrão por tipo de camisa: o da loja vence; tipo que ela deixou
+  // em branco herda do catálogo mestre.
+  let DESCRICOES_TIPO = {};
   let PRECOS_CUSTOMIZADOS = new Map(); // product_id -> preço customizado desta loja (sobrescreve products.preco)
   // Produtos do catalogo mestre que ESTA loja escolheu nao exibir.
   // Formato exigido pelo PostgREST no filtro .not('id','in', ...).
@@ -2058,6 +2081,27 @@
   function cssCor(v){
     const c = String(v ?? '').trim();
     return /^#[0-9a-f]{3,8}$/i.test(c) ? c : 'var(--line)';
+  }
+
+  async function carregarDescricoesTipo(){
+    DESCRICOES_TIPO = {};
+    if(!LOJAS_VISIVEIS.length) return;
+    try {
+      const { data, error } = await supabaseClient.from('store_settings')
+        .select('loja_id, descricoes_por_tipo').in('loja_id', LOJAS_VISIVEIS);
+      if(error) throw error;
+      const daLoja = id => ((data || []).find(r => r.loja_id === id) || {}).descricoes_por_tipo || {};
+      const mestreId = LOJAS_VISIVEIS.find(id => id !== LOJA_ID);
+      const limpar = obj => Object.fromEntries(Object.entries(obj).filter(([, v]) => typeof v === 'string' && v.trim()));
+      DESCRICOES_TIPO = Object.assign({}, mestreId ? limpar(daLoja(mestreId)) : {}, limpar(daLoja(LOJA_ID)));
+    } catch(e){
+      console.error('Nao consegui ler as descricoes padrao', e);
+    }
+  }
+
+  function descricaoDoProduto(p){
+    const propria = (p && p.descricao || '').trim();
+    return propria || (p && DESCRICOES_TIPO[p.tipo]) || '';
   }
 
   // ESTOQUE (opcional por loja). O catálogo nunca vê a quantidade — só quais
@@ -2181,7 +2225,7 @@
 
       // Personalizações desta loja (textos, tamanhos e fotos próprias) e
       // tamanhos esgotados (só se a loja usa controle de estoque).
-      await Promise.all([carregarOverrides(), carregarEstoque()]);
+      await Promise.all([carregarOverrides(), carregarEstoque(), carregarDescricoesTipo()]);
 
       registrarVisita();
 
@@ -3787,6 +3831,9 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     document.getElementById('productPhotoTag').textContent = currentProduct.tipo;
     updateFavoriteBtn();
     document.getElementById('productTitleLg').textContent = currentProduct.titulo;
+    const descricao = descricaoDoProduto(currentProduct);
+    document.getElementById('productDescText').textContent = descricao;
+    document.getElementById('productDescBox').hidden = !descricao;
     const subEl = document.getElementById('productSubtitleLg');
     if(currentProduct.subtitulo){
       subEl.textContent = currentProduct.subtitulo;
