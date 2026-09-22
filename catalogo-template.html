@@ -3369,6 +3369,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     document.getElementById('categoryView').classList.toggle('active', name === 'category');
     document.getElementById('timesView').classList.toggle('active', name === 'times');
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+    if(name === 'times') timesCentralizarDepoisDoLayout();
   }
 
   // Navega para uma nova tela e registra no histórico do navegador, para que o
@@ -4707,11 +4708,15 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   async function loadDynamicLigas(){
     if(!supabaseReady) return;
     try {
-      const { data: ligasData } = await supabaseClient.from('ligas').select('nome, icone_url, foto_atleta_url, ordem').in('loja_id', LOJAS_VISIVEIS);
-      (ligasData || []).forEach(row => {
+      const { data: ligasData } = await supabaseClient.from('ligas').select('loja_id, nome, icone_url, foto_atleta_url, ordem').in('loja_id', LOJAS_VISIVEIS);
+      // Mestre primeiro e a própria loja por último, para a loja poder
+      // sobrescrever. A ordem cadastrada no admin sempre vence a ordem fixa
+      // antiga deste arquivo (antes a fixa ganhava e o admin era ignorado).
+      const ligasOrdenadas = (ligasData || []).slice().sort((a, b) => (a.loja_id === LOJA_ID) - (b.loja_id === LOJA_ID));
+      ligasOrdenadas.forEach(row => {
         if(row.icone_url) LIGA_LOGOS[row.nome] = row.icone_url;
         if(row.foto_atleta_url) LIGA_FOTOS[row.nome] = row.foto_atleta_url;
-        if(row.ordem != null && !(row.nome in LIGA_ORDER)) LIGA_ORDER[row.nome] = row.ordem;
+        if(row.ordem != null) LIGA_ORDER[row.nome] = row.ordem;
         if(row.nome && !LIGAS_CADASTRADAS.includes(row.nome)) LIGAS_CADASTRADAS.push(row.nome);
       });
 
@@ -4908,6 +4913,23 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     playerTrack.addEventListener('scroll', onTimesPlayerScroll);
 
     timesAtualizarReflexo();
+    timesCentralizarDepoisDoLayout();
+  }
+
+  // Se o carrossel for montado com a tela ainda escondida, as medidas vêm
+  // zeradas e a foto central fica uma casa deslocada (escudo da Alemanha
+  // com foto da Argentina). Aqui ele é recentralizado no time atual depois
+  // que o navegador desenhou a tela de verdade.
+  function timesCentralizarAtual(){
+    const track = document.getElementById('timesPlayerCarousel');
+    if(!track || !track.children.length || !track.clientWidth) return;
+    const alvo = track.children[timesTimeIndex + TIMES_CLONE_BUFFER];
+    track.scrollLeft = scrollLeftParaCentralizar(track, alvo);
+    track.querySelectorAll('.player-card').forEach(el => el.classList.toggle('active', el === alvo));
+    timesAtualizarReflexo();
+  }
+  function timesCentralizarDepoisDoLayout(){
+    requestAnimationFrame(() => requestAnimationFrame(timesCentralizarAtual));
   }
 
   // Escudo real (`imagem`, vindo de escudo_url) — se por acaso um time não
