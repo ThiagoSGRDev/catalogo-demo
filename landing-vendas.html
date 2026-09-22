@@ -165,8 +165,9 @@
   .painel-previa small{ display:block; color:var(--texto-dim); font-weight:500; font-size:12.5px; margin-top:2px; }
 
   /* ---------- CONTADORES ---------- */
+  .contadores[hidden], .contador[hidden]{ display:none; }
   .contadores{ display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-top:36px; }
-  @media (min-width:860px){ .contadores{ grid-template-columns:repeat(4, 1fr); } }
+  @media (min-width:860px){ .contadores{ grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); } }
   .contador{ background:var(--bloco); border:1px solid var(--borda); border-radius:var(--raio); padding:22px 18px; }
   .contador b{ display:block; font-family:'Anton', sans-serif; font-weight:400; font-size:clamp(42px, 10vw, 60px); line-height:1; font-variant-numeric:tabular-nums; }
   .contador span{ display:block; color:var(--texto-dim); font-size:15px; margin-top:8px; }
@@ -416,11 +417,13 @@
   <div class="wrap">
     <h2 class="revelar">Você já começa com <span class="neon">catálogo pronto</span></h2>
     <p class="intro revelar">Camisas cadastradas com foto, tamanho e descrição, separadas por liga e por time. Esconda as que não quiser e cadastre as suas.</p>
-    <div class="contadores">
-      <div class="contador revelar"><b class="neon" data-contar="239" id="numProdutos">0</b><span>camisas cadastradas</span></div>
-      <div class="contador revelar" data-atraso="1"><b class="neon" data-contar="69" id="numTimes">0</b><span>times e seleções</span></div>
-      <div class="contador revelar" data-atraso="2"><b class="neon" data-contar="12" id="numLigas">0</b><span>ligas e categorias</span></div>
-      <div class="contador revelar" data-atraso="3"><b class="neon" data-contar="0" data-sufixo="%">0%</b><span>de comissão por venda</span></div>
+    <!-- Os contadores só aparecem quando o número real do catálogo passa do
+         mínimo definido em MINIMOS_CONTADOR (no fim da página). Abaixo disso,
+         a seção fica só com o texto: número baixo trabalha contra a venda. -->
+    <div class="contadores" id="contadores" hidden>
+      <div class="contador revelar" id="boxProdutos" hidden><b class="neon" data-contar="0" id="numProdutos">0</b><span>camisas cadastradas</span></div>
+      <div class="contador revelar" data-atraso="1" id="boxTimes" hidden><b class="neon" data-contar="0" id="numTimes">0</b><span>times e seleções</span></div>
+      <div class="contador revelar" data-atraso="2" id="boxLigas" hidden><b class="neon" data-contar="0" id="numLigas">0</b><span>ligas e categorias</span></div>
     </div>
   </div>
 </section>
@@ -675,6 +678,7 @@
       });
     }, { threshold:0.15, rootMargin:'0px 0px -40px 0px' });
     document.querySelectorAll('.revelar').forEach(el => obs.observe(el));
+    window.mantoObservar = el => obs.observe(el);
   })();
 
   // Vídeo do painel: se o arquivo ainda não existir no repositório,
@@ -910,6 +914,8 @@
   // falhar, ficam os números escritos no HTML.
   // ============================================================
   const LOJA_MESTRE_ID = '6313e64a-b638-4619-b36d-e02ac3cdffa2';
+  // Mínimo para cada número aparecer na página. Ajuste aqui quando quiser.
+  const MINIMOS_CONTADOR = { numProdutos: 1000, numTimes: 150, numLigas: 15 };
   (async function(){
     try {
       const contar = (tabela, filtros) => {
@@ -920,11 +926,19 @@
       const [prod, times, ligas] = await Promise.all([
         contar('products', q => q.eq('disponivel', true)), contar('teams'), contar('ligas')
       ]);
-      [[prod,'numProdutos'],[times,'numTimes'],[ligas,'numLigas']].forEach(([r, id]) => {
-        if(r.error || !r.count) return;
-        const el = document.getElementById(id);
-        el.dataset.contar = r.count;
-        if(el.dataset.contado) window.mantoContar(el); // já apareceu: reconta com o número real
+      let algumVisivel = false;
+      [[prod,'numProdutos','boxProdutos'],[times,'numTimes','boxTimes'],[ligas,'numLigas','boxLigas']].forEach(([r, id, box]) => {
+        if(r.error || !r.count || r.count < MINIMOS_CONTADOR[id]) return;
+        document.getElementById(id).dataset.contar = r.count;
+        document.getElementById(box).hidden = false;
+        algumVisivel = true;
+      });
+      if(!algumVisivel) return;
+      document.getElementById('contadores').hidden = false;
+      // os blocos recém-mostrados entram na animação de aparecer + contar
+      document.querySelectorAll('#contadores .contador:not([hidden])').forEach(el => {
+        if(window.mantoObservar) window.mantoObservar(el);
+        else { el.classList.add('visivel'); el.querySelectorAll('[data-contar]').forEach(window.mantoContar); }
       });
     } catch(e){ console.error('Nao consegui ler os numeros do catalogo', e); }
   })();
