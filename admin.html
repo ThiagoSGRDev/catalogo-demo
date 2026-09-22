@@ -1508,6 +1508,11 @@
         <input type="text" id="lojaTextoRodapeInput" placeholder="Frete grátis acima de R$ 299 · Compre 2 leve 3">
         <div class="field-hint">Fica rodando em loop na faixa final da página. Em branco, a faixa fica só com o gradiente, sem texto.</div>
       </div>
+      <div class="field">
+        <label for="lojaTextoEntregaInput">Aviso de entrega na página do produto</label>
+        <input type="text" id="lojaTextoEntregaInput" maxlength="160" placeholder="Entrega em até 5 dias úteis para todo o Brasil">
+        <div class="field-hint">Aparece na página de cada produto, com o ícone de caminhão. Em branco, o aviso não aparece.</div>
+      </div>
     </div>
   </div>
   <div class="form-footer">
@@ -6019,7 +6024,7 @@
 
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, usa_estoque, estoque_alerta_limite, descricoes_por_tipo')
+      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, descricoes_por_tipo')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     if(!error && data){
@@ -6034,6 +6039,7 @@
       document.getElementById('lojaInstagramInput').value = data.instagram || '';
       document.getElementById('lojaTextoBarraInput').value = data.texto_barra_superior || '';
       document.getElementById('lojaTextoRodapeInput').value = data.texto_rodape_loop || '';
+      document.getElementById('lojaTextoEntregaInput').value = data.texto_entrega || '';
     }
     renderLojaLogoGrid();
     renderLojaPaymentGrid();
@@ -6182,6 +6188,7 @@
         payment_icons: lojaPaymentIcons,
         texto_barra_superior: document.getElementById('lojaTextoBarraInput').value.trim() || null,
         texto_rodape_loop: document.getElementById('lojaTextoRodapeInput').value.trim() || null,
+        texto_entrega: document.getElementById('lojaTextoEntregaInput').value.trim() || null,
         usa_estoque: document.getElementById('lojaUsaEstoque').checked,
         estoque_alerta_limite: Number(document.getElementById('lojaEstoqueAlerta').value) || 0,
         ...(lerDescricoesTipo() ? { descricoes_por_tipo: lerDescricoesTipo() } : {}),

@@ -642,6 +642,7 @@
     display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px;
     font-family:'Space Mono', monospace; font-size:12px; color:rgba(var(--muted-rgb),0.6); text-align:center;
   }
+  .delivery-note[hidden]{ display:none; }
   .delivery-note svg{width:16px; height:16px; flex-shrink:0; color:var(--gold-text);}
 
   /* Descrição do produto (própria ou texto padrão do tipo) */
@@ -1792,9 +1793,10 @@
       </div>
     </div>
 
-    <div class="delivery-note">
+    <!-- Texto vem da tela Loja do admin (texto_entrega). Vazio = não aparece. -->
+    <div class="delivery-note" id="deliveryNote" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-      <span>Entrega em até 5-6 dias úteis para São Paulo e região</span>
+      <span id="deliveryNoteText"></span>
     </div>
 
     <div class="product-desc" id="productDescBox" hidden>
@@ -2278,7 +2280,7 @@
     try {
       const { data, error } = await supabaseClient
         .from('store_settings')
-        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop')
+        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega')
         .eq('loja_id', LOJA_ID)
         .single();
       if(error || !data) return;
@@ -2378,6 +2380,9 @@
       if(data.texto_barra_superior){
         document.querySelectorAll('.promo-stripe-texto').forEach(el => { el.textContent = data.texto_barra_superior; });
       }
+      const textoEntrega = (data.texto_entrega || '').trim();
+      document.getElementById('deliveryNoteText').textContent = textoEntrega;
+      document.getElementById('deliveryNote').hidden = !textoEntrega;
       if(data.texto_rodape_loop){
         document.getElementById('footerStripeTexto1').textContent = data.texto_rodape_loop;
         document.getElementById('footerStripeTexto2').textContent = data.texto_rodape_loop;
