@@ -722,6 +722,8 @@
     -webkit-overflow-scrolling: touch;
     animation: fadeInModal .3s ease;
   }
+  /* O estúdio de foto abre POR CIMA dos cadastros de time e de liga. */
+  #fotoStudioOverlay{ z-index: 160; }
   @keyframes fadeInModal {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -4251,20 +4253,13 @@
       : `<div class="image-slot add-slot" onclick="document.getElementById('ligaFormFotoInput').click()"><div class="add-slot-inner"><span class="add-slot-plus">+</span><span class="add-slot-label">Foto</span></div></div>`;
   }
 
-  async function handleLigaFormFoto(event){
+  // Mesmo estúdio do cadastro de time (remover fundo + recorte + nitidez).
+  // O upload de verdade só acontece quando o usuário confirmar lá.
+  function handleLigaFormFoto(event){
     const file = event.target.files[0];
     event.target.value = '';
     if(!file) return;
-    const path = `${ADMIN_LOJA_ID}/liga-atleta-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
-    document.getElementById('ligaFormFotoGrid').innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
-    let arquivoParaEnviar = file;
-    try { arquivoParaEnviar = await comprimirImagem(file, 1000, 0.85); }
-    catch(e){ console.error('Não consegui comprimir a foto, enviando original', e); }
-    const { error } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, arquivoParaEnviar, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
-    if(error){ showToast('Erro ao enviar foto: ' + error.message, 'error'); renderLigaFormFoto(); return; }
-    const { data } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
-    ligaFormFotoUrl = data.publicUrl;
-    renderLigaFormFoto();
+    fotoStudioAbrir(file, 'liga');
   }
 
   async function saveLiga(){
@@ -4497,7 +4492,7 @@
     const file = event.target.files[0];
     event.target.value = '';
     if(!file) return;
-    fotoStudioAbrir(file);
+    fotoStudioAbrir(file, 'time');
   }
 
   // ============================================================
@@ -4514,8 +4509,13 @@
   let fotoStudioPos = { x: 0, y: 0, scale: 1 };
   let fotoStudioDrag = null;       // estado do arraste em andamento (ou null)
   let fotoStudioUpscaler = null;   // instância do UpscalerJS, criada uma vez só
+  // Para onde vai o resultado: 'time' (foto do jogador no cadastro de time)
+  // ou 'liga' (foto do atleta no cadastro de liga). Mesmo estúdio, mesmo
+  // padrão 1500x2500 — os dois cards do catálogo são retrato recortado por baixo.
+  let fotoStudioDestino = 'time';
 
-  async function fotoStudioAbrir(file){
+  async function fotoStudioAbrir(file, destino){
+    fotoStudioDestino = destino === 'liga' ? 'liga' : 'time';
     const url = URL.createObjectURL(file);
     fotoStudioBlobUrlOriginal = url;
     const imgOriginal = new Image();
@@ -5202,18 +5202,23 @@
   }
 
   async function fotoStudioEnviar(blob){
-    const path = `${ADMIN_LOJA_ID}/busto-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
-    document.getElementById('teamFotoBustGrid').innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
+    const ehLiga = fotoStudioDestino === 'liga';
+    const prefixo = ehLiga ? 'liga-atleta' : 'busto';
+    const path = `${ADMIN_LOJA_ID}/${prefixo}-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+    const gridId = ehLiga ? 'ligaFormFotoGrid' : 'teamFotoBustGrid';
+    const reRender = ehLiga ? renderLigaFormFoto : renderTeamFotoBustGrid;
+    document.getElementById(gridId).innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
 
     const { error: uploadError } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, blob, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
     if(uploadError){
       showToast('Erro ao enviar foto do jogador: ' + uploadError.message, 'error');
-      renderTeamFotoBustGrid();
+      reRender();
       return;
     }
     const { data: publicUrlData } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
-    teamFotoBustUrl = publicUrlData.publicUrl;
-    renderTeamFotoBustGrid();
+    if(ehLiga) ligaFormFotoUrl = publicUrlData.publicUrl;
+    else teamFotoBustUrl = publicUrlData.publicUrl;
+    reRender();
   }
 
   async function saveTeam(){
