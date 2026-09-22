@@ -3,177 +3,220 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manto Hub — catálogo profissional para lojistas de camisas</title>
-<meta name="description" content="Manto Hub: transforme seu WhatsApp de vendas em um catálogo profissional, com painel administrativo próprio.">
+<title>Manto Hub — catálogo de camisas de time pronto para vender</title>
+<meta name="description" content="Catálogo online para lojistas de camisas de futebol: já vem com centenas de camisas cadastradas, painel próprio e pedido pronto no WhatsApp.">
+<meta property="og:title" content="Manto Hub — seu catálogo de camisas pronto para vender">
+<meta property="og:description" content="Centenas de camisas já cadastradas, sua cor e sua logo, pedido organizado no WhatsApp.">
+<meta name="theme-color" content="#062A20">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ============================================================
+     TEMA — cores tiradas da própria logo (verde-gramado + menta).
+     Trocar a marca = trocar só estas variáveis.
+     ============================================================ */
   :root{
-    --bg:#000000;
-    --panel:#0d0d0d;
-    --panel-border:rgba(255,255,255,0.09);
-    --text:#f2f2f2;
-    --text-dim:#8a8f98;
-    --green:#00ff66;
-    --cyan:#22d3ee;
-    --grad:linear-gradient(115deg,var(--green),var(--cyan));
+    --campo:#062A20;        /* fundo: gramado à noite */
+    --campo-2:#0B3A2C;      /* superfícies */
+    --campo-3:#114A38;      /* bordas de destaque */
+    --menta:#35FFC0;        /* cor da marca */
+    --menta-escura:#00C98C;
+    --tinta:#04231A;        /* texto em cima da menta */
+    --giz:#EAF5EF;          /* texto principal / linhas de campo */
+    --giz-dim:#A3C2B6;      /* texto secundário */
+    --linha:rgba(234,245,239,0.14);
+    --raio:18px;
+    --largura:1080px;
+
+    /* nomes usados pelo checkout (mantidos para não mexer no fluxo do Pix) */
+    --panel:var(--campo-2);
+    --panel-border:var(--linha);
+    --text:var(--giz);
+    --text-dim:var(--giz-dim);
+    --green:var(--menta);
+    --grad:var(--menta);
   }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  html{scroll-behavior:smooth;}
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } }
   body{
-    background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
+    background:var(--campo); color:var(--giz);
+    font-family:'Barlow', system-ui, sans-serif; font-size:17px; line-height:1.55;
     -webkit-font-smoothing:antialiased; overflow-x:hidden;
   }
-  ::selection{ background:var(--green); color:#000; }
+  ::selection{ background:var(--menta); color:var(--tinta); }
   a{ color:inherit; }
-  .wrap{ max-width:640px; margin:0 auto; padding:0 24px; }
-  section{ position:relative; }
-  h1,h2,h3{ text-transform:uppercase; font-weight:800; letter-spacing:-0.01em; }
+  img{ max-width:100%; display:block; }
+  :focus-visible{ outline:3px solid var(--menta); outline-offset:3px; border-radius:6px; }
+  .wrap{ max-width:var(--largura); margin:0 auto; padding:0 22px; }
 
-  /* ---------- CABEÇALHO ---------- */
-  .topo{ padding:22px 0; border-bottom:1px solid var(--panel-border); }
-  .topo-inner{ display:flex; align-items:center; justify-content:space-between; }
-  .topo-logo{ height:45px; width:auto; display:block; }
+  h1, h2, h3{ font-family:'Anton', Impact, sans-serif; font-weight:400; letter-spacing:.005em; line-height:1.05; }
+  h2{ font-size:clamp(32px, 7vw, 52px); max-width:18ch; }
+  .intro{ color:var(--giz-dim); max-width:56ch; margin-top:14px; }
+
+  /* Linha de giz: divisória de seção com o círculo central do campo */
+  .giz{
+    position:relative; height:1px; background:var(--linha); margin:0 auto; max-width:var(--largura);
+  }
+  .giz::after{
+    content:''; position:absolute; left:50%; top:50%; width:46px; height:46px;
+    transform:translate(-50%,-50%); border:1px solid var(--linha); border-radius:50%;
+    background:var(--campo);
+  }
+  section{ padding:84px 0; }
 
   /* ---------- BOTÕES ---------- */
   .btn{
     display:inline-flex; align-items:center; justify-content:center; gap:10px;
-    border-radius:12px; padding:16px 24px; font-weight:800; font-size:13.5px;
-    text-transform:uppercase; letter-spacing:.03em;
-    text-decoration:none; cursor:pointer; border:none; white-space:nowrap;
+    border-radius:999px; padding:16px 26px; min-height:54px;
+    font-family:'Barlow', sans-serif; font-weight:700; font-size:16px;
+    text-decoration:none; cursor:pointer; border:2px solid transparent; white-space:nowrap;
+    transition:transform .15s ease, background-color .15s ease;
   }
-  .btn-principal{ background:var(--grad); color:#000; box-shadow:0 10px 34px -8px rgba(0,255,102,0.5); }
-  .btn-secundario{ background:transparent; border:1px solid var(--panel-border); color:var(--text); }
-  .btn svg{ width:18px; height:18px; flex-shrink:0; }
+  .btn:active{ transform:scale(.98); }
+  .btn-principal{ background:var(--menta); color:var(--tinta); }
+  .btn-principal:hover{ background:#6CFFD2; }
+  .btn-secundario{ background:transparent; border-color:var(--linha); color:var(--giz); }
+  .btn-secundario:hover{ border-color:var(--giz-dim); }
+  .btn svg{ width:20px; height:20px; flex-shrink:0; }
+  .ctas{ display:flex; flex-wrap:wrap; gap:12px; }
+  .ctas .btn{ flex:1 1 200px; }
+
+  /* ---------- TOPO ---------- */
+  .topo{ padding:18px 0; }
+  .topo .wrap{ display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .topo-logo{ height:40px; width:auto; }
+  .topo-entrar{ color:var(--giz-dim); text-decoration:none; font-weight:600; font-size:15px; padding:10px 4px; }
+  .topo-entrar:hover{ color:var(--giz); }
 
   /* ---------- HERO ---------- */
-  .hero{
-    padding:56px 0 48px;
-    background:radial-gradient(560px 320px at 15% -10%, rgba(0,255,102,0.14), transparent 60%),
-               radial-gradient(480px 300px at 100% 5%, rgba(34,211,238,0.12), transparent 60%);
-  }
-  .hero-kicker{
-    display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:var(--green);
-    background:rgba(0,255,102,0.08); border:1px solid rgba(0,255,102,0.28);
-    border-radius:999px; padding:7px 14px; margin-bottom:24px; text-transform:none; font-weight:600;
-  }
-  .hero-kicker .dot{ width:6px; height:6px; border-radius:50%; background:var(--green); }
-  .hero h1{ font-size:clamp(28px,7.5vw,40px); line-height:1.15; }
-  .hero p.lead{ text-transform:none; font-weight:400; color:var(--text-dim); font-size:16px; line-height:1.6; margin-top:18px; max-width:44ch; }
-  .hero-ctas{ display:flex; flex-wrap:wrap; gap:12px; margin-top:30px; }
+  .hero{ padding:28px 0 72px; }
+  .hero-grid{ display:grid; gap:40px; align-items:center; }
+  @media (min-width:900px){ .hero-grid{ grid-template-columns:1.05fr .95fr; gap:56px; } }
+  .hero h1{ font-size:clamp(44px, 11vw, 78px); max-width:12ch; }
+  .hero .lead{ color:var(--giz-dim); font-size:19px; max-width:40ch; margin:20px 0 30px; }
+  .hero-nota{ color:var(--giz-dim); font-size:14px; margin-top:16px; }
+  .hero-nota strong{ color:var(--giz); font-weight:600; }
 
-  /* ---------- MOCKUPS DE VÍDEO ---------- */
-  .mockups{
-    margin-top:52px; display:flex; gap:20px; overflow-x:auto; padding:6px 4px 18px;
-    scroll-snap-type:x mandatory; scrollbar-width:none;
+  /* Camisa de costas: o nome da loja vira o nome do jogador */
+  .camisa-box{
+    position:relative; background:var(--campo-2); border-radius:28px; padding:28px 22px 22px;
+    overflow:hidden;
   }
-  .mockups::-webkit-scrollbar{ display:none; }
-  .phone{
-    scroll-snap-align:start; flex-shrink:0; width:230px;
-    border:1px solid var(--panel-border); border-radius:30px; padding:10px;
-    background:linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015));
+  .camisa-box::before{ /* meia-lua da grande área, em giz */
+    content:''; position:absolute; left:50%; bottom:-120px; width:260px; height:260px;
+    transform:translateX(-50%); border:1px solid var(--linha); border-radius:50%;
   }
-  .phone-label{ font-size:12px; color:var(--text-dim); text-align:center; margin-bottom:10px; text-transform:none; font-weight:400; }
-  .phone-label b{ color:var(--text); font-weight:700; }
-  .phone-screen{
-    background:#050505; border-radius:20px; overflow:hidden; aspect-ratio:9/18.5;
-    border:1px solid rgba(255,255,255,0.06);
+  .camisa-svg{ position:relative; width:100%; max-width:360px; margin:0 auto; height:auto; }
+  .camisa-nome{ font-family:'Anton', sans-serif; fill:var(--campo); letter-spacing:.06em; }
+  .camisa-num{ font-family:'Anton', sans-serif; fill:var(--campo); }
+  .camisa-input{ position:relative; margin-top:18px; }
+  .camisa-input label{ display:block; font-size:14px; color:var(--giz-dim); margin-bottom:8px; }
+  .camisa-input input{
+    width:100%; background:var(--campo); border:1.5px solid var(--linha); border-radius:14px;
+    padding:14px 16px; color:var(--giz); font:600 17px 'Barlow', sans-serif; outline:none;
   }
-  .phone-screen video{ width:100%; height:100%; object-fit:cover; display:block; }
+  .camisa-input input:focus{ border-color:var(--menta); }
 
-  /* ---------- SEÇÃO GENÉRICA ---------- */
-  .secao{ padding:60px 0 8px; }
-  .section-head h2{ font-size:24px; line-height:1.25; }
-  .section-head p{ text-transform:none; font-weight:400; color:var(--text-dim); font-size:14.5px; line-height:1.6; margin-top:12px; max-width:48ch; }
+  /* ---------- CATÁLOGO PRONTO ---------- */
+  .numeros{ display:flex; flex-wrap:wrap; gap:14px 40px; margin-top:34px; }
+  .numero b{ display:block; font-family:'Anton', sans-serif; font-weight:400; font-size:clamp(56px, 14vw, 88px); line-height:1; color:var(--menta); }
+  .numero span{ color:var(--giz-dim); font-size:16px; }
+  .vitrine-faixa{ margin-top:44px; overflow:hidden; mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .vitrine-trilho{ display:flex; gap:14px; width:max-content; animation:rolar 60s linear infinite; }
+  .vitrine-faixa:hover .vitrine-trilho{ animation-play-state:paused; }
+  @media (prefers-reduced-motion: reduce){ .vitrine-trilho{ animation:none; } .vitrine-faixa{ overflow-x:auto; } }
+  @keyframes rolar{ to{ transform:translateX(-50%); } }
+  .vitrine-item{ width:150px; flex-shrink:0; }
+  .vitrine-item img{ width:150px; height:150px; object-fit:cover; border-radius:16px; background:#fff; }
+  .vitrine-item span{ display:block; font-size:13px; color:var(--giz-dim); margin-top:8px; line-height:1.3; }
 
-  /* ---------- CARDS DE BENEFÍCIO ---------- */
-  .card-lista{ margin-top:30px; display:flex; flex-direction:column; gap:12px; }
-  .card{
-    background:var(--panel); border:1px solid var(--panel-border); border-radius:16px;
-    padding:20px; display:flex; gap:16px; align-items:flex-start;
+  /* ---------- PASSOS (sequência real, por isso numerados) ---------- */
+  .passos{ list-style:none; margin-top:40px; display:grid; gap:0; counter-reset:passo; }
+  @media (min-width:900px){ .passos{ grid-template-columns:repeat(3,1fr); gap:32px; } }
+  .passos li{ counter-increment:passo; padding:26px 0; border-top:1px solid var(--linha); }
+  .passos li::before{
+    content:counter(passo); display:block; font-family:'Anton', sans-serif; font-size:44px; line-height:1;
+    color:var(--menta); margin-bottom:12px;
   }
-  .card .ico{
-    width:42px; height:42px; border-radius:12px; flex-shrink:0;
-    background:rgba(0,255,102,0.10); border:1px solid rgba(0,255,102,0.28);
-    display:flex; align-items:center; justify-content:center; color:var(--green);
-  }
-  .card .ico svg{ width:21px; height:21px; }
-  .card h3{ font-size:14.5px; margin-bottom:5px; }
-  .card p{ text-transform:none; font-weight:400; font-size:13.5px; color:var(--text-dim); line-height:1.55; }
+  .passos h3{ font-size:26px; margin-bottom:8px; }
+  .passos p{ color:var(--giz-dim); }
 
-  /* ---------- COMPARATIVO ---------- */
-  .comparativo{
-    margin-top:30px; border:1px solid var(--panel-border); border-radius:18px; overflow:hidden;
-    background:var(--panel);
+  /* ---------- RECURSOS ---------- */
+  .recursos{ margin-top:40px; display:grid; gap:0 48px; }
+  @media (min-width:760px){ .recursos{ grid-template-columns:1fr 1fr; } }
+  .recurso{ display:grid; grid-template-columns:28px 1fr; gap:14px; padding:20px 0; border-top:1px solid var(--linha); }
+  .recurso svg{ width:26px; height:26px; color:var(--menta); margin-top:3px; }
+  .recurso h3{ font-family:'Barlow', sans-serif; font-weight:700; font-size:18px; line-height:1.3; letter-spacing:0; }
+  .recurso p{ color:var(--giz-dim); font-size:16px; margin-top:4px; }
+
+  /* ---------- ANTES / DEPOIS ---------- */
+  .comparar{ margin-top:36px; border:1px solid var(--linha); border-radius:var(--raio); overflow:hidden; }
+  .comparar-linha{ display:grid; grid-template-columns:1fr 1fr; }
+  .comparar-linha + .comparar-linha{ border-top:1px solid var(--linha); }
+  .comparar-linha > div{ padding:16px 18px; font-size:16px; }
+  .comparar-linha > div:first-child{ color:var(--giz-dim); }
+  .comparar-linha > div:last-child{ background:var(--campo-2); }
+  .comparar-cab > div{ font-weight:700; font-size:15px; }
+  .comparar-cab > div:first-child{ color:var(--giz-dim); }
+  .comparar-cab > div:last-child{ color:var(--menta); }
+
+  /* ---------- LOJA REAL ---------- */
+  .loja-grid{ display:grid; gap:44px; align-items:center; }
+  @media (min-width:900px){ .loja-grid{ grid-template-columns:1fr auto; } }
+  .celular{
+    width:300px; height:620px; margin:0 auto; border-radius:44px; padding:12px;
+    background:#020D09; border:1px solid var(--campo-3); position:relative;
   }
-  .comp-head{ display:grid; grid-template-columns:1.15fr 1fr 1fr; }
-  .comp-head div{ padding:16px 14px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
-  .comp-head .col-sozinho{ color:var(--text-dim); }
-  .comp-head .col-hub{ color:var(--green); background:rgba(0,255,102,0.06); }
-  .comp-row{ display:grid; grid-template-columns:1.15fr 1fr 1fr; border-top:1px solid var(--panel-border); }
-  .comp-row > div{ padding:14px; font-size:12.5px; text-transform:none; font-weight:500; line-height:1.4; }
-  .comp-row .item{ color:var(--text); font-weight:600; }
-  .comp-row .neg{ color:var(--text-dim); }
-  .comp-row .pos{ color:var(--green); background:rgba(0,255,102,0.045); font-weight:700; }
-  .comp-row .pos svg, .comp-row .neg svg{ width:14px; height:14px; margin-right:5px; vertical-align:-2px; }
+  .celular-tela{ width:100%; height:100%; border-radius:33px; overflow:hidden; background:#0A0D10; position:relative; }
+  .celular iframe{
+    width:375px; height:745px; border:0; transform:scale(.736); transform-origin:0 0;
+  }
+  .loja-link{ display:inline-block; margin-top:22px; color:var(--menta); font-weight:700; text-decoration:underline; text-underline-offset:4px; }
 
   /* ---------- PLANOS ---------- */
-  .planos-tabs{ display:flex; gap:8px; margin-top:30px; background:var(--panel); border:1px solid var(--panel-border); border-radius:12px; padding:5px; }
-  .plano-tab{
-    flex:1; text-align:center; padding:11px 8px; border-radius:8px; font-size:12.5px; font-weight:700;
-    text-transform:uppercase; letter-spacing:.02em; color:var(--text-dim); cursor:pointer; border:none; background:none;
+  .planos{ margin-top:40px; display:grid; gap:16px; }
+  @media (min-width:900px){ .planos{ grid-template-columns:repeat(3,1fr); align-items:stretch; } }
+  .plano{
+    border:1px solid var(--linha); border-radius:var(--raio); padding:28px 24px;
+    display:flex; flex-direction:column;
   }
-  .plano-tab.ativo{ background:var(--grad); color:#000; }
-  .plano-card{
-    margin-top:18px; border:1px solid var(--panel-border); border-radius:18px; padding:26px;
-    background:var(--panel); text-align:center;
+  .plano.fundador{ background:var(--campo-2); border:2px solid var(--menta); }
+  .plano-selo{
+    align-self:flex-start; background:var(--menta); color:var(--tinta); font-weight:700; font-size:13px;
+    border-radius:999px; padding:5px 12px; margin-bottom:16px;
   }
-  .plano-preco{ font-size:40px; font-weight:800; }
-  .plano-preco span{ font-size:15px; font-weight:600; color:var(--text-dim); text-transform:none; }
-  .plano-obs{ text-transform:none; font-weight:500; font-size:12.5px; color:var(--green); margin-top:6px; min-height:16px; }
-  .plano-card .btn{ width:100%; margin-top:20px; }
+  .plano h3{ font-size:30px; }
+  .plano-preco{ font-family:'Anton', sans-serif; font-size:52px; line-height:1; margin-top:18px; }
+  .plano-preco small{ font-family:'Barlow', sans-serif; font-size:17px; color:var(--giz-dim); font-weight:500; margin-left:4px; }
+  .plano-detalhe{ color:var(--giz-dim); font-size:15px; margin-top:8px; min-height:46px; }
+  .plano .btn{ margin-top:22px; width:100%; }
+  .planos-rodape{ color:var(--giz-dim); font-size:15px; margin-top:22px; max-width:70ch; }
 
-  /* ---------- DEPOIMENTOS ---------- */
-  .depo-card{
-    background:var(--panel); border:1px solid var(--panel-border); border-radius:16px; padding:20px;
+  /* ---------- DÚVIDAS ---------- */
+  .duvidas{ margin-top:32px; max-width:760px; }
+  .duvidas details{ border-top:1px solid var(--linha); }
+  .duvidas details:last-child{ border-bottom:1px solid var(--linha); }
+  .duvidas summary{
+    list-style:none; cursor:pointer; padding:20px 36px 20px 0; position:relative;
+    font-weight:700; font-size:18px;
   }
-  .depo-stars{ display:flex; gap:3px; color:var(--green); margin-bottom:12px; }
-  .depo-stars svg{ width:15px; height:15px; }
-  .depo-texto{ text-transform:none; font-weight:400; font-size:13.5px; color:var(--text); line-height:1.6; }
-  .depo-autor{ text-transform:none; font-weight:700; font-size:12.5px; color:var(--text-dim); margin-top:14px; }
-
-  /* ---------- FAIXA ---------- */
-  .faixa{ margin:60px 0; padding:26px 0; border-top:1px solid var(--panel-border); border-bottom:1px solid var(--panel-border); display:flex; gap:28px; }
-  .faixa .item{ flex:1; }
-  .faixa .valor{ font-size:23px; font-weight:800; background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
-  .faixa .label{ text-transform:none; font-weight:400; font-size:12px; color:var(--text-dim); margin-top:4px; line-height:1.4; }
-
-  /* ---------- CTA FINAL ---------- */
-  .cta-final{ padding:8px 0 88px; text-align:center; }
-  .cta-final h2{ font-size:24px; line-height:1.3; }
-  .cta-final p{ text-transform:none; font-weight:400; color:var(--text-dim); font-size:14px; margin:14px 0 26px; }
-  .cta-final .btn{ width:100%; max-width:380px; }
-
-  footer{ padding:22px 0 100px; text-align:center; color:var(--text-dim); font-size:12px; }
-  footer .footer-logo{ height:22px; width:auto; display:block; margin:0 auto 10px; }
-
-  /* ---------- BARRA FIXA ---------- */
-  .barra-fixa{
-    position:fixed; left:0; right:0; bottom:0; z-index:50;
-    padding:14px 20px calc(14px + env(safe-area-inset-bottom));
-    background:rgba(0,0,0,0.9); backdrop-filter:blur(12px);
-    border-top:1px solid var(--panel-border); display:flex; justify-content:center;
+  .duvidas summary::-webkit-details-marker{ display:none; }
+  .duvidas summary::after{
+    content:'+'; position:absolute; right:4px; top:50%; transform:translateY(-50%);
+    font-size:26px; font-weight:500; color:var(--menta); transition:transform .2s;
   }
-  .barra-fixa .btn{ width:100%; max-width:560px; }
+  .duvidas details[open] summary::after{ transform:translateY(-50%) rotate(45deg); }
+  .duvidas details p{ color:var(--giz-dim); padding:0 0 20px; max-width:62ch; }
 
-  @media (min-width:640px){
-    .hero h1{ max-width:16ch; }
-    .card-lista{ display:grid; grid-template-columns:1fr 1fr; }
-  }
-  @media (max-width:420px){
-    .comp-head div, .comp-row > div{ padding:10px 8px; font-size:11px; }
-  }
+  /* ---------- FECHAMENTO ---------- */
+  .final{ text-align:left; }
+  .final h2{ max-width:16ch; }
+  .final .ctas{ margin-top:30px; max-width:560px; }
+  .rodape{ padding:34px 0 44px; color:var(--giz-dim); font-size:14px; border-top:1px solid var(--linha); }
+  .rodape .wrap{ display:flex; flex-wrap:wrap; gap:14px 24px; align-items:center; justify-content:space-between; }
+  .rodape img{ height:30px; width:auto; }
 
   /* ============================================================
      CHECKOUT — modal estilo Stripe: escuro, limpo, um passo por vez.
@@ -201,7 +244,7 @@
   }
   .checkout-plano-resumo{
     display:flex; align-items:center; justify-content:space-between;
-    background:rgba(0,255,102,0.06); border:1px solid rgba(0,255,102,0.22);
+    background:rgba(53,255,192,0.06); border:1px solid rgba(53,255,192,0.22);
     border-radius:12px; padding:13px 16px; margin-bottom:20px;
   }
   .checkout-plano-resumo .nome{ font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; color:var(--text-dim); }
@@ -209,10 +252,10 @@
   .checkout-field{ margin-bottom:14px; }
   .checkout-field label{ display:block; font-size:12.5px; color:var(--text-dim); margin-bottom:6px; text-transform:none; font-weight:500; }
   .checkout-field input{
-    width:100%; background:#000; border:1px solid var(--panel-border); border-radius:10px;
+    width:100%; background:var(--campo); border:1px solid var(--panel-border); border-radius:10px;
     padding:13px 14px; color:var(--text); outline:none; font-size:15px; transition:border-color .15s, box-shadow .15s;
   }
-  .checkout-field input:focus{ border-color:var(--green); box-shadow:0 0 0 3px rgba(0,255,102,0.14); }
+  .checkout-field input:focus{ border-color:var(--green); box-shadow:0 0 0 3px rgba(53,255,192,0.14); }
   .checkout-row{ display:flex; gap:10px; }
   .checkout-row .checkout-field{ flex:1; }
   .checkout-erro{
@@ -235,7 +278,7 @@
   }
   .checkout-cronometro b{ color:var(--green); font-variant-numeric:tabular-nums; }
   .checkout-copia-cola{
-    display:flex; align-items:center; gap:8px; background:#000; border:1px solid var(--panel-border);
+    display:flex; align-items:center; gap:8px; background:var(--campo); border:1px solid var(--panel-border);
     border-radius:10px; padding:10px 10px 10px 14px; margin-bottom:16px;
   }
   .checkout-copia-cola input{
@@ -261,7 +304,7 @@
     text-align:center; padding:10px 0;
   }
   .checkout-status-pago .check{
-    width:56px; height:56px; border-radius:50%; background:rgba(0,255,102,0.12); border:1.5px solid var(--green);
+    width:56px; height:56px; border-radius:50%; background:rgba(53,255,192,0.12); border:1.5px solid var(--green);
     color:var(--green); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;
   }
   .checkout-status-pago .check svg{ width:28px; height:28px; }
@@ -272,197 +315,259 @@
 <body>
 
 <header class="topo">
-  <div class="wrap topo-inner">
-    <img src="logo.svg" alt="Manto Hub" class="topo-logo">
+  <div class="wrap">
+    <img src="logo.svg" alt="Manto Hub" class="topo-logo" width="104" height="40">
+    <a class="topo-entrar" href="admin.html">Entrar no painel</a>
   </div>
 </header>
 
+<main>
+
+<!-- ============ HERO ============ -->
 <section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Seu catálogo de camisas, pronto para vender hoje</h1>
+      <p class="lead">
+        O Manto Hub já vem com as camisas cadastradas, com foto, tamanho e descrição.
+        Você coloca sua logo e seu preço, manda o link, e o pedido chega pronto no seu WhatsApp.
+      </p>
+      <div class="ctas">
+        <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Assinar com Pix</button>
+        <a class="btn btn-secundario" href="https://wa.me/5511961647823?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20Manto%20Hub" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>
+          Tirar dúvidas no WhatsApp
+        </a>
+      </div>
+      <p class="hero-nota"><strong>Sem taxa por venda.</strong> Você paga só a assinatura, a partir de R$ 41,58 por mês.</p>
+    </div>
+
+    <div class="camisa-box">
+      <svg class="camisa-svg" viewBox="0 0 400 420" role="img" aria-labelledby="camisaTitulo">
+        <title id="camisaTitulo">Camisa de costas com o nome da sua loja</title>
+        <path d="M130 30 Q200 58 270 30 L352 64 Q370 72 374 92 L392 176 Q394 188 382 192 L330 206 L330 396 Q330 408 318 408 L82 408 Q70 408 70 396 L70 206 L18 192 Q6 188 8 176 L26 92 Q30 72 48 64 Z" fill="#EAF5EF"/>
+        <path d="M130 30 Q200 58 270 30 Q262 40 200 48 Q138 40 130 30 Z" fill="#35FFC0"/>
+        <path d="M26 92 L48 64 L70 76 L52 186 L18 192 Q6 188 8 176 Z M374 92 L352 64 L330 76 L348 186 L382 192 Q394 188 392 176 Z" fill="#D5E6DE"/>
+        <text id="camisaNome" class="camisa-nome" x="200" y="128" text-anchor="middle" font-size="40">SUA LOJA</text>
+        <text class="camisa-num" x="200" y="318" text-anchor="middle" font-size="190">10</text>
+      </svg>
+      <div class="camisa-input">
+        <label for="camisaNomeInput">Teste com o nome da sua loja</label>
+        <input id="camisaNomeInput" type="text" maxlength="16" placeholder="Ex.: Camisa e Cabide" autocomplete="off">
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="giz" aria-hidden="true"></div>
+
+<!-- ============ CATÁLOGO PRONTO ============ -->
+<section id="catalogo">
   <div class="wrap">
-    <div class="hero-kicker"><span class="dot"></span> catálogo digital + painel próprio</div>
-    <h1>Pare de vender camisa só no direct. Venda num catálogo que parece de marca grande.</h1>
-    <p class="lead">Seu cliente escolhe o time, o tamanho e a personalização sozinho — e o pedido cai pronto no seu WhatsApp. Você cadastra tudo isso pelo seu próprio painel, sem depender de ninguém.</p>
-    <div class="hero-ctas">
-      <a class="btn btn-principal" href="#" onclick="abrirCheckout('mensal'); return false;">
-        Quero ativar agora
-      </a>
-      <a class="btn btn-secundario" href="https://thiagosgrdev.github.io/catalogo-demo/catalogo-template.html" target="_blank" rel="noopener">Ver demonstrativo</a>
+    <h2>Você não começa do zero</h2>
+    <p class="intro">
+      Catálogo genérico te entrega uma página vazia. No Manto Hub as camisas já estão lá, separadas por liga e por time.
+      Se quiser, você cadastra também as que só você vende.
+    </p>
+    <div class="numeros">
+      <div class="numero"><b id="numProdutos">239</b><span>camisas cadastradas</span></div>
+      <div class="numero"><b id="numTimes">69</b><span>times e seleções</span></div>
     </div>
-
-    <div class="mockups" id="demonstrativo">
-      <div class="phone">
-        <div class="phone-label">A vitrine do seu <b>cliente</b></div>
-        <div class="phone-screen">
-          <video autoplay loop muted playsinline><source src="video-catalogo.mp4" type="video/mp4"></video>
-        </div>
-      </div>
-      <div class="phone">
-        <div class="phone-label">O painel que é só <b>seu</b></div>
-        <div class="phone-screen">
-          <video autoplay loop muted playsinline><source src="video-painel.mp4" type="video/mp4"></video>
-        </div>
-      </div>
-    </div>
+  </div>
+  <div class="vitrine-faixa" id="vitrineFaixa" hidden>
+    <div class="vitrine-trilho" id="vitrineTrilho"></div>
   </div>
 </section>
 
-<section class="secao" id="painel">
+<div class="giz" aria-hidden="true"></div>
+
+<!-- ============ COMO FUNCIONA ============ -->
+<section id="como-funciona">
   <div class="wrap">
-    <div class="section-head">
-      <h2>O painel faz o trabalho pesado — você só cadastra.</h2>
-      <p>Nada de esperar orçamento ou mexer em código toda vez que chega camisa nova. É tudo pelo celular, na hora.</p>
-    </div>
-    <div class="card-lista">
-      <div class="card">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg></div>
-        <div><h3>Produtos em minutos</h3><p>Foto, preço, tamanhos e tags — cadastra um produto novo sem depender de ninguém.</p></div>
-      </div>
-      <div class="card">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3v18M3.5 12h17"/></svg></div>
-        <div><h3>Categorias do seu jeito</h3><p>Crie uma categoria nova sem esperar atualização do site.</p></div>
-      </div>
-      <div class="card">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/></svg></div>
-        <div><h3>Escudos e times seus</h3><p>Sobe o escudo, associa à categoria certa. Aparece na hora na navegação.</p></div>
-      </div>
-      <div class="card">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 13h6M9 17h6"/></svg></div>
-        <div><h3>Pedido pronto no WhatsApp</h3><p>Cliente monta o carrinho e escolhe entrega — a mensagem chega organizada.</p></div>
-      </div>
-      <div class="card">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.6 5.9L21 9.6l-4.6 4.3L17.6 21 12 17.7 6.4 21l1.2-7.1L3 9.6l6.4-.7L12 3Z"/></svg></div>
-        <div><h3>Cor e logo da sua marca</h3><p>Você escolhe a cor principal e sobe sua logo — não parece template genérico.</p></div>
-      </div>
-      <div class="card">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2.5"/><path d="M9 18h6"/></svg></div>
-        <div><h3>Feito pra celular</h3><p>Você e seu cliente usam no dia a dia pelo telefone — foi desenhado pra isso.</p></div>
-      </div>
-    </div>
+    <h2>Do Pix ao primeiro pedido</h2>
+    <ol class="passos">
+      <li>
+        <h3>Assine e crie sua conta</h3>
+        <p>Preencha seus dados e pague com Pix. A loja libera sozinha assim que o pagamento cai.</p>
+      </li>
+      <li>
+        <h3>Deixe com a sua cara</h3>
+        <p>Suba sua logo, escolha a cor, defina seus preços e o frete. Tudo pelo celular.</p>
+      </li>
+      <li>
+        <h3>Mande o link</h3>
+        <p>Coloque na bio e no status. O cliente escolhe time, tamanho e personalização, e o pedido chega organizado no seu WhatsApp.</p>
+      </li>
+    </ol>
   </div>
 </section>
 
-<section class="secao">
+<div class="giz" aria-hidden="true"></div>
+
+<!-- ============ RECURSOS ============ -->
+<section id="recursos">
   <div class="wrap">
-    <div class="section-head">
-      <h2>Fazendo sozinho custa mais do que parece</h2>
-      <p>Compare o que você gasta (tempo e dinheiro) montando algo por conta própria contra ter o Manto Hub pronto.</p>
-    </div>
-    <div class="comparativo">
-      <div class="comp-head">
-        <div></div>
-        <div class="col-sozinho">Sozinho</div>
-        <div class="col-hub">Manto Hub</div>
+    <h2>Feito para quem vende camisa de time</h2>
+    <p class="intro">Não é um catálogo de qualquer coisa adaptado. Cada parte foi pensada para camisa de futebol.</p>
+    <div class="recursos">
+      <div class="recurso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.4 6.6 16 4l-1.5 1.5a3.5 3.5 0 0 1-5 0L8 4 3.6 6.6 5 11l2-1v10h10V10l2 1z"/></svg>
+        <div><h3>Personalização com nome e número</h3><p>O cliente escreve nome e número nas costas, e você define quanto cobra por isso.</p></div>
       </div>
-      <div class="comp-row">
-        <div class="item">Catálogo profissional</div>
-        <div class="neg">Contratar dev, semanas de espera</div>
-        <div class="pos">Pronto em dias</div>
+      <div class="recurso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <div><h3>Seu preço, do seu jeito</h3><p>Um preço por tipo de camisa (torcedor, jogador, retrô) ou um preço diferente para cada produto.</p></div>
       </div>
-      <div class="comp-row">
-        <div class="item">Atualizar produto novo</div>
-        <div class="neg">Depende de terceiro toda vez</div>
-        <div class="pos">Você mesmo, na hora</div>
+      <div class="recurso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+        <div><h3>Ajuste qualquer camisa do catálogo</h3><p>Mude título, tamanhos e acrescente suas próprias fotos. A mudança vale só na sua loja.</p></div>
       </div>
-      <div class="comp-row">
-        <div class="item">Identidade visual</div>
-        <div class="neg">Template genérico</div>
-        <div class="pos">Sua cor, sua logo</div>
+      <div class="recurso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>
+        <div><h3>Estoque por tamanho, se quiser</h3><p>Tamanho zerado aparece como "Esgotado" e o último como "Resta 1". Quem vende sob encomenda deixa desligado.</p></div>
       </div>
-      <div class="comp-row">
-        <div class="item">Gestão de pedidos</div>
-        <div class="neg">Zap bagunçado, sem padrão</div>
-        <div class="pos">Pedido organizado direto no zap</div>
+      <div class="recurso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <div><h3>Frete do seu jeito</h3><p>Motoboy na sua região e PAC ou Sedex para o resto do país, cada um com o preço que você definir.</p></div>
       </div>
-      <div class="comp-row">
-        <div class="item">Taxa por venda</div>
-        <div class="neg">Comum em plataforma pronta</div>
-        <div class="pos">Nenhuma</div>
+      <div class="recurso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/></svg>
+        <div><h3>Pedido pronto no WhatsApp</h3><p>Camisa, tamanho, personalização, quantidade e frete chegam numa mensagem só. Nada de pergunta repetida.</p></div>
+      </div>
+      <div class="recurso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="19" cy="13" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="10" cy="19" r="2.5"/></svg>
+        <div><h3>Sua cor e sua logo</h3><p>Tema claro ou escuro e a cor principal que você quiser. O cliente vê a sua marca, não a nossa.</p></div>
+      </div>
+      <div class="recurso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <div><h3>Fotos padronizadas sem editor</h3><p>O painel tira o fundo da foto do jogador e deixa todas no mesmo tamanho e enquadramento.</p></div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="secao" id="planos">
+<div class="giz" aria-hidden="true"></div>
+
+<!-- ============ ANTES / DEPOIS ============ -->
+<section id="comparar">
   <div class="wrap">
-    <div class="section-head">
-      <h2>Escolha o plano</h2>
-      <p>Valores de exemplo — ajuste pro que fizer sentido pra sua operação antes de publicar.</p>
-    </div>
-
-    <div class="planos-tabs">
-      <button class="plano-tab ativo" data-plano="mensal" onclick="trocarPlano('mensal')">Mensal</button>
-      <button class="plano-tab" data-plano="trimestral" onclick="trocarPlano('trimestral')">Trimestral</button>
-      <button class="plano-tab" data-plano="anual" onclick="trocarPlano('anual')">Anual</button>
-    </div>
-
-    <div class="plano-card">
-      <div class="plano-preco" id="planoPreco">R$ 97<span>/mês</span></div>
-      <div class="plano-obs" id="planoObs">&nbsp;</div>
-      <a class="btn btn-principal" href="#" onclick="abrirCheckout(planoAtual); return false;">Quero ativar agora</a>
+    <h2>Vender só pelo direct cansa</h2>
+    <div class="comparar" role="table" aria-label="Vender só pelo direct comparado com o Manto Hub">
+      <div class="comparar-linha comparar-cab" role="row"><div role="columnheader">Só no direct</div><div role="columnheader">Com o Manto Hub</div></div>
+      <div class="comparar-linha" role="row"><div role="cell">Cliente pergunta preço e tamanho, um por um</div><div role="cell">Cliente vê preço, tamanho e estoque sozinho</div></div>
+      <div class="comparar-linha" role="row"><div role="cell">Você manda foto por foto</div><div role="cell">Um link com todas as camisas</div></div>
+      <div class="comparar-linha" role="row"><div role="cell">Pedido espalhado na conversa</div><div role="cell">Pedido organizado numa mensagem</div></div>
+      <div class="comparar-linha" role="row"><div role="cell">Você cadastra tudo do zero</div><div role="cell">Camisas já cadastradas</div></div>
     </div>
   </div>
 </section>
 
-<section class="secao">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>Quem já usa</h2>
-      <p>Depoimentos de exemplo — troque pelos comentários reais dos seus clientes antes de publicar.</p>
+<div class="giz" aria-hidden="true"></div>
+
+<!-- ============ LOJA REAL ============ -->
+<section id="loja-real">
+  <div class="wrap loja-grid">
+    <div>
+      <h2>Uma loja de verdade rodando agora</h2>
+      <p class="intro">
+        A Manto Dez Sports é a loja de quem criou o Manto Hub. O sistema nasceu para vender camisa de verdade
+        e só depois virou produto para outros lojistas. Mexa na vitrine: é a mesma que o seu cliente vai ver.
+      </p>
+      <a class="loja-link" href="catalogo-template.html?loja=manto-dez-sports" target="_blank" rel="noopener">Abrir a vitrine da Manto Dez em tela cheia</a>
     </div>
-    <div class="card-lista">
-      <div class="depo-card">
-        <div class="depo-stars">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.6 5.9L19 7.6l-4.6 4.3L15.6 19 10 15.7 4.4 19l1.2-7.1L1 7.6l6.4-.7L10 1Z"/></svg>
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.6 5.9L19 7.6l-4.6 4.3L15.6 19 10 15.7 4.4 19l1.2-7.1L1 7.6l6.4-.7L10 1Z"/></svg>
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.6 5.9L19 7.6l-4.6 4.3L15.6 19 10 15.7 4.4 19l1.2-7.1L1 7.6l6.4-.7L10 1Z"/></svg>
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.6 5.9L19 7.6l-4.6 4.3L15.6 19 10 15.7 4.4 19l1.2-7.1L1 7.6l6.4-.7L10 1Z"/></svg>
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.6 5.9L19 7.6l-4.6 4.3L15.6 19 10 15.7 4.4 19l1.2-7.1L1 7.6l6.4-.7L10 1Z"/></svg>
-        </div>
-        <div class="depo-texto">"Depoimento de exemplo — substitua por um comentário real de cliente sobre a experiência com o catálogo."</div>
-        <div class="depo-autor">— Loja Exemplo</div>
-      </div>
-      <div class="depo-card">
-        <div class="depo-stars">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.6 5.9L19 7.6l-4.6 4.3L15.6 19 10 15.7 4.4 19l1.2-7.1L1 7.6l6.4-.7L10 1Z"/></svg>
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.6 5.9L19 7.6l-4.6 4.3L15.6 19 10 15.7 4.4 19l1.2-7.1L1 7.6l6.4-.7L10 1Z"/></svg>
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.6 5.9L19 7.6l-4.6 4.3L15.6 19 10 15.7 4.4 19l1.2-7.1L1 7.6l6.4-.7L10 1Z"/></svg>
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.6 5.9L19 7.6l-4.6 4.3L15.6 19 10 15.7 4.4 19l1.2-7.1L1 7.6l6.4-.7L10 1Z"/></svg>
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.6 5.9L19 7.6l-4.6 4.3L15.6 19 10 15.7 4.4 19l1.2-7.1L1 7.6l6.4-.7L10 1Z"/></svg>
-        </div>
-        <div class="depo-texto">"Depoimento de exemplo — substitua por um comentário real de cliente sobre a experiência com o painel."</div>
-        <div class="depo-autor">— Loja Exemplo</div>
+    <div class="celular">
+      <div class="celular-tela">
+        <iframe src="catalogo-template.html?loja=manto-dez-sports" title="Vitrine da Manto Dez Sports" loading="lazy"></iframe>
       </div>
     </div>
   </div>
 </section>
 
-<section class="wrap">
-  <div class="faixa">
-    <div class="item"><div class="valor">100%</div><div class="label">seu — sem mensalidade de plataforma de terceiro</div></div>
-    <div class="item"><div class="valor">0</div><div class="label">linhas de código pra cadastrar um produto novo</div></div>
-    <div class="item"><div class="valor">1</div><div class="label">painel só seu pra gerenciar tudo</div></div>
-  </div>
-</section>
+<div class="giz" aria-hidden="true"></div>
 
-<section class="cta-final">
+<!-- ============ PLANOS ============ -->
+<section id="planos">
   <div class="wrap">
-    <h2>Sua próxima camisa vendida já pode vir de um catálogo com a sua cara</h2>
-    <p>Manda uma mensagem e a gente monta o seu.</p>
-    <a class="btn btn-principal" href="https://wa.me/5511961647823?text=Ol%C3%A1%2C%20quero%20meu%20cat%C3%A1logo%20profissional" target="_blank" rel="noopener">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.07L2 22l5.07-1.32A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.1-.43-4.4-1.18l-.32-.18-3.1.8.83-3.02-.2-.32A7.94 7.94 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8zm4.4-5.9c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.55.12-.16.24-.63.78-.77.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.04.14-1.15-.06-.1-.22-.16-.46-.28z"/></svg>
-      Falar no WhatsApp agora
-    </a>
+    <h2>Escolha o plano</h2>
+    <p class="intro">Todos os planos têm tudo. Muda só como você paga.</p>
+    <div class="planos">
+      <div class="plano fundador">
+        <span class="plano-selo">Preço de fundador</span>
+        <h3>Mensal</h3>
+        <div class="plano-preco">R$ 49,90<small>/mês</small></div>
+        <p class="plano-detalhe">Os 20 primeiros lojistas mantêm esse valor enquanto a assinatura estiver ativa.</p>
+        <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Assinar mensal</button>
+      </div>
+      <div class="plano">
+        <h3>Trimestral</h3>
+        <div class="plano-preco">R$ 44,97<small>/mês</small></div>
+        <p class="plano-detalhe">R$ 134,90 cobrado a cada 3 meses. 10% mais barato que o mensal.</p>
+        <button class="btn btn-secundario" type="button" onclick="abrirCheckout('trimestral')">Assinar trimestral</button>
+      </div>
+      <div class="plano">
+        <h3>Anual</h3>
+        <div class="plano-preco">R$ 41,58<small>/mês</small></div>
+        <p class="plano-detalhe">R$ 499,00 cobrado uma vez por ano. Equivale a 2 meses grátis.</p>
+        <button class="btn btn-secundario" type="button" onclick="abrirCheckout('anual')">Assinar anual</button>
+      </div>
+    </div>
+    <p class="planos-rodape">Pagamento por Pix. Sem taxa por venda e sem comissão: o dinheiro do seu cliente vai direto para você.</p>
   </div>
 </section>
 
-<footer class="wrap">
-  <img src="logo.svg" alt="Manto Hub" class="footer-logo">
-  © <span id="anoAtual">2026</span> — feito sob medida para lojistas de camisas.
+<div class="giz" aria-hidden="true"></div>
+
+<!-- ============ DÚVIDAS ============ -->
+<section id="duvidas">
+  <div class="wrap">
+    <h2>Dúvidas comuns</h2>
+    <div class="duvidas">
+      <details>
+        <summary>Preciso ter CNPJ?</summary>
+        <p>Não. Dá para assinar com CPF.</p>
+      </details>
+      <details>
+        <summary>O dinheiro das vendas passa pelo Manto Hub?</summary>
+        <p>Não. O pedido chega no seu WhatsApp e você recebe do cliente do jeito que já recebe hoje. Não existe comissão por venda.</p>
+      </details>
+      <details>
+        <summary>Sou obrigado a vender as camisas que já vêm cadastradas?</summary>
+        <p>Não. Você esconde as que não quer mostrar e cadastra as suas próprias, com suas fotos e seu preço.</p>
+      </details>
+      <details>
+        <summary>Preciso de computador?</summary>
+        <p>Não. O painel e a vitrine foram feitos para funcionar no celular.</p>
+      </details>
+      <details>
+        <summary>Posso trocar de plano depois?</summary>
+        <p>Pode. A troca é feita pelo próprio painel e vale a partir da próxima cobrança.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<div class="giz" aria-hidden="true"></div>
+
+<!-- ============ FECHAMENTO ============ -->
+<section class="final">
+  <div class="wrap">
+    <h2>Sua próxima venda pode sair de um link, não de vinte mensagens</h2>
+    <div class="ctas">
+      <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Assinar com Pix</button>
+      <a class="btn btn-secundario" href="https://wa.me/5511961647823?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20Manto%20Hub" target="_blank" rel="noopener">Tirar dúvidas no WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="rodape">
+  <div class="wrap">
+    <img src="logo.svg" alt="Manto Hub" width="78" height="30">
+    <span>© <span id="anoAtual">2026</span> Manto Hub. Catálogo para lojistas de camisas.</span>
+    <a href="admin.html" style="color:var(--giz-dim);">Entrar no painel</a>
+  </div>
 </footer>
-
-<div class="barra-fixa">
-  <a class="btn btn-principal" href="#" onclick="abrirCheckout(planoAtual); return false;">Quero ativar agora</a>
-</div>
 
 <div class="checkout-overlay" id="checkoutOverlay">
   <div class="checkout-card">
@@ -477,7 +582,7 @@
       </div>
       <div class="checkout-plano-resumo">
         <span class="nome" id="checkoutPlanoNome">Plano mensal</span>
-        <span class="valor" id="checkoutPlanoValor">R$ 97/mês</span>
+        <span class="valor" id="checkoutPlanoValor">R$ 49,90/mês</span>
       </div>
       <div id="checkoutErro" class="checkout-erro" style="display:none;"></div>
       <div class="checkout-field">
@@ -540,23 +645,35 @@
   </div>
 </div>
 
+<script>
+  // ============================================================
+  // CAMISA DO HERO — o nome digitado vira o nome do "jogador".
+  // Só textContent (nunca HTML): nada digitado aqui vira código.
+  // ============================================================
+  (function(){
+    const input = document.getElementById('camisaNomeInput');
+    const texto = document.getElementById('camisaNome');
+    const LARGURA_MAX = 250; // largura útil entre as costuras, no desenho
+    function atualizar(){
+      const nome = (input.value.trim() || 'Sua loja').toUpperCase();
+      texto.textContent = nome;
+      texto.removeAttribute('textLength');
+      texto.removeAttribute('lengthAdjust');
+      try {
+        if(texto.getComputedTextLength() > LARGURA_MAX){
+          texto.setAttribute('textLength', LARGURA_MAX);
+          texto.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+        }
+      } catch(e){ /* navegador sem medição de SVG: fica no tamanho padrão */ }
+    }
+    input.addEventListener('input', atualizar);
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(atualizar); else atualizar();
+  })();
+
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   document.getElementById('anoAtual').textContent = new Date().getFullYear();
-
-  const PLANOS = {
-    mensal:     { preco: 'R$ 49,90', sufixo: '/mês', obs: '' },
-    trimestral: { preco: 'R$ 44,97', sufixo: '/mês', obs: 'cobrado R$ 134,90 a cada 3 meses' },
-    anual:      { preco: 'R$ 34,99', sufixo: '/mês', obs: 'cobrado R$ 419,90 uma vez por ano' }
-  };
-
-  function trocarPlano(chave){
-    document.querySelectorAll('.plano-tab').forEach(el => el.classList.toggle('ativo', el.dataset.plano === chave));
-    const p = PLANOS[chave];
-    document.getElementById('planoPreco').innerHTML = p.preco + '<span>' + p.sufixo + '</span>';
-    document.getElementById('planoObs').textContent = p.obs || '\u00A0';
-    planoAtual = chave;
-  }
 
   // ============================================================
   // CHECKOUT — cria a conta+loja (travada) e a assinatura no Asaas,
@@ -568,12 +685,12 @@
   };
   const supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
 
-  // Nomes/valores de exibição no resumo do checkout — mesmos dados do
-  // objeto PLANOS acima, só reorganizados pro resumo do modal.
+  // Nomes/valores de exibição no resumo do checkout. Precisam bater com
+  // PLANOS das funções criar-assinatura e mudar-plano e com o admin.
   const PLANOS_RESUMO = {
     mensal:     { nome: 'Plano mensal',     valorTexto: 'R$ 49,90/mês' },
     trimestral: { nome: 'Plano trimestral', valorTexto: 'R$ 134,90 a cada 3 meses' },
-    anual:      { nome: 'Plano anual',      valorTexto: 'R$ 419,90 por ano' },
+    anual:      { nome: 'Plano anual',      valorTexto: 'R$ 499,00 por ano' },
   };
 
   let planoAtual = 'mensal';
@@ -749,6 +866,59 @@
       }
     }, 5000);
   }
+
+</script>
+<script>
+  // ============================================================
+  // CATÁLOGO PRONTO — números e fotos reais, direto do catálogo mestre.
+  // Se a consulta falhar, ficam os números escritos no HTML e a faixa
+  // de fotos simplesmente não aparece.
+  // ============================================================
+  const LOJA_MESTRE_ID = '6313e64a-b638-4619-b36d-e02ac3cdffa2';
+
+  async function carregarVitrineReal(){
+    try {
+      const [prod, times, amostra] = await Promise.all([
+        supabaseClient.from('products').select('id', { count: 'exact', head: true })
+          .eq('loja_id', LOJA_MESTRE_ID).eq('disponivel', true),
+        supabaseClient.from('teams').select('id', { count: 'exact', head: true })
+          .eq('loja_id', LOJA_MESTRE_ID),
+        supabaseClient.from('products').select('titulo, product_images(url, ordem)')
+          .eq('loja_id', LOJA_MESTRE_ID).eq('disponivel', true).eq('tipo', 'Torcedor')
+          .limit(40)
+      ]);
+      if(!prod.error && prod.count) document.getElementById('numProdutos').textContent = prod.count;
+      if(!times.error && times.count) document.getElementById('numTimes').textContent = times.count;
+
+      const itens = (amostra.data || [])
+        .map(p => {
+          const fotos = (p.product_images || []).slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+          return { titulo: p.titulo || '', url: fotos[0] && fotos[0].url };
+        })
+        .filter(i => /^https:\/\//.test(i.url || ''))
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 14);
+      if(itens.length < 6) return;
+
+      const trilho = document.getElementById('vitrineTrilho');
+      // Duas cópias seguidas: a animação anda metade do trilho e recomeça sem salto.
+      itens.concat(itens).forEach((item, i) => {
+        const fig = document.createElement('figure');
+        fig.className = 'vitrine-item';
+        if(i >= itens.length) fig.setAttribute('aria-hidden', 'true');
+        const img = document.createElement('img');
+        img.src = item.url; img.alt = item.titulo; img.loading = 'lazy'; img.width = 150; img.height = 150;
+        const legenda = document.createElement('span');
+        legenda.textContent = item.titulo.replace(/^Camisa\s+/i, '');
+        fig.append(img, legenda);
+        trilho.appendChild(fig);
+      });
+      document.getElementById('vitrineFaixa').hidden = false;
+    } catch(e){
+      console.error('Nao consegui carregar a vitrine real', e);
+    }
+  }
+  if(typeof supabaseClient !== 'undefined') carregarVitrineReal();
 </script>
 
 </body>
