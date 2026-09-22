@@ -2,218 +2,242 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manto Hub — catálogo de camisas de time pronto para vender</title>
-<meta name="description" content="Catálogo online para lojistas de camisas de futebol: já vem com centenas de camisas cadastradas, painel próprio e pedido pronto no WhatsApp.">
-<meta property="og:title" content="Manto Hub — seu catálogo de camisas pronto para vender">
-<meta property="og:description" content="Centenas de camisas já cadastradas, sua cor e sua logo, pedido organizado no WhatsApp.">
-<meta name="theme-color" content="#062A20">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Manto Hub — catálogo de camisas com painel de verdade</title>
+<meta name="description" content="Catálogo online para lojistas de camisas de futebol, com painel completo no celular e pedido pronto no WhatsApp. Sem taxa por venda.">
+<meta name="theme-color" content="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* ============================================================
-     TEMA — cores tiradas da própria logo (verde-gramado + menta).
+     TEMA — estilo da referência: preto total, neon da logo.
      Trocar a marca = trocar só estas variáveis.
      ============================================================ */
   :root{
-    --campo:#062A20;        /* fundo: gramado à noite */
-    --campo-2:#0B3A2C;      /* superfícies */
-    --campo-3:#114A38;      /* bordas de destaque */
-    --menta:#35FFC0;        /* cor da marca */
-    --menta-escura:#00C98C;
-    --tinta:#04231A;        /* texto em cima da menta */
-    --giz:#EAF5EF;          /* texto principal / linhas de campo */
-    --giz-dim:#A3C2B6;      /* texto secundário */
-    --linha:rgba(234,245,239,0.14);
-    --raio:18px;
-    --largura:1080px;
+    --preto:#000000;
+    --bloco:#0A0F0D;          /* blocos escuros */
+    --bloco-2:#0F1714;
+    --neon:#35FFC0;           /* verde da logo */
+    --neon-2:#22D3EE;         /* ciano de apoio */
+    --tinta:#00140D;          /* texto em cima do neon */
+    --texto:#F2F7F5;
+    --texto-dim:#8FA59C;
+    --borda:rgba(53,255,192,0.16);
+    --borda-forte:rgba(53,255,192,0.45);
+    --grad:linear-gradient(110deg, var(--neon), var(--neon-2));
+    --raio:20px;
+    --largura:1120px;
 
     /* nomes usados pelo checkout (mantidos para não mexer no fluxo do Pix) */
-    --panel:var(--campo-2);
-    --panel-border:var(--linha);
-    --text:var(--giz);
-    --text-dim:var(--giz-dim);
-    --green:var(--menta);
-    --grad:var(--menta);
+    --panel:var(--bloco); --panel-border:var(--borda); --text:var(--texto);
+    --text-dim:var(--texto-dim); --green:var(--neon); --campo:#000;
   }
   *{ box-sizing:border-box; margin:0; padding:0; }
   html{ scroll-behavior:smooth; }
-  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } }
   body{
-    background:var(--campo); color:var(--giz);
+    background:var(--preto); color:var(--texto);
     font-family:'Barlow', system-ui, sans-serif; font-size:17px; line-height:1.55;
     -webkit-font-smoothing:antialiased; overflow-x:hidden;
   }
-  ::selection{ background:var(--menta); color:var(--tinta); }
+  ::selection{ background:var(--neon); color:var(--tinta); }
   a{ color:inherit; }
   img{ max-width:100%; display:block; }
-  :focus-visible{ outline:3px solid var(--menta); outline-offset:3px; border-radius:6px; }
-  .wrap{ max-width:var(--largura); margin:0 auto; padding:0 22px; }
+  :focus-visible{ outline:3px solid var(--neon); outline-offset:3px; border-radius:6px; }
+  .wrap{ max-width:var(--largura); margin:0 auto; padding:0 20px; }
+  section{ padding:80px 0; position:relative; }
 
-  h1, h2, h3{ font-family:'Anton', Impact, sans-serif; font-weight:400; letter-spacing:.005em; line-height:1.05; }
-  h2{ font-size:clamp(32px, 7vw, 52px); max-width:18ch; }
-  .intro{ color:var(--giz-dim); max-width:56ch; margin-top:14px; }
+  h1, h2, h3{ font-family:'Anton', Impact, sans-serif; font-weight:400; text-transform:uppercase; line-height:1.02; letter-spacing:.01em; }
+  h2{ font-size:clamp(34px, 8vw, 58px); max-width:16ch; }
+  .intro{ color:var(--texto-dim); max-width:56ch; margin-top:16px; font-size:18px; }
 
-  /* Linha de giz: divisória de seção com o círculo central do campo */
-  .giz{
-    position:relative; height:1px; background:var(--linha); margin:0 auto; max-width:var(--largura);
+  /* ---------- NEON ANIMADO ---------- */
+  .neon{
+    background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 0 14px rgba(53,255,192,.35));
+    animation:pulsoNeon 3.2s ease-in-out infinite;
   }
-  .giz::after{
-    content:''; position:absolute; left:50%; top:50%; width:46px; height:46px;
-    transform:translate(-50%,-50%); border:1px solid var(--linha); border-radius:50%;
-    background:var(--campo);
+  @keyframes pulsoNeon{
+    0%,100%{ filter:drop-shadow(0 0 10px rgba(53,255,192,.28)); }
+    50%{ filter:drop-shadow(0 0 22px rgba(53,255,192,.65)); }
   }
-  section{ padding:84px 0; }
+  /* borda que gira em volta do bloco em destaque */
+  .borda-viva{ position:relative; isolation:isolate; }
+  .borda-viva::before{
+    content:''; position:absolute; inset:-1.5px; border-radius:inherit; z-index:-1;
+    background:conic-gradient(from var(--ang), var(--neon), var(--neon-2), transparent 35%, transparent 65%, var(--neon));
+    animation:girar 5s linear infinite;
+  }
+  .borda-viva::after{ content:''; position:absolute; inset:0; border-radius:inherit; background:var(--bloco); z-index:-1; }
+  @property --ang{ syntax:'<angle>'; initial-value:0deg; inherits:false; }
+  @keyframes girar{ to{ --ang:360deg; } }
+
+  /* ---------- APARECER AO ROLAR ---------- */
+  .js .revelar{ opacity:0; transform:translateY(28px); transition:opacity .7s ease, transform .7s ease; }
+  .js .revelar.visivel{ opacity:1; transform:none; }
+  .js .revelar[data-atraso="1"]{ transition-delay:.1s; }
+  .js .revelar[data-atraso="2"]{ transition-delay:.2s; }
+  .js .revelar[data-atraso="3"]{ transition-delay:.3s; }
+
+  /* ---------- FAIXAS ROLANDO ---------- */
+  .faixa{ overflow:hidden; border-block:1px solid var(--borda); background:var(--bloco); padding:16px 0; }
+  .faixa.invertida{ background:var(--grad); border:0; }
+  .faixa-trilho{ display:flex; width:max-content; animation:rolar 32s linear infinite; }
+  .faixa.invertida .faixa-trilho{ animation-direction:reverse; animation-duration:38s; }
+  .faixa span{
+    font-family:'Anton', sans-serif; text-transform:uppercase; font-size:22px; letter-spacing:.04em;
+    padding:0 22px; white-space:nowrap; display:flex; align-items:center; gap:22px;
+  }
+  .faixa span::after{ content:''; width:9px; height:9px; background:var(--neon); transform:rotate(45deg); }
+  .faixa.invertida span{ color:var(--tinta); }
+  .faixa.invertida span::after{ background:var(--tinta); }
+  @keyframes rolar{ to{ transform:translateX(-50%); } }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .neon, .borda-viva::before, .faixa-trilho{ animation:none; }
+    .js .revelar{ opacity:1; transform:none; transition:none; }
+  }
 
   /* ---------- BOTÕES ---------- */
   .btn{
     display:inline-flex; align-items:center; justify-content:center; gap:10px;
-    border-radius:999px; padding:16px 26px; min-height:54px;
-    font-family:'Barlow', sans-serif; font-weight:700; font-size:16px;
-    text-decoration:none; cursor:pointer; border:2px solid transparent; white-space:nowrap;
-    transition:transform .15s ease, background-color .15s ease;
+    border-radius:14px; padding:16px 24px; min-height:56px;
+    font-family:'Barlow', sans-serif; font-weight:800; font-size:15px; text-transform:uppercase; letter-spacing:.04em;
+    text-decoration:none; cursor:pointer; border:1.5px solid transparent; white-space:nowrap;
+    transition:transform .15s ease, box-shadow .2s ease;
   }
   .btn:active{ transform:scale(.98); }
-  .btn-principal{ background:var(--menta); color:var(--tinta); }
-  .btn-principal:hover{ background:#6CFFD2; }
-  .btn-secundario{ background:transparent; border-color:var(--linha); color:var(--giz); }
-  .btn-secundario:hover{ border-color:var(--giz-dim); }
+  .btn-principal{ background:var(--grad); color:var(--tinta); box-shadow:0 0 0 0 rgba(53,255,192,.0), 0 10px 30px -8px rgba(53,255,192,.55); }
+  .btn-principal:hover{ box-shadow:0 0 28px rgba(53,255,192,.6); }
+  .btn-secundario{ background:transparent; border-color:var(--borda-forte); color:var(--texto); }
+  .btn-secundario:hover{ border-color:var(--neon); }
   .btn svg{ width:20px; height:20px; flex-shrink:0; }
   .ctas{ display:flex; flex-wrap:wrap; gap:12px; }
-  .ctas .btn{ flex:1 1 200px; }
+  .ctas .btn{ flex:1 1 210px; }
 
   /* ---------- TOPO ---------- */
-  .topo{ padding:18px 0; }
-  .topo .wrap{ display:flex; align-items:center; justify-content:space-between; gap:16px; }
-  .topo-logo{ height:40px; width:auto; }
-  .topo-entrar{ color:var(--giz-dim); text-decoration:none; font-weight:600; font-size:15px; padding:10px 4px; }
-  .topo-entrar:hover{ color:var(--giz); }
+  .topo{ position:sticky; top:0; z-index:50; background:rgba(0,0,0,.78); backdrop-filter:blur(10px); border-bottom:1px solid var(--borda); }
+  .topo .wrap{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding-top:12px; padding-bottom:12px; }
+  .topo-logo{ height:38px; width:auto; }
+  .topo-entrar{ font-weight:700; font-size:14px; text-decoration:none; color:var(--texto-dim); padding:10px 0; }
+  .topo-entrar:hover{ color:var(--texto); }
 
   /* ---------- HERO ---------- */
-  .hero{ padding:28px 0 72px; }
-  .hero-grid{ display:grid; gap:40px; align-items:center; }
-  .hero-grid > *{ min-width:0; } /* sem isso o carrossel de celulares alarga a página */
-  @media (min-width:900px){ .hero-grid{ grid-template-columns:1fr auto; gap:48px; } }
-  .hero h1{ font-size:clamp(44px, 11vw, 66px); max-width:12ch; }
-  .hero .lead{ color:var(--giz-dim); font-size:19px; max-width:40ch; margin:20px 0 30px; }
-  .hero-nota{ color:var(--giz-dim); font-size:14px; margin-top:16px; }
-  .hero-nota strong{ color:var(--giz); font-weight:600; }
+  .hero{ padding:44px 0 56px; overflow:hidden; }
+  .hero::before{ /* luz de estádio */
+    content:''; position:absolute; inset:-20% -10% auto; height:520px; pointer-events:none;
+    background:radial-gradient(420px 260px at 20% 30%, rgba(53,255,192,.16), transparent 70%),
+               radial-gradient(380px 240px at 85% 10%, rgba(34,211,238,.12), transparent 70%);
+  }
+  .hero-grid{ position:relative; display:grid; gap:44px; align-items:center; }
+  .hero-grid > *{ min-width:0; }
+  @media (min-width:960px){ .hero-grid{ grid-template-columns:1fr auto; gap:48px; } }
+  .selo{
+    display:inline-flex; align-items:center; gap:8px; border:1px solid var(--borda-forte); border-radius:999px;
+    padding:7px 14px; font-size:14px; font-weight:600; color:var(--neon); margin-bottom:22px;
+  }
+  .selo i{ width:8px; height:8px; border-radius:50%; background:var(--neon); box-shadow:0 0 10px var(--neon); animation:piscar 1.6s ease-in-out infinite; }
+  @keyframes piscar{ 50%{ opacity:.35; } }
+  .hero h1{ font-size:clamp(46px, 12vw, 76px); max-width:11ch; }
+  .hero .lead{ color:var(--texto-dim); font-size:19px; max-width:42ch; margin:20px 0 30px; }
+  .hero-nota{ color:var(--texto-dim); font-size:14px; margin-top:16px; }
+  .hero-nota b{ color:var(--texto); }
 
-  /* Demonstrativo: vitrine ao vivo (catálogo mestre) + vídeo do painel */
-  .demo{ display:flex; gap:18px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px 22px 10px; margin:0 -22px; scrollbar-width:none; }
+  /* Demonstrativo: catálogo mestre ao vivo + vídeo do painel */
+  .demo{ display:flex; gap:18px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px 20px 10px; margin:0 -20px; scrollbar-width:none; }
   .demo::-webkit-scrollbar{ display:none; }
-  @media (min-width:900px){ .demo{ overflow:visible; margin:0; padding:0; justify-content:flex-end; } }
+  @media (min-width:960px){ .demo{ overflow:visible; margin:0; padding:0; } }
   .demo-item{ scroll-snap-align:center; flex-shrink:0; }
-  .demo-titulo{ font-weight:700; font-size:15px; margin-bottom:4px; }
-  .demo-sub{ color:var(--giz-dim); font-size:14px; margin-bottom:12px; max-width:250px; }
-  .demo-dica{ color:var(--giz-dim); font-size:14px; margin-top:12px; }
-  @media (min-width:900px){ .demo-dica{ display:none; } }
-
-  /* ---------- CATÁLOGO PRONTO ---------- */
-  .numeros{ display:flex; flex-wrap:wrap; gap:14px 40px; margin-top:34px; }
-  .numero b{ display:block; font-family:'Anton', sans-serif; font-weight:400; font-size:clamp(56px, 14vw, 88px); line-height:1; color:var(--menta); }
-  .numero span{ color:var(--giz-dim); font-size:16px; }
-  .vitrine-faixa{ margin-top:44px; overflow:hidden; mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-  .vitrine-trilho{ display:flex; gap:14px; width:max-content; animation:rolar 60s linear infinite; }
-  .vitrine-faixa:hover .vitrine-trilho{ animation-play-state:paused; }
-  @media (prefers-reduced-motion: reduce){ .vitrine-trilho{ animation:none; } .vitrine-faixa{ overflow-x:auto; } }
-  @keyframes rolar{ to{ transform:translateX(-50%); } }
-  .vitrine-item{ width:150px; flex-shrink:0; }
-  .vitrine-item img{ width:150px; height:150px; object-fit:cover; border-radius:16px; background:#fff; }
-  .vitrine-item span{ display:block; font-size:13px; color:var(--giz-dim); margin-top:8px; line-height:1.3; }
-
-  /* ---------- PASSOS (sequência real, por isso numerados) ---------- */
-  .passos{ list-style:none; margin-top:40px; display:grid; gap:0; counter-reset:passo; }
-  @media (min-width:900px){ .passos{ grid-template-columns:repeat(3,1fr); gap:32px; } }
-  .passos li{ counter-increment:passo; padding:26px 0; border-top:1px solid var(--linha); }
-  .passos li::before{
-    content:counter(passo); display:block; font-family:'Anton', sans-serif; font-size:44px; line-height:1;
-    color:var(--menta); margin-bottom:12px;
-  }
-  .passos h3{ font-size:26px; margin-bottom:8px; }
-  .passos p{ color:var(--giz-dim); }
-
-  /* ---------- RECURSOS ---------- */
-  .recursos{ margin-top:40px; display:grid; gap:0 48px; }
-  @media (min-width:760px){ .recursos{ grid-template-columns:1fr 1fr; } }
-  .recurso{ display:grid; grid-template-columns:28px 1fr; gap:14px; padding:20px 0; border-top:1px solid var(--linha); }
-  .recurso svg{ width:26px; height:26px; color:var(--menta); margin-top:3px; }
-  .recurso h3{ font-family:'Barlow', sans-serif; font-weight:700; font-size:18px; line-height:1.3; letter-spacing:0; }
-  .recurso p{ color:var(--giz-dim); font-size:16px; margin-top:4px; }
-
-  /* ---------- ANTES / DEPOIS ---------- */
-  .comparar{ margin-top:36px; border:1px solid var(--linha); border-radius:var(--raio); overflow:hidden; }
-  .comparar-linha{ display:grid; grid-template-columns:1fr 1fr; }
-  .comparar-linha + .comparar-linha{ border-top:1px solid var(--linha); }
-  .comparar-linha > div{ padding:16px 18px; font-size:16px; }
-  .comparar-linha > div:first-child{ color:var(--giz-dim); }
-  .comparar-linha > div:last-child{ background:var(--campo-2); }
-  .comparar-cab > div{ font-weight:700; font-size:15px; }
-  .comparar-cab > div:first-child{ color:var(--giz-dim); }
-  .comparar-cab > div:last-child{ color:var(--menta); }
-
-  /* ---------- LOJA REAL ---------- */
-
-  .celular{
-    width:262px; height:540px; border-radius:40px; padding:10px;
-    background:#020D09; border:1px solid var(--campo-3); position:relative;
-  }
-  .celular-tela{ width:100%; height:100%; border-radius:31px; overflow:hidden; background:#0A0D10; position:relative; }
-  .celular iframe{
-    width:375px; height:745px; border:0; transform:scale(.6453); transform-origin:0 0;
-  }
+  .demo-titulo{ font-family:'Anton', sans-serif; text-transform:uppercase; font-size:20px; letter-spacing:.02em; }
+  .demo-sub{ color:var(--texto-dim); font-size:14px; margin:2px 0 12px; max-width:250px; }
+  .demo-dica{ color:var(--texto-dim); font-size:14px; margin-top:12px; }
+  @media (min-width:960px){ .demo-dica{ display:none; } }
+  .celular{ width:262px; height:540px; border-radius:40px; padding:9px; background:#050807; }
+  .celular.borda-viva::after{ background:#050807; }
+  .celular-tela{ width:100%; height:100%; border-radius:32px; overflow:hidden; background:#0A0D10; position:relative; }
+  .celular iframe{ width:375px; height:752px; border:0; transform:scale(.6507); transform-origin:0 0; }
   .celular video{ width:100%; height:100%; object-fit:cover; display:block; }
-  /* Enquanto o vídeo do painel não for enviado, aparece esta prévia */
-  .painel-previa{ position:absolute; inset:0; padding:26px 18px; display:flex; flex-direction:column; gap:10px; background:var(--campo); }
+  .painel-previa{ position:absolute; inset:0; padding:24px 16px; display:flex; flex-direction:column; gap:9px; background:#050807; }
   .painel-previa[hidden]{ display:none; }
   .painel-previa img{ height:22px; width:auto; margin-bottom:10px; }
-  .painel-previa div{ background:var(--campo-2); border:1px solid var(--linha); border-radius:14px; padding:12px 14px; font-size:14px; font-weight:600; }
-  .painel-previa small{ display:block; color:var(--giz-dim); font-weight:500; font-size:12.5px; margin-top:2px; }
-  .loja-link{ display:inline-block; margin-top:22px; color:var(--menta); font-weight:700; text-decoration:underline; text-underline-offset:4px; }
+  .painel-previa div{ background:var(--bloco-2); border:1px solid var(--borda); border-radius:14px; padding:11px 13px; font-size:14px; font-weight:700; }
+  .painel-previa small{ display:block; color:var(--texto-dim); font-weight:500; font-size:12.5px; margin-top:2px; }
+
+  /* ---------- CONTADORES ---------- */
+  .contadores{ display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-top:36px; }
+  @media (min-width:860px){ .contadores{ grid-template-columns:repeat(4, 1fr); } }
+  .contador{ background:var(--bloco); border:1px solid var(--borda); border-radius:var(--raio); padding:22px 18px; }
+  .contador b{ display:block; font-family:'Anton', sans-serif; font-weight:400; font-size:clamp(42px, 10vw, 60px); line-height:1; font-variant-numeric:tabular-nums; }
+  .contador span{ display:block; color:var(--texto-dim); font-size:15px; margin-top:8px; }
+
+  /* ---------- RECURSOS ---------- */
+  .recursos{ display:grid; gap:14px; margin-top:38px; }
+  @media (min-width:760px){ .recursos{ grid-template-columns:repeat(2, 1fr); } }
+  @media (min-width:1060px){ .recursos{ grid-template-columns:repeat(3, 1fr); } }
+  .recurso{
+    background:var(--bloco); border:1px solid var(--borda); border-radius:var(--raio); padding:24px 22px;
+    transition:border-color .25s ease, box-shadow .25s ease;
+  }
+  .recurso:hover{ border-color:var(--borda-forte); box-shadow:0 0 30px -10px rgba(53,255,192,.5); }
+  .recurso-icone{
+    width:46px; height:46px; border-radius:12px; display:grid; place-items:center; margin-bottom:16px;
+    background:rgba(53,255,192,.08); border:1px solid var(--borda-forte); color:var(--neon);
+  }
+  .recurso-icone svg{ width:24px; height:24px; }
+  .recurso h3{ font-size:22px; letter-spacing:.02em; }
+  .recurso p{ color:var(--texto-dim); font-size:16px; margin-top:8px; }
+
+  /* ---------- COMPARAÇÃO ---------- */
+  .comparar{ margin-top:36px; border:1px solid var(--borda); border-radius:var(--raio); overflow:hidden; background:var(--bloco); }
+  .comparar-linha{ display:grid; grid-template-columns:1fr 1fr; }
+  .comparar-linha + .comparar-linha{ border-top:1px solid var(--borda); }
+  .comparar-linha > div{ padding:16px 18px; font-size:16px; }
+  .comparar-linha > div:first-child{ color:var(--texto-dim); }
+  .comparar-linha > div:last-child{ background:rgba(53,255,192,.05); font-weight:600; }
+  .comparar-cab > div{ font-family:'Anton', sans-serif; text-transform:uppercase; font-size:18px; font-weight:400 !important; letter-spacing:.03em; }
+  .comparar-cab > div:last-child{ color:var(--neon); }
 
   /* ---------- PLANOS ---------- */
-  .planos{ margin-top:40px; display:grid; gap:16px; }
-  @media (min-width:900px){ .planos{ grid-template-columns:repeat(3,1fr); align-items:stretch; } }
-  .plano{
-    border:1px solid var(--linha); border-radius:var(--raio); padding:28px 24px;
-    display:flex; flex-direction:column;
+  .planos-box{ max-width:560px; margin-top:36px; border-radius:26px; padding:28px 24px; }
+  .abas{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; background:#000; border:1px solid var(--borda); border-radius:14px; padding:5px; }
+  .aba{
+    border:0; background:transparent; color:var(--texto-dim); border-radius:10px; padding:11px 6px; cursor:pointer;
+    font:800 13px 'Barlow', sans-serif; text-transform:uppercase; letter-spacing:.04em; position:relative;
   }
-  .plano.fundador{ background:var(--campo-2); border:2px solid var(--menta); }
-  .plano-selo{
-    align-self:flex-start; background:var(--menta); color:var(--tinta); font-weight:700; font-size:13px;
-    border-radius:999px; padding:5px 12px; margin-bottom:16px;
-  }
-  .plano h3{ font-size:30px; }
-  .plano-preco{ font-family:'Anton', sans-serif; font-size:52px; line-height:1; margin-top:18px; }
-  .plano-preco small{ font-family:'Barlow', sans-serif; font-size:17px; color:var(--giz-dim); font-weight:500; margin-left:4px; }
-  .plano-detalhe{ color:var(--giz-dim); font-size:15px; margin-top:8px; min-height:46px; }
-  .plano .btn{ margin-top:22px; width:100%; }
-  .planos-rodape{ color:var(--giz-dim); font-size:15px; margin-top:22px; max-width:70ch; }
+  .aba.ativa{ background:var(--grad); color:var(--tinta); }
+  .aba small{ display:block; font-size:11px; font-weight:700; opacity:.8; }
+  .plano-selo{ display:inline-block; margin-top:22px; color:var(--neon); font-weight:700; font-size:14px; }
+  .plano-preco{ font-family:'Anton', sans-serif; font-size:clamp(58px, 16vw, 76px); line-height:1; margin-top:8px; }
+  .plano-preco small{ font-family:'Barlow', sans-serif; font-size:18px; color:var(--texto-dim); font-weight:600; margin-left:6px; }
+  .plano-obs{ color:var(--texto-dim); margin-top:10px; min-height:52px; }
+  .plano-lista{ list-style:none; margin:20px 0 24px; display:grid; gap:10px; }
+  .plano-lista li{ display:flex; gap:10px; align-items:flex-start; font-size:16px; }
+  .plano-lista li::before{ content:''; flex-shrink:0; width:18px; height:18px; margin-top:3px; border-radius:50%; background:var(--neon) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300140D' stroke-width='3.5'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/12px no-repeat; }
+  .planos-box .btn{ width:100%; }
+
+  /* ---------- MANTO DEZ ---------- */
+  .loja-real{ display:grid; gap:14px; align-items:center; background:var(--bloco); border:1px solid var(--borda); border-radius:var(--raio); padding:26px 24px; margin-top:32px; max-width:760px; }
+  .loja-real p{ color:var(--texto-dim); }
+  .loja-real a{ color:var(--neon); font-weight:700; text-underline-offset:4px; }
 
   /* ---------- DÚVIDAS ---------- */
-  .duvidas{ margin-top:32px; max-width:760px; }
-  .duvidas details{ border-top:1px solid var(--linha); }
-  .duvidas details:last-child{ border-bottom:1px solid var(--linha); }
-  .duvidas summary{
-    list-style:none; cursor:pointer; padding:20px 36px 20px 0; position:relative;
-    font-weight:700; font-size:18px;
-  }
+  .duvidas{ margin-top:32px; max-width:780px; display:grid; gap:10px; }
+  .duvidas details{ background:var(--bloco); border:1px solid var(--borda); border-radius:16px; }
+  .duvidas details[open]{ border-color:var(--borda-forte); }
+  .duvidas summary{ list-style:none; cursor:pointer; padding:18px 48px 18px 20px; position:relative; font-weight:700; font-size:17px; }
   .duvidas summary::-webkit-details-marker{ display:none; }
-  .duvidas summary::after{
-    content:'+'; position:absolute; right:4px; top:50%; transform:translateY(-50%);
-    font-size:26px; font-weight:500; color:var(--menta); transition:transform .2s;
-  }
+  .duvidas summary::after{ content:'+'; position:absolute; right:20px; top:50%; transform:translateY(-50%); font-size:26px; color:var(--neon); transition:transform .2s; }
   .duvidas details[open] summary::after{ transform:translateY(-50%) rotate(45deg); }
-  .duvidas details p{ color:var(--giz-dim); padding:0 0 20px; max-width:62ch; }
+  .duvidas details p{ color:var(--texto-dim); padding:0 20px 18px; max-width:62ch; }
 
   /* ---------- FECHAMENTO ---------- */
-  .final{ text-align:left; }
-  .final h2{ max-width:16ch; }
-  .final .ctas{ margin-top:30px; max-width:560px; }
-  .rodape{ padding:34px 0 44px; color:var(--giz-dim); font-size:14px; border-top:1px solid var(--linha); }
+  .final{ text-align:center; }
+  .final h2{ margin:0 auto; max-width:18ch; }
+  .final .ctas{ margin:30px auto 0; max-width:580px; }
+  .rodape{ padding:30px 0 40px; color:var(--texto-dim); font-size:14px; border-top:1px solid var(--borda); }
   .rodape .wrap{ display:flex; flex-wrap:wrap; gap:14px 24px; align-items:center; justify-content:space-between; }
-  .rodape img{ height:30px; width:auto; }
+  .rodape img{ height:28px; width:auto; }
 
   /* ============================================================
      CHECKOUT — modal estilo Stripe: escuro, limpo, um passo por vez.
@@ -308,12 +332,15 @@
   .checkout-status-pago h3{ font-size:16px; margin-bottom:6px; }
   .checkout-status-pago p{ text-transform:none; font-weight:400; font-size:13px; color:var(--text-dim); line-height:1.5; }
 </style>
+<!-- Com JS ligado, os blocos começam escondidos e aparecem ao rolar.
+     Sem JS, tudo aparece normalmente (nada some). -->
+<script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
 
 <header class="topo">
   <div class="wrap">
-    <img src="logo.svg" alt="Manto Hub" class="topo-logo" width="104" height="40">
+    <img src="logo.svg" alt="Manto Hub" class="topo-logo" width="99" height="38">
     <a class="topo-entrar" href="admin.html">Já sou assinante</a>
   </div>
 </header>
@@ -323,28 +350,29 @@
 <!-- ============ HERO ============ -->
 <section class="hero">
   <div class="wrap hero-grid">
-    <div>
-      <h1>Seu catálogo de camisas, pronto para vender hoje</h1>
+    <div class="revelar">
+      <span class="selo"><i></i>Feito para quem vende camisa de time</span>
+      <h1>Seu catálogo de camisas com <span class="neon">painel de verdade</span></h1>
       <p class="lead">
-        O Manto Hub já vem com as camisas cadastradas, com foto, tamanho e descrição.
-        Você coloca sua logo e seu preço, manda o link, e o pedido chega pronto no seu WhatsApp.
+        Catálogo pronto incluso, e um painel onde você controla preço, estoque, frete e personalização pelo celular.
+        O cliente escolhe sozinho e o pedido chega pronto no seu WhatsApp.
       </p>
       <div class="ctas">
-        <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Assinar com Pix</button>
+        <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Quero ativar agora</button>
         <a class="btn btn-secundario" href="https://wa.me/5511961647823?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20Manto%20Hub" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>
-          Tirar dúvidas no WhatsApp
+          Falar no WhatsApp
         </a>
       </div>
-      <p class="hero-nota"><strong>Sem taxa por venda.</strong> Você paga só a assinatura, a partir de R$ 41,58 por mês.</p>
+      <p class="hero-nota"><b>Sem taxa por venda.</b> Só a assinatura, a partir de R$ 41,58 por mês.</p>
     </div>
 
-    <div id="demonstrativo">
+    <div id="demonstrativo" class="revelar" data-atraso="2">
       <div class="demo">
         <div class="demo-item">
           <div class="demo-titulo">A vitrine do seu cliente</div>
-          <div class="demo-sub">O catálogo completo, funcionando. Pode mexer.</div>
-          <div class="celular">
+          <div class="demo-sub">O catálogo funcionando de verdade. Pode mexer.</div>
+          <div class="celular borda-viva">
             <div class="celular-tela">
               <iframe src="catalogo-template.html?loja=manto-hub" title="Catálogo Manto Hub funcionando" loading="lazy"></iframe>
             </div>
@@ -353,7 +381,7 @@
         <div class="demo-item">
           <div class="demo-titulo">O painel que é só seu</div>
           <div class="demo-sub">Onde você cadastra, muda preço e personaliza tudo.</div>
-          <div class="celular">
+          <div class="celular borda-viva">
             <div class="celular-tela">
               <!-- Para trocar o vídeo: suba "video-painel.mp4" na raiz do repositório. -->
               <video id="videoPainel" autoplay loop muted playsinline preload="metadata">
@@ -371,200 +399,156 @@
           </div>
         </div>
       </div>
-      <p class="demo-dica">No celular, arraste para o lado para ver o painel.</p>
+      <p class="demo-dica">Arraste para o lado para ver o painel.</p>
     </div>
   </div>
 </section>
 
-<div class="giz" aria-hidden="true"></div>
+<div class="faixa" aria-hidden="true">
+  <div class="faixa-trilho">
+    <span>Pedido pronto no WhatsApp</span><span>Sem taxa por venda</span><span>Painel no celular</span><span>Sua logo e sua cor</span><span>Nome e número nas costas</span><span>Estoque por tamanho</span>
+    <span>Pedido pronto no WhatsApp</span><span>Sem taxa por venda</span><span>Painel no celular</span><span>Sua logo e sua cor</span><span>Nome e número nas costas</span><span>Estoque por tamanho</span>
+  </div>
+</div>
 
-<!-- ============ CATÁLOGO PRONTO ============ -->
-<section id="catalogo">
+<!-- ============ CONTADORES ============ -->
+<section>
   <div class="wrap">
-    <h2>Você não começa do zero</h2>
-    <p class="intro">
-      Catálogo genérico te entrega uma página vazia. No Manto Hub as camisas já estão lá, separadas por liga e por time.
-      Se quiser, você cadastra também as que só você vende.
-    </p>
-    <div class="numeros">
-      <div class="numero"><b id="numProdutos">239</b><span>camisas cadastradas</span></div>
-      <div class="numero"><b id="numTimes">69</b><span>times e seleções</span></div>
+    <h2 class="revelar">Você já começa com <span class="neon">catálogo pronto</span></h2>
+    <p class="intro revelar">Camisas cadastradas com foto, tamanho e descrição, separadas por liga e por time. Esconda as que não quiser e cadastre as suas.</p>
+    <div class="contadores">
+      <div class="contador revelar"><b class="neon" data-contar="239" id="numProdutos">0</b><span>camisas cadastradas</span></div>
+      <div class="contador revelar" data-atraso="1"><b class="neon" data-contar="69" id="numTimes">0</b><span>times e seleções</span></div>
+      <div class="contador revelar" data-atraso="2"><b class="neon" data-contar="12" id="numLigas">0</b><span>ligas e categorias</span></div>
+      <div class="contador revelar" data-atraso="3"><b class="neon" data-contar="0" data-sufixo="%">0%</b><span>de comissão por venda</span></div>
     </div>
   </div>
-  <div class="vitrine-faixa" id="vitrineFaixa" hidden>
-    <div class="vitrine-trilho" id="vitrineTrilho"></div>
-  </div>
 </section>
-
-<div class="giz" aria-hidden="true"></div>
-
-<!-- ============ COMO FUNCIONA ============ -->
-<section id="como-funciona">
-  <div class="wrap">
-    <h2>Do Pix ao primeiro pedido</h2>
-    <ol class="passos">
-      <li>
-        <h3>Assine e crie sua conta</h3>
-        <p>Preencha seus dados e pague com Pix. A loja libera sozinha assim que o pagamento cai.</p>
-      </li>
-      <li>
-        <h3>Deixe com a sua cara</h3>
-        <p>Suba sua logo, escolha a cor, defina seus preços e o frete. Tudo pelo celular.</p>
-      </li>
-      <li>
-        <h3>Mande o link</h3>
-        <p>Coloque na bio e no status. O cliente escolhe time, tamanho e personalização, e o pedido chega organizado no seu WhatsApp.</p>
-      </li>
-    </ol>
-  </div>
-</section>
-
-<div class="giz" aria-hidden="true"></div>
 
 <!-- ============ RECURSOS ============ -->
-<section id="recursos">
+<section id="painel">
   <div class="wrap">
-    <h2>Feito para quem vende camisa de time</h2>
-    <p class="intro">Não é um catálogo de qualquer coisa adaptado. Cada parte foi pensada para camisa de futebol.</p>
+    <h2 class="revelar">O painel faz o <span class="neon">trabalho pesado</span></h2>
+    <p class="intro revelar">Tudo pelo celular, na hora. Sem esperar ninguém e sem mexer em código.</p>
     <div class="recursos">
-      <div class="recurso">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.4 6.6 16 4l-1.5 1.5a3.5 3.5 0 0 1-5 0L8 4 3.6 6.6 5 11l2-1v10h10V10l2 1z"/></svg>
-        <div><h3>Personalização com nome e número</h3><p>O cliente escreve nome e número nas costas, e você define quanto cobra por isso.</p></div>
+      <div class="recurso revelar">
+        <div class="recurso-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>Seu preço, seu jeito</h3><p>Um preço por tipo de camisa (torcedor, jogador, retrô) ou um valor diferente para cada produto.</p>
       </div>
-      <div class="recurso">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        <div><h3>Seu preço, do seu jeito</h3><p>Um preço por tipo de camisa (torcedor, jogador, retrô) ou um preço diferente para cada produto.</p></div>
+      <div class="recurso revelar" data-atraso="1">
+        <div class="recurso-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.4 6.6 16 4l-1.5 1.5a3.5 3.5 0 0 1-5 0L8 4 3.6 6.6 5 11l2-1v10h10V10l2 1z"/></svg></div>
+        <h3>Nome e número</h3><p>O cliente escolhe o que vai nas costas da camisa, com o preço de personalização que você definir.</p>
       </div>
-      <div class="recurso">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
-        <div><h3>Ajuste qualquer camisa do catálogo</h3><p>Mude título, tamanhos e acrescente suas próprias fotos. A mudança vale só na sua loja.</p></div>
+      <div class="recurso revelar" data-atraso="2">
+        <div class="recurso-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></div>
+        <h3>Estoque por tamanho</h3><p>Tamanho zerado vira "Esgotado" e o último vira "Resta 1". Vende sob encomenda? É só deixar desligado.</p>
       </div>
-      <div class="recurso">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>
-        <div><h3>Estoque por tamanho, se quiser</h3><p>Tamanho zerado aparece como "Esgotado" e o último como "Resta 1". Quem vende sob encomenda deixa desligado.</p></div>
+      <div class="recurso revelar">
+        <div class="recurso-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div>
+        <h3>Edite qualquer camisa</h3><p>Troque título, tamanhos e acrescente fotos suas em qualquer camisa do catálogo. Vale só na sua loja.</p>
       </div>
-      <div class="recurso">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-        <div><h3>Frete do seu jeito</h3><p>Motoboy na sua região e PAC ou Sedex para o resto do país, cada um com o preço que você definir.</p></div>
+      <div class="recurso revelar" data-atraso="1">
+        <div class="recurso-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+        <h3>Frete do seu jeito</h3><p>Motoboy na sua região e PAC ou Sedex para o resto do país, cada um com o seu preço.</p>
       </div>
-      <div class="recurso">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/></svg>
-        <div><h3>Pedido pronto no WhatsApp</h3><p>Camisa, tamanho, personalização, quantidade e frete chegam numa mensagem só. Nada de pergunta repetida.</p></div>
+      <div class="recurso revelar" data-atraso="2">
+        <div class="recurso-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/></svg></div>
+        <h3>Pedido pronto no Zap</h3><p>Camisa, tamanho, personalização, quantidade e frete numa mensagem só. Chega de pergunta repetida.</p>
       </div>
-      <div class="recurso">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="19" cy="13" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="10" cy="19" r="2.5"/></svg>
-        <div><h3>Sua cor e sua logo</h3><p>Tema claro ou escuro e a cor principal que você quiser. O cliente vê a sua marca, não a nossa.</p></div>
+      <div class="recurso revelar">
+        <div class="recurso-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="19" cy="13" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="10" cy="19" r="2.5"/></svg></div>
+        <h3>Sua cor e sua logo</h3><p>Tema claro ou escuro e a cor da sua marca. O cliente vê a sua loja, não a nossa.</p>
       </div>
-      <div class="recurso">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        <div><h3>Fotos padronizadas sem editor</h3><p>O painel tira o fundo da foto do jogador e deixa todas no mesmo tamanho e enquadramento.</p></div>
+      <div class="recurso revelar" data-atraso="1">
+        <div class="recurso-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        <h3>Estúdio de foto</h3><p>Tira o fundo da foto do jogador e deixa todas no mesmo tamanho, sem abrir editor nenhum.</p>
+      </div>
+      <div class="recurso revelar" data-atraso="2">
+        <div class="recurso-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></div>
+        <h3>Veja o que vende</h3><p>Visitas, camisas mais vistas e cliques no WhatsApp, para saber o que colocar em destaque.</p>
       </div>
     </div>
   </div>
 </section>
 
-<div class="giz" aria-hidden="true"></div>
+<div class="faixa invertida" aria-hidden="true">
+  <div class="faixa-trilho">
+    <span>Brasileirão</span><span>Premier League</span><span>La Liga</span><span>Seleções</span><span>Série A</span><span>Bundesliga</span><span>Retrô</span><span>Kit infantil</span>
+    <span>Brasileirão</span><span>Premier League</span><span>La Liga</span><span>Seleções</span><span>Série A</span><span>Bundesliga</span><span>Retrô</span><span>Kit infantil</span>
+  </div>
+</div>
 
-<!-- ============ ANTES / DEPOIS ============ -->
-<section id="comparar">
+<!-- ============ COMPARAÇÃO ============ -->
+<section>
   <div class="wrap">
-    <h2>Vender só pelo direct cansa</h2>
-    <div class="comparar" role="table" aria-label="Vender só pelo direct comparado com o Manto Hub">
+    <h2 class="revelar">Vender só pelo direct <span class="neon">cansa</span></h2>
+    <div class="comparar revelar" role="table" aria-label="Vender só pelo direct comparado com o Manto Hub">
       <div class="comparar-linha comparar-cab" role="row"><div role="columnheader">Só no direct</div><div role="columnheader">Com o Manto Hub</div></div>
       <div class="comparar-linha" role="row"><div role="cell">Cliente pergunta preço e tamanho, um por um</div><div role="cell">Cliente vê preço, tamanho e estoque sozinho</div></div>
       <div class="comparar-linha" role="row"><div role="cell">Você manda foto por foto</div><div role="cell">Um link com todas as camisas</div></div>
       <div class="comparar-linha" role="row"><div role="cell">Pedido espalhado na conversa</div><div role="cell">Pedido organizado numa mensagem</div></div>
-      <div class="comparar-linha" role="row"><div role="cell">Você cadastra tudo do zero</div><div role="cell">Camisas já cadastradas</div></div>
+      <div class="comparar-linha" role="row"><div role="cell">Frete calculado na mão</div><div role="cell">Frete aparece no carrinho</div></div>
     </div>
   </div>
 </section>
-
-<div class="giz" aria-hidden="true"></div>
-
-<!-- ============ LOJA REAL ============ -->
-<section id="loja-real">
-  <div class="wrap">
-    <h2>Quem criou, usa</h2>
-    <p class="intro">
-      A Manto Dez Sports é a loja de quem criou o Manto Hub e vende camisa de verdade com ele todos os dias.
-      O sistema nasceu para resolver o problema de um lojista antes de virar produto para outros.
-    </p>
-    <a class="loja-link" href="catalogo-template.html?loja=manto-dez-sports" target="_blank" rel="noopener">Ver a vitrine da Manto Dez</a>
-  </div>
-</section>
-
-<div class="giz" aria-hidden="true"></div>
 
 <!-- ============ PLANOS ============ -->
 <section id="planos">
   <div class="wrap">
-    <h2>Escolha o plano</h2>
-    <p class="intro">Todos os planos têm tudo. Muda só como você paga.</p>
-    <div class="planos">
-      <div class="plano fundador">
-        <span class="plano-selo">Preço de fundador</span>
-        <h3>Mensal</h3>
-        <div class="plano-preco">R$ 49,90<small>/mês</small></div>
-        <p class="plano-detalhe">Os 20 primeiros lojistas mantêm esse valor enquanto a assinatura estiver ativa.</p>
-        <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Assinar mensal</button>
+    <h2 class="revelar">Escolha o <span class="neon">plano</span></h2>
+    <p class="intro revelar">Todos os planos têm tudo. Muda só como você paga.</p>
+    <div class="planos-box borda-viva revelar">
+      <div class="abas" role="tablist" aria-label="Planos">
+        <button class="aba ativa" type="button" role="tab" aria-selected="true" data-plano="mensal" onclick="trocarPlano('mensal')">Mensal</button>
+        <button class="aba" type="button" role="tab" aria-selected="false" data-plano="trimestral" onclick="trocarPlano('trimestral')">Trimestral<small>-10%</small></button>
+        <button class="aba" type="button" role="tab" aria-selected="false" data-plano="anual" onclick="trocarPlano('anual')">Anual<small>2 meses grátis</small></button>
       </div>
-      <div class="plano">
-        <h3>Trimestral</h3>
-        <div class="plano-preco">R$ 44,97<small>/mês</small></div>
-        <p class="plano-detalhe">R$ 134,90 cobrado a cada 3 meses. 10% mais barato que o mensal.</p>
-        <button class="btn btn-secundario" type="button" onclick="abrirCheckout('trimestral')">Assinar trimestral</button>
-      </div>
-      <div class="plano">
-        <h3>Anual</h3>
-        <div class="plano-preco">R$ 41,58<small>/mês</small></div>
-        <p class="plano-detalhe">R$ 499,00 cobrado uma vez por ano. Equivale a 2 meses grátis.</p>
-        <button class="btn btn-secundario" type="button" onclick="abrirCheckout('anual')">Assinar anual</button>
-      </div>
+      <span class="plano-selo" id="planoSelo">Preço de fundador para os 20 primeiros lojistas</span>
+      <div class="plano-preco" id="planoPreco">R$ 49,90<small>/mês</small></div>
+      <p class="plano-obs" id="planoObs">Quem entrar agora mantém esse valor enquanto a assinatura estiver ativa.</p>
+      <ul class="plano-lista">
+        <li>Catálogo pronto com suas cores e sua logo</li>
+        <li>Painel completo no celular</li>
+        <li>Pedido organizado no WhatsApp</li>
+        <li>Sem taxa ou comissão por venda</li>
+      </ul>
+      <button class="btn btn-principal" type="button" onclick="abrirCheckout(planoAtual)">Quero ativar agora</button>
     </div>
-    <p class="planos-rodape">Pagamento por Pix. Sem taxa por venda e sem comissão: o dinheiro do seu cliente vai direto para você.</p>
   </div>
 </section>
 
-<div class="giz" aria-hidden="true"></div>
+<!-- ============ MANTO DEZ ============ -->
+<section id="loja-real">
+  <div class="wrap">
+    <h2 class="revelar">Quem criou, <span class="neon">usa</span></h2>
+    <div class="loja-real revelar">
+      <p>A Manto Dez Sports é a loja de quem criou o Manto Hub e vende camisa todos os dias com ele. O sistema nasceu para resolver o problema de um lojista antes de virar produto para outros.</p>
+      <a href="catalogo-template.html?loja=manto-dez-sports" target="_blank" rel="noopener">Ver a vitrine da Manto Dez</a>
+    </div>
+  </div>
+</section>
 
 <!-- ============ DÚVIDAS ============ -->
 <section id="duvidas">
   <div class="wrap">
-    <h2>Dúvidas comuns</h2>
-    <div class="duvidas">
-      <details>
-        <summary>Preciso ter CNPJ?</summary>
-        <p>Não. Dá para assinar com CPF.</p>
-      </details>
-      <details>
-        <summary>O dinheiro das vendas passa pelo Manto Hub?</summary>
-        <p>Não. O pedido chega no seu WhatsApp e você recebe do cliente do jeito que já recebe hoje. Não existe comissão por venda.</p>
-      </details>
-      <details>
-        <summary>Sou obrigado a vender as camisas que já vêm cadastradas?</summary>
-        <p>Não. Você esconde as que não quer mostrar e cadastra as suas próprias, com suas fotos e seu preço.</p>
-      </details>
-      <details>
-        <summary>Preciso de computador?</summary>
-        <p>Não. O painel e a vitrine foram feitos para funcionar no celular.</p>
-      </details>
-      <details>
-        <summary>Posso trocar de plano depois?</summary>
-        <p>Pode. A troca é feita pelo próprio painel e vale a partir da próxima cobrança.</p>
-      </details>
+    <h2 class="revelar">Dúvidas <span class="neon">comuns</span></h2>
+    <div class="duvidas revelar">
+      <details><summary>Preciso ter CNPJ?</summary><p>Não. Dá para assinar com CPF.</p></details>
+      <details><summary>O dinheiro das vendas passa pelo Manto Hub?</summary><p>Não. O pedido chega no seu WhatsApp e você recebe do cliente do jeito que já recebe hoje. Não existe comissão por venda.</p></details>
+      <details><summary>Sou obrigado a vender as camisas que já vêm cadastradas?</summary><p>Não. Você esconde as que não quer mostrar e cadastra as suas próprias, com suas fotos e seu preço.</p></details>
+      <details><summary>Preciso de computador?</summary><p>Não. O painel e a vitrine foram feitos para funcionar no celular.</p></details>
+      <details><summary>Posso trocar de plano depois?</summary><p>Pode. A troca é feita pelo próprio painel e vale a partir da próxima cobrança.</p></details>
     </div>
   </div>
 </section>
 
-<div class="giz" aria-hidden="true"></div>
-
 <!-- ============ FECHAMENTO ============ -->
 <section class="final">
   <div class="wrap">
-    <h2>Sua próxima venda pode sair de um link, não de vinte mensagens</h2>
-    <div class="ctas">
-      <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Assinar com Pix</button>
-      <a class="btn btn-secundario" href="https://wa.me/5511961647823?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20Manto%20Hub" target="_blank" rel="noopener">Tirar dúvidas no WhatsApp</a>
+    <h2 class="revelar">Sua próxima venda sai de um <span class="neon">link</span>, não de vinte mensagens</h2>
+    <div class="ctas revelar">
+      <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Quero ativar agora</button>
+      <a class="btn btn-secundario" href="https://wa.me/5511961647823?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20Manto%20Hub" target="_blank" rel="noopener">Falar no WhatsApp</a>
     </div>
   </div>
 </section>
@@ -573,9 +557,9 @@
 
 <footer class="rodape">
   <div class="wrap">
-    <img src="logo.svg" alt="Manto Hub" width="78" height="30">
+    <img src="logo.svg" alt="Manto Hub" width="73" height="28">
     <span>© <span id="anoAtual">2026</span> Manto Hub. Catálogo para lojistas de camisas.</span>
-    <a href="admin.html" style="color:var(--giz-dim);">Entrar no painel</a>
+    <a href="admin.html" style="color:var(--texto-dim);">Já sou assinante</a>
   </div>
 </footer>
 
@@ -656,22 +640,78 @@
 </div>
 
 <script>
+  // ============================================================
+  // EFEITOS — blocos aparecendo ao rolar + contadores subindo.
+  // Independe do Supabase: funciona mesmo se o checkout falhar.
+  // ============================================================
+  (function(){
+    const semMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function contar(el){
+      const alvo = Number(el.dataset.contar) || 0;
+      const sufixo = el.dataset.sufixo || '';
+      if(semMovimento || alvo === 0){ el.textContent = alvo + sufixo; return; }
+      const inicio = performance.now(), duracao = 1400;
+      (function passo(agora){
+        const t = Math.min(1, (agora - inicio) / duracao);
+        const suave = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(alvo * suave) + sufixo;
+        if(t < 1) requestAnimationFrame(passo);
+      })(inicio);
+    }
+    window.mantoContar = contar;
+
+    if(!('IntersectionObserver' in window)){
+      document.querySelectorAll('.revelar').forEach(el => el.classList.add('visivel'));
+      document.querySelectorAll('[data-contar]').forEach(contar);
+      return;
+    }
+    const obs = new IntersectionObserver(entradas => {
+      entradas.forEach(e => {
+        if(!e.isIntersecting) return;
+        e.target.classList.add('visivel');
+        e.target.querySelectorAll('[data-contar]').forEach(el => { el.dataset.contado = '1'; contar(el); });
+        obs.unobserve(e.target);
+      });
+    }, { threshold:0.15, rootMargin:'0px 0px -40px 0px' });
+    document.querySelectorAll('.revelar').forEach(el => obs.observe(el));
+  })();
+
   // Vídeo do painel: se o arquivo ainda não existir no repositório,
   // mostra a prévia em vez de uma tela preta.
   (function(){
     const video = document.getElementById('videoPainel');
     const previa = document.getElementById('painelPrevia');
     const mostrarPrevia = () => { video.hidden = true; previa.hidden = false; };
-    const fonte = video.querySelector('source');
-    fonte.addEventListener('error', mostrarPrevia);
+    video.querySelector('source').addEventListener('error', mostrarPrevia);
     video.addEventListener('error', mostrarPrevia);
     setTimeout(() => { if(video.readyState === 0) mostrarPrevia(); }, 4000);
   })();
+
+  // Seletor de planos (abas)
+  const PLANOS_TELA = {
+    mensal:     { preco:'R$ 49,90', sufixo:'/mês', selo:'Preço de fundador para os 20 primeiros lojistas', obs:'Quem entrar agora mantém esse valor enquanto a assinatura estiver ativa.' },
+    trimestral: { preco:'R$ 44,97', sufixo:'/mês', selo:'10% mais barato que o mensal', obs:'R$ 134,90 cobrado a cada 3 meses.' },
+    anual:      { preco:'R$ 41,58', sufixo:'/mês', selo:'2 meses grátis', obs:'R$ 499,00 cobrado uma vez por ano.' }
+  };
+  function trocarPlano(chave){
+    const p = PLANOS_TELA[chave]; if(!p) return;
+    document.querySelectorAll('.aba').forEach(el => {
+      const ativa = el.dataset.plano === chave;
+      el.classList.toggle('ativa', ativa); el.setAttribute('aria-selected', ativa);
+    });
+    const preco = document.getElementById('planoPreco');
+    preco.textContent = p.preco;
+    const s = document.createElement('small'); s.textContent = p.sufixo; preco.appendChild(s);
+    document.getElementById('planoSelo').textContent = p.selo;
+    document.getElementById('planoObs').textContent = p.obs;
+    planoAtual = chave;
+  }
+  var planoAtual = 'mensal';
+  document.getElementById('anoAtual').textContent = new Date().getFullYear();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  document.getElementById('anoAtual').textContent = new Date().getFullYear();
-
   // ============================================================
   // CHECKOUT — cria a conta+loja (travada) e a assinatura no Asaas,
   // mostra o Pix, e fica de olho até o pagamento confirmar.
@@ -690,7 +730,7 @@
     anual:      { nome: 'Plano anual',      valorTexto: 'R$ 499,00 por ano' },
   };
 
-  let planoAtual = 'mensal';
+  // planoAtual vem do seletor de planos (bloco anterior).
   let cronometroInterval = null;
   let pollingInterval = null;
   let emailCheckoutAtual = '';
@@ -864,58 +904,30 @@
     }, 5000);
   }
 
-</script>
-<script>
+
   // ============================================================
-  // CATÁLOGO PRONTO — números e fotos reais, direto do catálogo mestre.
-  // Se a consulta falhar, ficam os números escritos no HTML e a faixa
-  // de fotos simplesmente não aparece.
+  // CONTADORES COM NÚMEROS REAIS do catálogo mestre. Se a consulta
+  // falhar, ficam os números escritos no HTML.
   // ============================================================
   const LOJA_MESTRE_ID = '6313e64a-b638-4619-b36d-e02ac3cdffa2';
-
-  async function carregarVitrineReal(){
+  (async function(){
     try {
-      const [prod, times, amostra] = await Promise.all([
-        supabaseClient.from('products').select('id', { count: 'exact', head: true })
-          .eq('loja_id', LOJA_MESTRE_ID).eq('disponivel', true),
-        supabaseClient.from('teams').select('id', { count: 'exact', head: true })
-          .eq('loja_id', LOJA_MESTRE_ID),
-        supabaseClient.from('products').select('titulo, product_images(url, ordem)')
-          .eq('loja_id', LOJA_MESTRE_ID).eq('disponivel', true).eq('tipo', 'Torcedor')
-          .limit(40)
+      const contar = (tabela, filtros) => {
+        let q = supabaseClient.from(tabela).select('id', { count:'exact', head:true }).eq('loja_id', LOJA_MESTRE_ID);
+        if(filtros) q = filtros(q);
+        return q;
+      };
+      const [prod, times, ligas] = await Promise.all([
+        contar('products', q => q.eq('disponivel', true)), contar('teams'), contar('ligas')
       ]);
-      if(!prod.error && prod.count) document.getElementById('numProdutos').textContent = prod.count;
-      if(!times.error && times.count) document.getElementById('numTimes').textContent = times.count;
-
-      const itens = (amostra.data || [])
-        .map(p => {
-          const fotos = (p.product_images || []).slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
-          return { titulo: p.titulo || '', url: fotos[0] && fotos[0].url };
-        })
-        .filter(i => /^https:\/\//.test(i.url || ''))
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 14);
-      if(itens.length < 6) return;
-
-      const trilho = document.getElementById('vitrineTrilho');
-      // Duas cópias seguidas: a animação anda metade do trilho e recomeça sem salto.
-      itens.concat(itens).forEach((item, i) => {
-        const fig = document.createElement('figure');
-        fig.className = 'vitrine-item';
-        if(i >= itens.length) fig.setAttribute('aria-hidden', 'true');
-        const img = document.createElement('img');
-        img.src = item.url; img.alt = item.titulo; img.loading = 'lazy'; img.width = 150; img.height = 150;
-        const legenda = document.createElement('span');
-        legenda.textContent = item.titulo.replace(/^Camisa\s+/i, '');
-        fig.append(img, legenda);
-        trilho.appendChild(fig);
+      [[prod,'numProdutos'],[times,'numTimes'],[ligas,'numLigas']].forEach(([r, id]) => {
+        if(r.error || !r.count) return;
+        const el = document.getElementById(id);
+        el.dataset.contar = r.count;
+        if(el.dataset.contado) window.mantoContar(el); // já apareceu: reconta com o número real
       });
-      document.getElementById('vitrineFaixa').hidden = false;
-    } catch(e){
-      console.error('Nao consegui carregar a vitrine real', e);
-    }
-  }
-  if(typeof supabaseClient !== 'undefined') carregarVitrineReal();
+    } catch(e){ console.error('Nao consegui ler os numeros do catalogo', e); }
+  })();
 </script>
 
 </body>
