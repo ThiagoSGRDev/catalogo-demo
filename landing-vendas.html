@@ -93,31 +93,22 @@
   /* ---------- HERO ---------- */
   .hero{ padding:28px 0 72px; }
   .hero-grid{ display:grid; gap:40px; align-items:center; }
-  @media (min-width:900px){ .hero-grid{ grid-template-columns:1.05fr .95fr; gap:56px; } }
-  .hero h1{ font-size:clamp(44px, 11vw, 78px); max-width:12ch; }
+  .hero-grid > *{ min-width:0; } /* sem isso o carrossel de celulares alarga a página */
+  @media (min-width:900px){ .hero-grid{ grid-template-columns:1fr auto; gap:48px; } }
+  .hero h1{ font-size:clamp(44px, 11vw, 66px); max-width:12ch; }
   .hero .lead{ color:var(--giz-dim); font-size:19px; max-width:40ch; margin:20px 0 30px; }
   .hero-nota{ color:var(--giz-dim); font-size:14px; margin-top:16px; }
   .hero-nota strong{ color:var(--giz); font-weight:600; }
 
-  /* Camisa de costas: o nome da loja vira o nome do jogador */
-  .camisa-box{
-    position:relative; background:var(--campo-2); border-radius:28px; padding:28px 22px 22px;
-    overflow:hidden;
-  }
-  .camisa-box::before{ /* meia-lua da grande área, em giz */
-    content:''; position:absolute; left:50%; bottom:-120px; width:260px; height:260px;
-    transform:translateX(-50%); border:1px solid var(--linha); border-radius:50%;
-  }
-  .camisa-svg{ position:relative; width:100%; max-width:360px; margin:0 auto; height:auto; }
-  .camisa-nome{ font-family:'Anton', sans-serif; fill:var(--campo); letter-spacing:.06em; }
-  .camisa-num{ font-family:'Anton', sans-serif; fill:var(--campo); }
-  .camisa-input{ position:relative; margin-top:18px; }
-  .camisa-input label{ display:block; font-size:14px; color:var(--giz-dim); margin-bottom:8px; }
-  .camisa-input input{
-    width:100%; background:var(--campo); border:1.5px solid var(--linha); border-radius:14px;
-    padding:14px 16px; color:var(--giz); font:600 17px 'Barlow', sans-serif; outline:none;
-  }
-  .camisa-input input:focus{ border-color:var(--menta); }
+  /* Demonstrativo: vitrine ao vivo (catálogo mestre) + vídeo do painel */
+  .demo{ display:flex; gap:18px; overflow-x:auto; scroll-snap-type:x mandatory; padding:4px 22px 10px; margin:0 -22px; scrollbar-width:none; }
+  .demo::-webkit-scrollbar{ display:none; }
+  @media (min-width:900px){ .demo{ overflow:visible; margin:0; padding:0; justify-content:flex-end; } }
+  .demo-item{ scroll-snap-align:center; flex-shrink:0; }
+  .demo-titulo{ font-weight:700; font-size:15px; margin-bottom:4px; }
+  .demo-sub{ color:var(--giz-dim); font-size:14px; margin-bottom:12px; max-width:250px; }
+  .demo-dica{ color:var(--giz-dim); font-size:14px; margin-top:12px; }
+  @media (min-width:900px){ .demo-dica{ display:none; } }
 
   /* ---------- CATÁLOGO PRONTO ---------- */
   .numeros{ display:flex; flex-wrap:wrap; gap:14px 40px; margin-top:34px; }
@@ -163,16 +154,22 @@
   .comparar-cab > div:last-child{ color:var(--menta); }
 
   /* ---------- LOJA REAL ---------- */
-  .loja-grid{ display:grid; gap:44px; align-items:center; }
-  @media (min-width:900px){ .loja-grid{ grid-template-columns:1fr auto; } }
+
   .celular{
-    width:300px; height:620px; margin:0 auto; border-radius:44px; padding:12px;
+    width:262px; height:540px; border-radius:40px; padding:10px;
     background:#020D09; border:1px solid var(--campo-3); position:relative;
   }
-  .celular-tela{ width:100%; height:100%; border-radius:33px; overflow:hidden; background:#0A0D10; position:relative; }
+  .celular-tela{ width:100%; height:100%; border-radius:31px; overflow:hidden; background:#0A0D10; position:relative; }
   .celular iframe{
-    width:375px; height:745px; border:0; transform:scale(.736); transform-origin:0 0;
+    width:375px; height:745px; border:0; transform:scale(.6453); transform-origin:0 0;
   }
+  .celular video{ width:100%; height:100%; object-fit:cover; display:block; }
+  /* Enquanto o vídeo do painel não for enviado, aparece esta prévia */
+  .painel-previa{ position:absolute; inset:0; padding:26px 18px; display:flex; flex-direction:column; gap:10px; background:var(--campo); }
+  .painel-previa[hidden]{ display:none; }
+  .painel-previa img{ height:22px; width:auto; margin-bottom:10px; }
+  .painel-previa div{ background:var(--campo-2); border:1px solid var(--linha); border-radius:14px; padding:12px 14px; font-size:14px; font-weight:600; }
+  .painel-previa small{ display:block; color:var(--giz-dim); font-weight:500; font-size:12.5px; margin-top:2px; }
   .loja-link{ display:inline-block; margin-top:22px; color:var(--menta); font-weight:700; text-decoration:underline; text-underline-offset:4px; }
 
   /* ---------- PLANOS ---------- */
@@ -317,7 +314,7 @@
 <header class="topo">
   <div class="wrap">
     <img src="logo.svg" alt="Manto Hub" class="topo-logo" width="104" height="40">
-    <a class="topo-entrar" href="admin.html">Entrar no painel</a>
+    <a class="topo-entrar" href="admin.html">Já sou assinante</a>
   </div>
 </header>
 
@@ -342,19 +339,39 @@
       <p class="hero-nota"><strong>Sem taxa por venda.</strong> Você paga só a assinatura, a partir de R$ 41,58 por mês.</p>
     </div>
 
-    <div class="camisa-box">
-      <svg class="camisa-svg" viewBox="0 0 400 420" role="img" aria-labelledby="camisaTitulo">
-        <title id="camisaTitulo">Camisa de costas com o nome da sua loja</title>
-        <path d="M130 30 Q200 58 270 30 L352 64 Q370 72 374 92 L392 176 Q394 188 382 192 L330 206 L330 396 Q330 408 318 408 L82 408 Q70 408 70 396 L70 206 L18 192 Q6 188 8 176 L26 92 Q30 72 48 64 Z" fill="#EAF5EF"/>
-        <path d="M130 30 Q200 58 270 30 Q262 40 200 48 Q138 40 130 30 Z" fill="#35FFC0"/>
-        <path d="M26 92 L48 64 L70 76 L52 186 L18 192 Q6 188 8 176 Z M374 92 L352 64 L330 76 L348 186 L382 192 Q394 188 392 176 Z" fill="#D5E6DE"/>
-        <text id="camisaNome" class="camisa-nome" x="200" y="128" text-anchor="middle" font-size="40">SUA LOJA</text>
-        <text class="camisa-num" x="200" y="318" text-anchor="middle" font-size="190">10</text>
-      </svg>
-      <div class="camisa-input">
-        <label for="camisaNomeInput">Teste com o nome da sua loja</label>
-        <input id="camisaNomeInput" type="text" maxlength="16" placeholder="Ex.: Camisa e Cabide" autocomplete="off">
+    <div id="demonstrativo">
+      <div class="demo">
+        <div class="demo-item">
+          <div class="demo-titulo">A vitrine do seu cliente</div>
+          <div class="demo-sub">O catálogo completo, funcionando. Pode mexer.</div>
+          <div class="celular">
+            <div class="celular-tela">
+              <iframe src="catalogo-template.html?loja=manto-hub" title="Catálogo Manto Hub funcionando" loading="lazy"></iframe>
+            </div>
+          </div>
+        </div>
+        <div class="demo-item">
+          <div class="demo-titulo">O painel que é só seu</div>
+          <div class="demo-sub">Onde você cadastra, muda preço e personaliza tudo.</div>
+          <div class="celular">
+            <div class="celular-tela">
+              <!-- Para trocar o vídeo: suba "video-painel.mp4" na raiz do repositório. -->
+              <video id="videoPainel" autoplay loop muted playsinline preload="metadata">
+                <source src="video-painel.mp4" type="video/mp4">
+              </video>
+              <div class="painel-previa" id="painelPrevia" hidden>
+                <img src="logo.svg" alt="Manto Hub" width="57" height="22">
+                <div>Produtos<small>Foto, preço, tamanhos e estoque</small></div>
+                <div>Seu preço<small>Por tipo de camisa ou por produto</small></div>
+                <div>Aparência<small>Sua logo, sua cor, claro ou escuro</small></div>
+                <div>Frete e entrega<small>Motoboy, PAC e Sedex</small></div>
+                <div>Ligas e times<small>Escudos e fotos padronizadas</small></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+      <p class="demo-dica">No celular, arraste para o lado para ver o painel.</p>
     </div>
   </div>
 </section>
@@ -466,20 +483,13 @@
 
 <!-- ============ LOJA REAL ============ -->
 <section id="loja-real">
-  <div class="wrap loja-grid">
-    <div>
-      <h2>Uma loja de verdade rodando agora</h2>
-      <p class="intro">
-        A Manto Dez Sports é a loja de quem criou o Manto Hub. O sistema nasceu para vender camisa de verdade
-        e só depois virou produto para outros lojistas. Mexa na vitrine: é a mesma que o seu cliente vai ver.
-      </p>
-      <a class="loja-link" href="catalogo-template.html?loja=manto-dez-sports" target="_blank" rel="noopener">Abrir a vitrine da Manto Dez em tela cheia</a>
-    </div>
-    <div class="celular">
-      <div class="celular-tela">
-        <iframe src="catalogo-template.html?loja=manto-dez-sports" title="Vitrine da Manto Dez Sports" loading="lazy"></iframe>
-      </div>
-    </div>
+  <div class="wrap">
+    <h2>Quem criou, usa</h2>
+    <p class="intro">
+      A Manto Dez Sports é a loja de quem criou o Manto Hub e vende camisa de verdade com ele todos os dias.
+      O sistema nasceu para resolver o problema de um lojista antes de virar produto para outros.
+    </p>
+    <a class="loja-link" href="catalogo-template.html?loja=manto-dez-sports" target="_blank" rel="noopener">Ver a vitrine da Manto Dez</a>
   </div>
 </section>
 
@@ -646,30 +656,17 @@
 </div>
 
 <script>
-  // ============================================================
-  // CAMISA DO HERO — o nome digitado vira o nome do "jogador".
-  // Só textContent (nunca HTML): nada digitado aqui vira código.
-  // ============================================================
+  // Vídeo do painel: se o arquivo ainda não existir no repositório,
+  // mostra a prévia em vez de uma tela preta.
   (function(){
-    const input = document.getElementById('camisaNomeInput');
-    const texto = document.getElementById('camisaNome');
-    const LARGURA_MAX = 250; // largura útil entre as costuras, no desenho
-    function atualizar(){
-      const nome = (input.value.trim() || 'Sua loja').toUpperCase();
-      texto.textContent = nome;
-      texto.removeAttribute('textLength');
-      texto.removeAttribute('lengthAdjust');
-      try {
-        if(texto.getComputedTextLength() > LARGURA_MAX){
-          texto.setAttribute('textLength', LARGURA_MAX);
-          texto.setAttribute('lengthAdjust', 'spacingAndGlyphs');
-        }
-      } catch(e){ /* navegador sem medição de SVG: fica no tamanho padrão */ }
-    }
-    input.addEventListener('input', atualizar);
-    if(document.fonts && document.fonts.ready) document.fonts.ready.then(atualizar); else atualizar();
+    const video = document.getElementById('videoPainel');
+    const previa = document.getElementById('painelPrevia');
+    const mostrarPrevia = () => { video.hidden = true; previa.hidden = false; };
+    const fonte = video.querySelector('source');
+    fonte.addEventListener('error', mostrarPrevia);
+    video.addEventListener('error', mostrarPrevia);
+    setTimeout(() => { if(video.readyState === 0) mostrarPrevia(); }, 4000);
   })();
-
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
