@@ -269,6 +269,7 @@
     padding:16px 20px 8px; font-family:'Space Mono', monospace; font-size:11px;
     color:rgba(var(--muted-rgb),0.45); text-transform:uppercase; letter-spacing:.1em;
   }
+  .drawer-link[hidden]{ display:none; }
   .drawer-link{
     display:flex; align-items:center; justify-content:space-between;
     padding:14px 20px; border-bottom:1px solid var(--line);
@@ -1434,6 +1435,15 @@
       <span>Feminina</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
     </div>
+    <!-- Só aparecem se a loja tiver produto desse tipo (ver atualizarMenuTipos) -->
+    <div class="drawer-link" data-tipo-menu="Kit Treino" hidden onclick="closeDrawer(); openCategory('Kit Treino');">
+      <span>Kit Treino</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="drawer-link" data-tipo-menu="Conjunto de Treino" hidden onclick="closeDrawer(); openCategory('Conjunto de Treino');">
+      <span>Conjunto de Treino</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
 
     <div class="drawer-footer">
       <a href="#">Trocas e devoluções</a>
@@ -2099,6 +2109,23 @@
     }
   }
 
+  // Mostra no menu lateral os tipos opcionais só quando existe produto
+  // disponível deles nesta loja (evita link que leva a página vazia).
+  async function atualizarMenuTipos(){
+    const links = document.querySelectorAll('[data-tipo-menu]');
+    for(const link of links){
+      try {
+        const { count, error } = await supabaseClient.from('products')
+          .select('id, teams!inner(id)', { count: 'exact', head: true })
+          .eq('tipo', link.dataset.tipoMenu)
+          .eq('disponivel', true)
+          .in('loja_id', LOJAS_VISIVEIS)
+          .not('id', 'in', OCULTOS_FILTRO);
+        link.hidden = !!error || !count;
+      } catch(e){ link.hidden = true; }
+    }
+  }
+
   function descricaoDoProduto(p){
     const propria = (p && p.descricao || '').trim();
     return propria || (p && DESCRICOES_TIPO[p.tipo]) || '';
@@ -2226,6 +2253,7 @@
       // Personalizações desta loja (textos, tamanhos e fotos próprias) e
       // tamanhos esgotados (só se a loja usa controle de estoque).
       await Promise.all([carregarOverrides(), carregarEstoque(), carregarDescricoesTipo()]);
+      atualizarMenuTipos(); // não trava o carregamento
 
       registrarVisita();
 
