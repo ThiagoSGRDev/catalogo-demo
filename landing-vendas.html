@@ -142,6 +142,12 @@
   .hero h1{ font-size:clamp(46px, 12vw, 76px); max-width:11ch; }
   .hero .lead{ color:var(--texto-dim); font-size:19px; max-width:42ch; margin:20px 0 30px; }
   .hero-nota{ color:var(--texto-dim); font-size:14px; margin-top:16px; }
+  /* Selos de segurança: tiram o medo antes de clicar */
+  .selos{ display:grid; gap:10px; margin-top:24px; padding-top:22px; border-top:1px solid var(--borda); }
+  @media (min-width:560px){ .selos{ grid-template-columns:repeat(3, 1fr); gap:16px; } }
+  .selo-item{ display:flex; gap:10px; align-items:flex-start; font-size:14.5px; color:var(--texto-dim); }
+  .selo-item svg{ width:20px; height:20px; color:var(--neon); flex-shrink:0; margin-top:1px; }
+  .selo-item b{ display:block; color:var(--texto); font-size:15px; }
   .hero-nota b{ color:var(--texto); }
 
   /* Demonstrativo: catálogo mestre ao vivo + vídeo do painel */
@@ -366,6 +372,20 @@
         </a>
       </div>
       <p class="hero-nota"><b>Sem taxa por venda.</b> Só a assinatura, a partir de R$ 41,58 por mês.</p>
+      <div class="selos">
+        <div class="selo-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+          <span><b>Liberado na hora</b>Sua loja abre sozinha assim que o Pix cai</span>
+        </div>
+        <div class="selo-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span><b>Garantia de 7 dias</b>Não gostou? Devolvo o valor, sem discussão</span>
+        </div>
+        <div class="selo-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+          <span><b>Catálogo atualizado</b>Camisas novas entram todo mês, sem você fazer nada</span>
+        </div>
+      </div>
     </div>
 
     <div id="demonstrativo" class="revelar" data-atraso="2">
@@ -514,6 +534,7 @@
         <li>Painel completo no celular</li>
         <li>Pedido organizado no WhatsApp</li>
         <li>Sem taxa ou comissão por venda</li>
+        <li>Garantia de 7 dias</li>
       </ul>
       <button class="btn btn-principal" type="button" onclick="abrirCheckout(planoAtual)">Quero ativar agora</button>
     </div>
@@ -536,6 +557,7 @@
   <div class="wrap">
     <h2 class="revelar">Dúvidas <span class="neon">comuns</span></h2>
     <div class="duvidas revelar">
+      <details><summary>E se eu não gostar?</summary><p>Você tem 7 dias para pedir o dinheiro de volta. Basta me chamar no WhatsApp dentro desse prazo; devolvo o valor cheio, sem precisar justificar.</p></details>
       <details><summary>Preciso ter CNPJ?</summary><p>Não. Dá para assinar com CPF.</p></details>
       <details><summary>O dinheiro das vendas passa pelo Manto Hub?</summary><p>Não. O pedido chega no seu WhatsApp e você recebe do cliente do jeito que já recebe hoje. Não existe comissão por venda.</p></details>
       <details><summary>Sou obrigado a vender as camisas que já vêm cadastradas?</summary><p>Não. Você esconde as que não quer mostrar e cadastra as suas próprias, com suas fotos e seu preço.</p></details>
