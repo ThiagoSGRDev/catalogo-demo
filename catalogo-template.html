@@ -4624,13 +4624,9 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
         ? ` (Personalização: ${item.nome || 'sem nome'}${item.numero ? ' / Nº ' + item.numero : ''})`
         : '';
       msg += `• ${nomeCompleto} — ${item.subtitulo || item.modelo}, Tam ${item.tamanho}, Qtd ${item.qty}${personalizacaoTxt} — R$ ${subtotal}%0A`;
-      // Inclui o link da foto só quando for uma foto real (URL do Storage) —
-      // nunca quando for o escudo do time (esse vem em base64, não é um link).
-      // Não usar encodeURIComponent aqui: o link precisa ficar "limpo" no
-      // texto pra o WhatsApp reconhecer e mostrar a prévia com miniatura.
-      if(item.foto && /^https?:\/\//i.test(item.foto)){
-        msg += `${item.foto}%0A`;
-      }
+      // O link da foto foi removido de propósito: na prática o WhatsApp raramente
+      // gerava a prévia (miniatura), e o link cru só deixava a mensagem feia e
+      // técnica pro cliente ver. O nome do produto já basta pra identificar.
     });
 
     const subtotal = getSubtotal();
