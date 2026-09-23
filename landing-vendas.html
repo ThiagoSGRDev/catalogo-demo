@@ -158,6 +158,16 @@
   .demo-titulo{ font-family:'Anton', sans-serif; text-transform:uppercase; font-size:20px; letter-spacing:.02em; }
   .demo-sub{ color:var(--texto-dim); font-size:14px; margin:2px 0 12px; max-width:250px; }
   .demo-dica{ color:var(--texto-dim); font-size:14px; margin-top:12px; }
+  .whatsapp-flutuante{
+    position:fixed; right:18px; bottom:18px; z-index:90;
+    width:56px; height:56px; border-radius:50%; background:#25D366; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 22px rgba(0,0,0,0.4); animation:flutuarPulso 2.6s ease-in-out infinite;
+  }
+  .whatsapp-flutuante svg{ width:28px; height:28px; }
+  @keyframes flutuarPulso{ 0%,100%{ box-shadow:0 8px 22px rgba(0,0,0,0.4), 0 0 0 0 rgba(37,211,102,.5); } 50%{ box-shadow:0 8px 22px rgba(0,0,0,0.4), 0 0 0 10px rgba(37,211,102,0); } }
+  @media (prefers-reduced-motion: reduce){ .whatsapp-flutuante{ animation:none; } }
+
   .demo-link{
     display:inline-block; margin-top:14px; color:var(--neon); font-weight:700;
     text-decoration:underline; text-underline-offset:4px; font-size:15px;
@@ -369,11 +379,11 @@
         O cliente escolhe sozinho e o pedido chega pronto no seu WhatsApp.
       </p>
       <div class="ctas">
-        <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Quero ativar agora</button>
-        <a class="btn btn-secundario" href="https://wa.me/5511961647823?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20Manto%20Hub" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>
-          Falar no WhatsApp
+        <a class="btn btn-secundario" href="catalogo-template.html?loja=manto-hub" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 9-14 9V3z"/></svg>
+          Ver demonstração
         </a>
+        <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Quero ativar agora</button>
       </div>
       <p class="hero-nota"><b>Sem taxa por venda.</b> Só a assinatura, a partir de R$ 41,58 por mês.</p>
       <div class="selos">
@@ -391,6 +401,10 @@
         </div>
       </div>
     </div>
+
+    <a class="whatsapp-flutuante" href="https://wa.me/5511961647823?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20Manto%20Hub" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>
+    </a>
 
     <div id="demonstrativo" class="revelar" data-atraso="2">
       <div class="demo">
@@ -577,8 +591,8 @@
   <div class="wrap">
     <h2 class="revelar">Sua próxima venda sai de um <span class="neon">link</span>, não de vinte mensagens</h2>
     <div class="ctas revelar">
+      <a class="btn btn-secundario" href="catalogo-template.html?loja=manto-hub" target="_blank" rel="noopener">Ver demonstração</a>
       <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Quero ativar agora</button>
-      <a class="btn btn-secundario" href="https://wa.me/5511961647823?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20Manto%20Hub" target="_blank" rel="noopener">Falar no WhatsApp</a>
     </div>
   </div>
 </section>
