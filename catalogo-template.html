@@ -304,6 +304,62 @@
   .drawer-bottom span{font-family:'Space Mono', monospace; font-size:11px; color:rgba(var(--muted-rgb),0.5); letter-spacing:.05em;}
 
   /* CART OVERLAY (Meu Pedido) */
+  /* ============================================================
+     SELO E POP-UP DE DEMONSTRAÇÃO — só aparecem na vitrine "manto-hub"
+     (o catálogo mestre, usado como demo na página de vendas). Nunca
+     aparecem nas vitrines dos lojistas de verdade (ex.: Manto Dez).
+     ============================================================ */
+  .demo-selo{
+    position:fixed; left:16px; bottom:16px; z-index:80;
+    display:flex; align-items:center; gap:8px;
+    background:rgba(10,13,16,0.9); backdrop-filter:blur(6px);
+    border:1.5px solid var(--gold); color:var(--gold-text);
+    font-family:'Space Mono', monospace; font-size:11px; font-weight:700;
+    letter-spacing:.04em; text-transform:uppercase;
+    padding:9px 14px; border-radius:999px; text-decoration:none;
+    box-shadow:0 6px 20px rgba(0,0,0,0.35);
+  }
+  .demo-selo[hidden]{ display:none; }
+  .demo-selo span{ width:7px; height:7px; border-radius:50%; background:var(--gold); flex-shrink:0; }
+
+  .demo-popup-fundo{
+    position:fixed; inset:0; z-index:180; background:rgba(0,0,0,0.6);
+    display:flex; align-items:flex-end; opacity:0; pointer-events:none;
+    transition:opacity .25s ease;
+  }
+  .demo-popup-fundo.open{ opacity:1; pointer-events:auto; }
+  .demo-popup{
+    position:relative; width:100%; max-width:480px; margin:0 auto;
+    background:var(--pitch-deep); border:1.5px solid var(--gold);
+    border-radius:24px 24px 0 0; padding:26px 24px 28px;
+    transform:translateY(16px); transition:transform .25s ease;
+  }
+  @media (min-width:560px){ .demo-popup{ border-radius:24px; margin-bottom:24px; } }
+  .demo-popup-fundo.open .demo-popup{ transform:translateY(0); }
+  .demo-popup-fechar{
+    position:absolute; top:16px; right:16px; width:34px; height:34px; border-radius:50%;
+    background:rgba(255,255,255,0.06); border:0; color:var(--chalk); font-size:18px; cursor:pointer;
+  }
+  .demo-popup-tag{
+    display:inline-flex; align-items:center; gap:7px; border:1.5px solid var(--gold);
+    color:var(--gold-text); font-family:'Space Mono', monospace; font-size:11px; font-weight:700;
+    letter-spacing:.05em; text-transform:uppercase; padding:6px 12px; border-radius:999px; margin-bottom:16px;
+  }
+  .demo-popup h3{ font-family:'Anton', sans-serif; font-size:26px; line-height:1.12; margin-bottom:10px; }
+  .demo-popup h3 em{ font-style:normal; color:var(--gold-text); }
+  .demo-popup p{ color:rgba(var(--muted-rgb),0.85); font-size:15px; line-height:1.5; margin-bottom:16px; }
+  .demo-popup ul{ list-style:none; display:grid; gap:9px; margin-bottom:22px; }
+  .demo-popup li{ display:flex; gap:9px; align-items:flex-start; font-size:14.5px; }
+  .demo-popup li::before{ content:'✓'; color:var(--gold-text); font-weight:700; flex-shrink:0; }
+  .demo-popup-btn{
+    display:block; width:100%; text-align:center; background:var(--gold); color:var(--pitch-deep);
+    font-weight:700; padding:15px; border-radius:999px; text-decoration:none; font-size:15px;
+  }
+  .demo-popup-dispensar{
+    display:block; width:100%; text-align:center; margin-top:12px; background:none; border:0;
+    color:rgba(var(--muted-rgb),0.65); font-size:13.5px; cursor:pointer; padding:6px;
+  }
+
   .cart-overlay{
     position:fixed; inset:0; background:var(--pitch-dark); z-index:55;
     transform:translateX(100%); transition:transform .25s ease;
@@ -1319,6 +1375,27 @@
 </style>
 </head>
 <body>
+  <a class="demo-selo" id="demoSelo" href="landing-vendas.html#planos" hidden>
+    <span></span>Isto é uma demonstração
+  </a>
+
+  <div class="demo-popup-fundo" id="demoPopupFundo" hidden>
+    <div class="demo-popup">
+      <button class="demo-popup-fechar" onclick="fecharDemoPopup()" aria-label="Fechar">×</button>
+      <span class="demo-popup-tag">Isto é uma demonstração</span>
+      <h3>Gostou do que viu?<br><em>Esta loja pode ser sua.</em></h3>
+      <p>Este catálogo já está pronto, com as camisas e as fotos que você acabou de ver. Ative o seu com a sua marca e comece a receber pedidos hoje.</p>
+      <ul>
+        <li>Catálogo completo, já montado</li>
+        <li>Pedido direto no seu WhatsApp</li>
+        <li>Sua logo, suas cores</li>
+        <li>Liberado assim que o Pix cai</li>
+      </ul>
+      <a class="demo-popup-btn" href="landing-vendas.html#planos" target="_top">Quero o meu catálogo →</a>
+      <button class="demo-popup-dispensar" onclick="fecharDemoPopup()">Continuar navegando</button>
+    </div>
+  </div>
+
 <div id="appShell">
 
   <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
@@ -4188,6 +4265,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
   function addToCart(){
     if(!currentTeam || !currentProduct) return;
+    abrirDemoPopup();
     if(!selectedSize || tamanhoEsgotado(currentProduct, selectedSize)) return;
 
     const nome = document.getElementById('personalizeNome').value.trim().toUpperCase();
@@ -4762,6 +4840,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   (async function initCatalogNav(){
     const lojaOk = await resolverLoja();
     if(!lojaOk) return; // resolverLoja() já mostrou a tela de "loja não encontrada"
+    iniciarDemoLoja();
     await aplicarAparencia();
     await loadDynamicLigas();
     await loadDynamicTeams();
@@ -4785,7 +4864,30 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   }
 
   // ===== CART OVERLAY (Meu Pedido) =====
+  const EH_LOJA_DEMO = (LOJA_SLUG === 'manto-hub');
+  let demoPopupMostrado = false;
+
+  function iniciarDemoLoja(){
+    if(!EH_LOJA_DEMO) return;
+    document.getElementById('demoSelo').hidden = false;
+  }
+
+  function abrirDemoPopup(){
+    if(!EH_LOJA_DEMO || demoPopupMostrado) return;
+    if(sessionStorage.getItem('demoPopupVisto')) return;
+    demoPopupMostrado = true;
+    sessionStorage.setItem('demoPopupVisto', '1');
+    document.getElementById('demoPopupFundo').hidden = false;
+    requestAnimationFrame(() => document.getElementById('demoPopupFundo').classList.add('open'));
+  }
+  function fecharDemoPopup(){
+    const el = document.getElementById('demoPopupFundo');
+    el.classList.remove('open');
+    setTimeout(() => { el.hidden = true; }, 250);
+  }
+
   function showCart(){
+    abrirDemoPopup();
     document.getElementById('cartOverlay').classList.add('open');
     if (order.length > 0) {
       trackEvent('start_checkout', { items_count: order.length, shipping_method: freteEscolhido, total_price: getSubtotal() + getFreteValor() });
