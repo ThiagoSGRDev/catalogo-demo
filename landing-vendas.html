@@ -549,7 +549,7 @@
         <button class="aba" type="button" role="tab" aria-selected="false" data-plano="trimestral" onclick="trocarPlano('trimestral')">Trimestral<small>-10%</small></button>
         <button class="aba" type="button" role="tab" aria-selected="false" data-plano="anual" onclick="trocarPlano('anual')">Anual<small>2 meses grátis</small></button>
       </div>
-      <span class="plano-selo" id="planoSelo">Preço de fundador para os 20 primeiros lojistas</span>
+      <span class="plano-selo" id="planoSelo">Preço de fundador — carregando vagas…</span>
       <div class="plano-preco" id="planoPreco">R$ 49,90<small>/mês</small></div>
       <p class="plano-obs" id="planoObs">Quem entrar agora mantém esse valor enquanto a assinatura estiver ativa.</p>
       <ul class="plano-lista">
@@ -739,7 +739,7 @@
 
   // Seletor de planos (abas)
   const PLANOS_TELA = {
-    mensal:     { preco:'R$ 49,90', sufixo:'/mês', selo:'Preço de fundador para os 20 primeiros lojistas', obs:'Quem entrar agora mantém esse valor enquanto a assinatura estiver ativa.' },
+    mensal:     { preco:'R$ 49,90', sufixo:'/mês', selo:'Preço de fundador — carregando vagas…', obs:'Quem entrar agora mantém esse valor enquanto a assinatura estiver ativa.' },
     trimestral: { preco:'R$ 44,97', sufixo:'/mês', selo:'10% mais barato que o mensal', obs:'R$ 134,90 cobrado a cada 3 meses.' },
     anual:      { preco:'R$ 41,58', sufixo:'/mês', selo:'2 meses grátis', obs:'R$ 499,00 cobrado uma vez por ano.' }
   };
@@ -770,6 +770,45 @@
     publishableKey: "sb_publishable_t-LqIKyLqCT4Kx8Hgi7JcA_tvk3gjsy"
   };
   const supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
+
+  // ============================================================
+  // SELO "PREÇO DE FUNDADOR" — vagas reais, não texto fixo.
+  // Busca no banco (via função pública vagas_fundador_restantes(),
+  // que só conta assinaturas com status='active') quantas das 20
+  // vagas de fundador ainda restam, e atualiza o selo do plano mensal
+  // com o número real. Se as 20 vagas já foram preenchidas, troca a
+  // mensagem em vez de continuar prometendo "20 primeiros" pra sempre.
+  // Se a busca falhar (rede, RPC fora do ar), mantém uma mensagem
+  // honesta genérica em vez de travar em "carregando" para sempre.
+  // ============================================================
+  async function carregarVagasFundador(){
+    let vagas = null;
+    try {
+      const { data, error } = await supabaseClient.rpc('vagas_fundador_restantes');
+      if(error) throw error;
+      vagas = data;
+    } catch(e){
+      console.error('Não consegui carregar as vagas de fundador', e);
+    }
+
+    let seloFundador;
+    if(vagas === null){
+      seloFundador = 'Preço de fundador para os primeiros lojistas';
+    } else if(vagas > 0){
+      seloFundador = `Preço de fundador — restam ${vagas} de 20 vagas`;
+    } else {
+      seloFundador = 'Vagas de fundador encerradas — valor promocional pode mudar em breve';
+    }
+
+    PLANOS_TELA.mensal.selo = seloFundador;
+    // Só troca o texto na tela se o plano mensal ainda for o exibido
+    // (evita sobrescrever o selo de outro plano se o visitante já trocou
+    // de aba antes da resposta do banco chegar).
+    if(planoAtual === 'mensal'){
+      document.getElementById('planoSelo').textContent = seloFundador;
+    }
+  }
+  carregarVagasFundador();
 
   // Nomes/valores de exibição no resumo do checkout. Precisam bater com
   // PLANOS das funções criar-assinatura e mudar-plano e com o admin.
