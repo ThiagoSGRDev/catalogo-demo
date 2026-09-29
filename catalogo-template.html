@@ -4794,12 +4794,18 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const stage = document.getElementById('heroCrestStage');
     let midias = null;
 
-    // Tenta buscar as mídias do banner cadastradas no painel admin
+    // Tenta buscar as mídias do banner cadastradas no painel admin.
+    // Cada mídia é marcada no admin como 'ambos', 'mobile' ou 'desktop':
+    // vídeo vertical de celular fica pixelizado esticado no banner largo.
+    // Mesmo corte de 820px do CSS do hero.
+    const ehDesktop = window.matchMedia('(min-width:820px)').matches;
+    const dispositivoAtual = ehDesktop ? 'desktop' : 'mobile';
     if(supabaseReady){
       const { data, error } = await supabaseClient
         .from('hero_banners')
-        .select('url')
+        .select('url, dispositivo')
         .in('loja_id', LOJAS_VISIVEIS)
+        .in('dispositivo', ['ambos', dispositivoAtual])
         .order('ordem', { ascending: true });
       if(!error && data && data.length > 0){
         midias = data.map(row => row.url);

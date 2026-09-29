@@ -827,6 +827,13 @@
   .add-slot-plus{ font-size:26px; line-height:1; color:var(--neon-green); }
   .add-slot-label{ font-size:9.5px; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-faint); text-align:center; padding:0 4px; }
   .image-slot .uploading{ font-size:11px; color:var(--text-dim); text-align:center; padding:0 6px; }
+  /* Banner hero: cada mídia vem com o seletor de dispositivo embaixo. */
+  .hero-slot-wrap{ display:flex; flex-direction:column; gap:4px; }
+  .image-grid > .add-slot{ align-self:start; }
+  .hero-disp-select{
+    width:100%; background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    color:var(--text); font-size:11px; padding:4px 2px; cursor:pointer;
+  }
 
   /* LISTA DE TIMES */
   .team-row{
@@ -1700,6 +1707,13 @@
         </div>
       </div>
       <div class="field-hint" style="margin-bottom:12px;">Você pode selecionar vários de uma vez. Cada ação (adicionar, mover, excluir) salva na hora — não precisa de botão "Salvar".</div>
+      <div class="field-hint" style="margin-bottom:6px;">Onde os próximos arquivos vão aparecer:</div>
+      <div class="size-picker" id="heroUploadDispositivo" style="margin-bottom:12px;">
+        <button type="button" class="size-opt active" data-disp="ambos" onclick="setHeroUploadDispositivo('ambos')">Ambos</button>
+        <button type="button" class="size-opt" data-disp="mobile" onclick="setHeroUploadDispositivo('mobile')">Só mobile</button>
+        <button type="button" class="size-opt" data-disp="desktop" onclick="setHeroUploadDispositivo('desktop')">Só desktop</button>
+      </div>
+      <div class="field-hint" style="margin-bottom:12px;">Vídeo vertical gravado no celular fica pixelizado esticado no banner largo do computador: marque ele como "Só mobile" e suba uma versão horizontal como "Só desktop".</div>
       <div class="image-grid" id="heroImageGrid"></div>
       <input type="file" id="heroFileInput" accept="image/*,video/mp4,video/webm,video/quicktime" multiple class="hidden" onchange="handleHeroFileSelected(event)">
     </div>
@@ -4022,7 +4036,7 @@
   async function loadHeroBanners(){
     const { data, error } = await supabaseClient
       .from('hero_banners')
-      .select('id, url, ordem')
+      .select('id, url, ordem, dispositivo')
       .order('ordem', { ascending: true });
     if(error){ showToast('Erro ao carregar banner: ' + error.message, 'error'); return; }
     HERO_BANNERS = data || [];
@@ -4032,21 +4046,49 @@
     return /\.(mp4|webm|mov)(\?.*)?$/i.test(url || '');
   }
 
+  const HERO_DISPOSITIVOS = [
+    { valor:'ambos', rotulo:'Ambos' },
+    { valor:'mobile', rotulo:'Só mobile' },
+    { valor:'desktop', rotulo:'Só desktop' },
+  ];
+  let heroUploadDispositivo = 'ambos';
+
+  function setHeroUploadDispositivo(dispositivo){
+    heroUploadDispositivo = dispositivo;
+    document.querySelectorAll('#heroUploadDispositivo .size-opt').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.disp === dispositivo);
+    });
+  }
+
+  async function setHeroBannerDispositivo(id, dispositivo){
+    const { error } = await supabaseClient.from('hero_banners').update({ dispositivo }).eq('id', id);
+    if(error){ showToast('Erro ao salvar dispositivo: ' + error.message, 'error'); }
+    await loadHeroBanners();
+    renderHeroGrid();
+  }
+
   function renderHeroGrid(){
     const grid = document.getElementById('heroImageGrid');
     let html = HERO_BANNERS.map((banner, i) => {
       const midia = isHeroVideo(banner.url)
         ? `<video src="${banner.url}" muted loop playsinline autoplay></video><span class="media-badge">vídeo</span>`
         : `<img src="${banner.url}" alt="">`;
+      const dispositivoAtual = banner.dispositivo || 'ambos';
+      const opcoes = HERO_DISPOSITIVOS.map(d =>
+        `<option value="${d.valor}" ${d.valor === dispositivoAtual ? 'selected' : ''}>${d.rotulo}</option>`
+      ).join('');
       return `
-      <div class="image-slot">
-        <span class="order-badge">${i + 1}</span>
-        ${midia}
-        <button class="remove-btn" onclick="removeHeroBanner('${banner.id}')">×</button>
-        <div class="move-btns">
-          <button class="move-btn" onclick="moveHeroBanner(${i}, -1)" ${i === 0 ? 'disabled' : ''} aria-label="Mover para a esquerda">‹</button>
-          <button class="move-btn" onclick="moveHeroBanner(${i}, 1)" ${i === HERO_BANNERS.length - 1 ? 'disabled' : ''} aria-label="Mover para a direita">›</button>
+      <div class="hero-slot-wrap">
+        <div class="image-slot">
+          <span class="order-badge">${i + 1}</span>
+          ${midia}
+          <button class="remove-btn" onclick="removeHeroBanner('${banner.id}')">×</button>
+          <div class="move-btns">
+            <button class="move-btn" onclick="moveHeroBanner(${i}, -1)" ${i === 0 ? 'disabled' : ''} aria-label="Mover para a esquerda">‹</button>
+            <button class="move-btn" onclick="moveHeroBanner(${i}, 1)" ${i === HERO_BANNERS.length - 1 ? 'disabled' : ''} aria-label="Mover para a direita">›</button>
+          </div>
         </div>
+        <select class="hero-disp-select" aria-label="Onde este banner aparece" onchange="setHeroBannerDispositivo('${banner.id}', this.value)">${opcoes}</select>
       </div>
     `;
     }).join('');
@@ -4062,6 +4104,7 @@
 
   async function openHeroOverlay(){
     document.getElementById('heroOverlay').classList.remove('hidden');
+    setHeroUploadDispositivo('ambos');
     document.getElementById('heroImageGrid').innerHTML = '<div class="no-results">Carregando…</div>';
     await loadHeroBanners();
     renderHeroGrid();
@@ -4079,6 +4122,7 @@
     event.target.value = '';
     if(files.length === 0) return;
 
+    const dispositivo = heroUploadDispositivo;
     let proximaOrdem = HERO_BANNERS.length > 0 ? Math.max(...HERO_BANNERS.map(b => b.ordem)) + 1 : 0;
     let enviados = 0;
 
@@ -4111,7 +4155,7 @@
         continue;
       }
       const { data: publicUrlData } = supabaseClient.storage.from(HERO_BUCKET).getPublicUrl(path);
-      const { error: dbError } = await supabaseClient.from('hero_banners').insert({ url: publicUrlData.publicUrl, ordem: proximaOrdem, loja_id: ADMIN_LOJA_ID });
+      const { error: dbError } = await supabaseClient.from('hero_banners').insert({ url: publicUrlData.publicUrl, ordem: proximaOrdem, loja_id: ADMIN_LOJA_ID, dispositivo });
       if(dbError){ showToast('Erro ao salvar no banco: ' + dbError.message, 'error'); continue; }
       proximaOrdem++;
       enviados++;
