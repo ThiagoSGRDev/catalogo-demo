@@ -183,15 +183,15 @@
      vazia ao redor (era assim antes; ver histórico do commit).
      O #appShell não tem teto de largura: fundo, topo, banners e
      carrosséis vão de borda a borda. Quem limita a leitura é o .wrap.
-     O "transform" no #appShell não é cosmético — é o que faz os
-     overlays (position:fixed: carrinho, formulários, menu) se
-     posicionarem pelo #appShell em vez da janela.
+     NÃO colocar transform (nem filter/will-change) no #appShell: isso
+     faz os position:fixed (filtros, barra de compra, carrinho, menu)
+     se posicionarem pelo #appShell em vez da janela, e o que devia
+     grudar no rodapé da tela vai parar no fim da página.
      ============================================================ */
   @media (min-width:820px){
     html{ background:var(--fundo-fora); }
     #appShell{
       margin:0 auto; min-height:100vh;
-      transform:translateZ(0);
       overflow-x:hidden;
     }
   }
