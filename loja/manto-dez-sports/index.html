@@ -2211,16 +2211,18 @@
   // ============================================================
   // Extrair slug da URL: pode vir de /loja/[slug]/ ou de ?loja=...
   function extrairSlugDaURL() {
+    const validSlugPattern = /^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$/;
+
     // Tentar primeiro a query string (?loja=...)
     const querySlug = new URLSearchParams(location.search).get('loja');
-    if (querySlug) return querySlug;
+    if (querySlug && validSlugPattern.test(querySlug)) return querySlug;
 
     // Tentar extrair de /loja/[slug]/
     const pathParts = location.pathname.split('/');
     const lojaIndex = pathParts.indexOf('loja');
     if (lojaIndex !== -1 && lojaIndex + 1 < pathParts.length) {
       const slug = pathParts[lojaIndex + 1];
-      if (slug) return slug;
+      if (slug && validSlugPattern.test(slug)) return slug;
     }
 
     // Fallback: demo
