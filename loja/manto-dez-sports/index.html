@@ -5000,6 +5000,19 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   setTimeout(esconderLoadingGate, 5000);
 
   (async function initCatalogNav(){
+    // Aguardar loja.js definir ADMIN_LOJA_ID (validação e autorização de acesso)
+    // Timeout de até 3 segundos — se loja.js não respondeu, seguir com fallback
+    let tentativas = 0;
+    while (!window.ADMIN_LOJA_ID && tentativas < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tentativas++;
+    }
+    if (window.ADMIN_LOJA_ID) {
+      console.log('✅ ADMIN_LOJA_ID disponível:', window.ADMIN_LOJA_ID);
+    } else {
+      console.log('⚠️ ADMIN_LOJA_ID não foi definido por loja.js, usando fallback');
+    }
+
     const { ok, extras } = await resolverLoja();
     if(!ok) return; // resolverLoja() já mostrou a tela de "loja não encontrada"
     iniciarDemoLoja();
