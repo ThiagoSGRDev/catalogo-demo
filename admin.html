@@ -6502,6 +6502,19 @@
     return v.replace(/^@/, '').trim();
   }
 
+  // Gera slug automático do nome da loja (ex: "Manto Dez Sports" → "manto-dez-sports")
+  function gerarSlugDaLoja(nome) {
+    return nome
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
   async function salvarLoja(){
     const nomeLoja = document.getElementById('lojaNomeInput').value.trim();
     if(!nomeLoja){
@@ -6513,7 +6526,50 @@
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>';
 
-    const { error: erroNome } = await supabaseClient.from('lojas').update({ nome: nomeLoja }).eq('id', ADMIN_LOJA_ID);
+    const slugLoja = gerarSlugDaLoja(nomeLoja);
+
+    // 1. Buscar loja atual pra ver se já tem slug
+    const { data: lojaAtual, error: erroFetch } = await supabaseClient
+      .from('lojas')
+      .select('slug')
+      .eq('id', ADMIN_LOJA_ID)
+      .single();
+
+    if(erroFetch){
+      btn.disabled = false;
+      btn.textContent = 'Salvar loja';
+      showToast('Erro ao buscar dados da loja: ' + erroFetch.message, 'error');
+      return;
+    }
+
+    // 2. Se não tem slug, gerar e validar se já existe
+    let novoSlug = null;
+    if(!lojaAtual.slug){
+      // Validar se slug já existe (outro lojista com mesmo nome)
+      const { data: slugExiste } = await supabaseClient
+        .from('lojas')
+        .select('id')
+        .eq('slug', slugLoja)
+        .single();
+
+      if(slugExiste){
+        btn.disabled = false;
+        btn.textContent = 'Salvar loja';
+        showToast('Uma loja com este nome já existe. Escolha outro nome.', 'error');
+        return;
+      }
+      novoSlug = slugLoja;
+    }
+
+    // 3. Atualizar nome e slug (se novo)
+    const updatePayload = { nome: nomeLoja };
+    if(novoSlug) updatePayload.slug = novoSlug;
+
+    const { error: erroNome } = await supabaseClient
+      .from('lojas')
+      .update(updatePayload)
+      .eq('id', ADMIN_LOJA_ID);
+
     if(erroNome){
       btn.disabled = false;
       btn.textContent = 'Salvar loja';
@@ -6521,6 +6577,7 @@
       return;
     }
 
+    // 4. Atualizar ou criar store_settings
     const { error } = await supabaseClient
       .from('store_settings')
       .update({
@@ -6547,8 +6604,14 @@
       showToast('Erro ao salvar loja: ' + error.message, 'error');
       return;
     }
+
     ADMIN_USA_ESTOQUE = document.getElementById('lojaUsaEstoque').checked;
-    showToast('Loja salva! O catálogo já reflete a mudança.', 'success');
+
+    // 5. Exibir mensagem com URL personalizada
+    const slugFinal = novoSlug || lojaAtual.slug;
+    const urlPersonalizada = `https://katalogohub.com/loja/${slugFinal}/`;
+    showToast(`Loja salva! URL: ${urlPersonalizada}`, 'success');
+
     closeLojaOverlay();
     loadTopbarLoja();
   }
