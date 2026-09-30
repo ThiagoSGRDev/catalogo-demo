@@ -2209,7 +2209,24 @@
   // path bonito (/s/katalogohub) sem mexer no resto do código — só troca
   // como LOJA_SLUG é lido, o resto (LOJA_ID e os filtros) continua igual.
   // ============================================================
-  const LOJA_SLUG = new URLSearchParams(location.search).get('loja') || 'katalogohub';
+  // Extrair slug da URL: pode vir de /loja/[slug]/ ou de ?loja=...
+  function extrairSlugDaURL() {
+    // Tentar primeiro a query string (?loja=...)
+    const querySlug = new URLSearchParams(location.search).get('loja');
+    if (querySlug) return querySlug;
+
+    // Tentar extrair de /loja/[slug]/
+    const pathParts = location.pathname.split('/');
+    const lojaIndex = pathParts.indexOf('loja');
+    if (lojaIndex !== -1 && lojaIndex + 1 < pathParts.length) {
+      const slug = pathParts[lojaIndex + 1];
+      if (slug) return slug;
+    }
+
+    // Fallback: demo
+    return 'katalogohub';
+  }
+  const LOJA_SLUG = extrairSlugDaURL();
   let LOJA_ID = null;
   let LOJAS_VISIVEIS = []; // [minha loja] + [loja mestre, se essa loja usar o catálogo compartilhado]
   // Texto padrão por tipo de camisa: o da loja vence; tipo que ela deixou
