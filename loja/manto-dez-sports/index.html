@@ -2405,13 +2405,17 @@
   async function resolverLoja(){
     if(!supabaseReady) return { ok:false };
     try {
+      // Se loja.js já definiu ADMIN_LOJA_ID (URL com slug), usar direto
+      // Senão, usar LOJA_SLUG da query string (compatibilidade)
+      const lojaIdADefinir = window.ADMIN_LOJA_ID || null;
+
       const { data, error } = await supabaseClient
         .from('lojas')
         .select('id, nome, ativa, usa_catalogo_mestre')
-        .eq('slug', LOJA_SLUG)
+        .eq(lojaIdADefinir ? 'id' : 'slug', lojaIdADefinir || LOJA_SLUG)
         .single();
       if(error || !data || !data.ativa){
-        console.error('Loja não encontrada ou inativa:', LOJA_SLUG, error);
+        console.error('Loja não encontrada ou inativa:', lojaIdADefinir ? `ID:${lojaIdADefinir}` : `slug:${LOJA_SLUG}`, error);
         document.body.innerHTML = '<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:#0A0D10; color:#F4F6F7; font-family:sans-serif; text-align:center; padding:20px;">Essa loja não existe ou está temporariamente indisponível.</div>';
         return { ok:false };
       }
