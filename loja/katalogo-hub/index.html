@@ -1467,6 +1467,24 @@
   #loadingGate{ position:fixed; inset:0; background:#0A0D10; z-index:99999; }
   #loadingGate.oculto{ display:none; }
 </style>
+<!-- Store URL Resolver — detecta slug ANTES de qualquer outro script -->
+<script>
+  // Extrair slug da URL e resolver para loja_id IMEDIATAMENTE
+  function getStoreSlugFromURL() {
+    const pathParts = window.location.pathname.split('/');
+    const lojaIndex = pathParts.indexOf('loja');
+    if (lojaIndex !== -1 && lojaIndex + 1 < pathParts.length) {
+      return pathParts[lojaIndex + 1];
+    }
+    return null;
+  }
+
+  const storeSlug = getStoreSlugFromURL();
+  console.log('🏪 Store slug detectado:', storeSlug);
+
+  // Será sobrescrito pela resolução no loja.js
+  // Por enquanto, apenas log
+</script>
 <!-- Supabase Client Library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Store URL Resolver — detecta slug e seta ADMIN_LOJA_ID -->
