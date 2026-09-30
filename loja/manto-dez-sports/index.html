@@ -1480,6 +1480,7 @@
        um limite de segurança de 5s, se algo travar) em esconderLoadingGate(). -->
   <div id="loadingGate"></div>
 
+  <!-- Demo selo: só aparece em katalogohub (catálogo mestre de demonstração) -->
   <a class="demo-selo" id="demoSelo" href="landing-vendas.html#planos" hidden>
     <span></span>Isto é uma demonstração
   </a>
@@ -5015,6 +5016,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
     const { ok, extras } = await resolverLoja();
     if(!ok) return; // resolverLoja() já mostrou a tela de "loja não encontrada"
+    controlarDemoSelo(); // Mostrar/esconder selo de demonstração
     iniciarDemoLoja();
     // aplicarAparencia() só precisa do LOJA_ID (já resolvido acima) -- não
     // precisa mais esperar o resto (ocultos, personalizações, estoque,
@@ -5059,6 +5061,21 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     document.getElementById('demoPopupFundo').hidden = false;
     requestAnimationFrame(() => document.getElementById('demoPopupFundo').classList.add('open'));
   }
+  // Controlar visibilidade do selo de demonstração
+  // Só aparece em "katalogohub" (catálogo mestre de demo)
+  function controlarDemoSelo(){
+    const demoSelo = document.getElementById('demoSelo');
+    // Se for katalogohub (demo) ou se LOJA_SLUG for katalogohub, mostrar
+    const ehDemo = LOJA_SLUG === 'katalogohub';
+    if (demoSelo) {
+      if (ehDemo) {
+        demoSelo.removeAttribute('hidden');
+      } else {
+        demoSelo.setAttribute('hidden', '');
+      }
+    }
+  }
+
   function fecharDemoPopup(){
     const el = document.getElementById('demoPopupFundo');
     el.classList.remove('open');
