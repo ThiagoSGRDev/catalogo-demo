@@ -5082,13 +5082,24 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // Só aparece em "katalogohub" (catálogo mestre de demo)
   function controlarDemoSelo(){
     const demoSelo = document.getElementById('demoSelo');
+    const demoPopupFundo = document.getElementById('demoPopupFundo');
     // Se for katalogohub (demo) ou se LOJA_SLUG for katalogohub, mostrar
     const ehDemo = LOJA_SLUG === 'katalogohub';
+
     if (demoSelo) {
       if (ehDemo) {
         demoSelo.removeAttribute('hidden');
       } else {
         demoSelo.setAttribute('hidden', '');
+      }
+    }
+
+    // Também esconder o popup de demo
+    if (demoPopupFundo) {
+      if (ehDemo) {
+        demoPopupFundo.removeAttribute('hidden');
+      } else {
+        demoPopupFundo.setAttribute('hidden', '');
       }
     }
   }
