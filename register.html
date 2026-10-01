@@ -147,6 +147,32 @@
     margin-top: 6px;
   }
 
+  .password-container {
+    position: relative;
+  }
+
+  .password-container input {
+    padding-right: 44px;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 18px;
+    transition: color 0.2s ease;
+  }
+
+  .password-toggle:hover {
+    color: var(--text);
+  }
+
   .error-text {
     font-size: 12px;
     color: var(--red);
@@ -339,13 +365,18 @@
 
       <div class="form-group">
         <label for="password">Senha</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          placeholder="••••••••"
-          required
-        >
+        <div class="password-container">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="••••••••"
+            required
+          >
+          <button type="button" class="password-toggle" id="passwordToggle" aria-label="Mostrar/esconder senha">
+            👁️
+          </button>
+        </div>
         <div class="strength-indicator">
           <div class="strength-bar" id="strengthBar"></div>
         </div>
@@ -392,6 +423,15 @@
   const storeNameInput = document.getElementById('storeName');
   const submitBtn = document.getElementById('submitBtn');
   const alertBox = document.getElementById('alertBox');
+  const passwordToggle = document.getElementById('passwordToggle');
+
+  // Toggle visibilidade da senha
+  passwordToggle.addEventListener('click', (e) => {
+    e.preventDefault();
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    passwordToggle.textContent = isPassword ? '🙈' : '👁️';
+  });
 
   // ========== VALIDAÇÕES ==========
   function validateEmail(email) {
