@@ -428,7 +428,7 @@
   if (!window.SUPABASE_CONFIG) {
     window.SUPABASE_CONFIG = {
       url: 'https://qqoepslbisxpswabrkqe.supabase.co',
-      publishableKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxb2Vwc2xiaXN4cHN3YWJya3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ5NTI5ODAsImV4cCI6MjA0MDUyODk4MH0.FjPMaL6LNH6rP0-2ZfpQv_LDzNLBNtaQ0K0xCwt7f1U'
+      publishableKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxb2Vwc2xiaXN4cHN3YWJya3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NTEyMDUsImV4cCI6MjEwNDMyNzIwNX0.Ub-loecsbwuW8QiXXJvWW2mZmfTxyI58hKPXWDFXLQM'
     };
   }
 </script>
@@ -441,7 +441,7 @@
   function initSupabase() {
     const config = window.SUPABASE_CONFIG || {
       url: 'https://qqoepslbisxpswabrkqe.supabase.co',
-      publishableKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxb2Vwc2xiaXN4cHN3YWJya3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ5NTI5ODAsImV4cCI6MjA0MDUyODk4MH0.FjPMaL6LNH6rP0-2ZfpQv_LDzNLBNtaQ0K0xCwt7f1U'
+      publishableKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxb2Vwc2xiaXN4cHN3YWJya3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3NTEyMDUsImV4cCI6MjEwNDMyNzIwNX0.Ub-loecsbwuW8QiXXJvWW2mZmfTxyI58hKPXWDFXLQM'
     };
 
     supabaseClient = window.supabase.createClient(config.url, config.publishableKey);
