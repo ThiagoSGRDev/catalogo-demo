@@ -1,18 +1,7 @@
 /**
  * Loja.js - Multi-tenant store initialization
- * Handles URL-based store detection, slug validation, and user session verification
+ * Handles URL-based store detection, slug validation, user session verification, and theme application
  */
-
-// Load environment variables (development only)
-const loadEnv = async () => {
-  if (typeof window === 'undefined') {
-    try {
-      require('dotenv').config();
-    } catch (e) {
-      console.warn('dotenv not available');
-    }
-  }
-};
 
 // Get credentials from environment or window config
 const getSupabaseConfig = () => {
@@ -93,6 +82,58 @@ function validateStoreOwnership(user, storeData) {
 }
 
 /**
+ * Convert hex color to RGB
+ */
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+/**
+ * Load and apply store theme from store_settings
+ */
+async function applyStoreTheme(supabaseClient, storeId) {
+  try {
+    const { data: settings, error } = await supabaseClient
+      .from('store_settings')
+      .select('modo, cor_primaria, cor_primaria_clara')
+      .eq('loja_id', storeId)
+      .single();
+
+    if (error || !settings) {
+      console.warn('Store settings not found, using defaults');
+      return;
+    }
+
+    const html = document.documentElement;
+
+    // Set theme mode
+    const theme = settings.modo === 'light' ? 'clean-light' : 'dark-esportivo';
+    html.setAttribute('data-theme', theme);
+
+    // Apply custom colors
+    if (settings.cor_primaria) {
+      // Convert hex to RGB for glow effects
+      const rgb = hexToRgb(settings.cor_primaria);
+      html.style.setProperty('--gold', settings.cor_primaria);
+      html.style.setProperty('--gold-bright', settings.cor_primaria_clara || settings.cor_primaria);
+      html.style.setProperty('--gold-text', settings.cor_primaria);
+      if (rgb) {
+        html.style.setProperty('--gold-rgb', `${rgb.r},${rgb.g},${rgb.b}`);
+      }
+    }
+
+    console.log('Theme applied:', theme, settings.cor_primaria);
+  } catch (error) {
+    console.error('Theme loading error:', error);
+  }
+}
+
+/**
  * Initialize store from URL and set ADMIN_LOJA_ID if user is owner
  */
 async function initializeStoreFromURL() {
@@ -108,11 +149,19 @@ async function initializeStoreFromURL() {
     const config = getSupabaseConfig();
     const supabaseClient = window.supabase.createClient(config.url, config.key);
 
-    // Get store data and user session
+    // Get store data
     const storeData = await resolveStoreSlugToData(supabaseClient, slug);
-    const user = await checkUserSession(supabaseClient);
 
-    // Set ADMIN_LOJA_ID only if user owns the store
+    if (!storeData) {
+      console.warn('Store not found');
+      return;
+    }
+
+    // Apply store theme from settings
+    await applyStoreTheme(supabaseClient, storeData.id);
+
+    // Set ADMIN_LOJA_ID if user owns the store
+    const user = await checkUserSession(supabaseClient);
     if (validateStoreOwnership(user, storeData)) {
       window.ADMIN_LOJA_ID = storeData.id;
       console.log('Store owner authenticated:', storeData.id);
