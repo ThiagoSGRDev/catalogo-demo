@@ -973,6 +973,11 @@
     letter-spacing:.03em; box-sizing:border-box;
   }
 </style>
+
+<!-- Security Modules -->
+<script src="loja/security/xss-protection.js"></script>
+<script src="loja/security/csrf-protection.js"></script>
+
 </head>
 <body>
 
@@ -6516,7 +6521,7 @@
   }
 
   async function salvarLoja(){
-    const nomeLoja = document.getElementById('lojaNomeInput').value.trim();
+    const nomeLoja = sanitizeText(document.getElementById('lojaNomeInput').value.trim());
     if(!nomeLoja){
       showToast('Preencha o nome da loja.', 'error');
       return;
