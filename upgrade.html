@@ -1,435 +1,268 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Katalogo Hub — Upgrade</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #07090C 0%, #161B26 100%);
-      color: #FFFFFF;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 900px;
-      width: 100%;
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 60px;
-    }
-
-    .header h1 {
-      font-size: 48px;
-      font-weight: 800;
-      margin-bottom: 16px;
-      background: linear-gradient(135deg, #35FFC0 0%, #00D4FF 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .header p {
-      font-size: 18px;
-      color: #94A3B8;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    .pricing-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 32px;
-      margin-bottom: 60px;
-    }
-
-    .card {
-      background: rgba(22, 27, 38, 0.8);
-      border: 1px solid rgba(53, 255, 192, 0.2);
-      border-radius: 16px;
-      padding: 40px 30px;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, rgba(53, 255, 192, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      pointer-events: none;
-    }
-
-    .card:hover {
-      border-color: rgba(53, 255, 192, 0.4);
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba(53, 255, 192, 0.15);
-    }
-
-    .card:hover::before {
-      opacity: 1;
-    }
-
-    .card.popular {
-      border-color: #35FFC0;
-      box-shadow: 0 20px 40px rgba(53, 255, 192, 0.2);
-      transform: scale(1.05);
-    }
-
-    .card.popular .badge {
-      position: absolute;
-      top: -12px;
-      right: 30px;
-      background: #35FFC0;
-      color: #0A0A0A;
-      padding: 6px 16px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .card-title {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .card-subtitle {
-      font-size: 14px;
-      color: #64748B;
-      margin-bottom: 24px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .price {
-      font-size: 48px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .price-period {
-      font-size: 14px;
-      color: #94A3B8;
-      margin-bottom: 32px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .features {
-      list-style: none;
-      margin-bottom: 32px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .features li {
-      padding: 12px 0;
-      font-size: 14px;
-      color: #CBD5E1;
-      border-bottom: 1px solid rgba(53, 255, 192, 0.1);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .features li:before {
-      content: '✓';
-      color: #35FFC0;
-      font-weight: 800;
-      font-size: 16px;
-    }
-
-    .features li:last-child {
-      border-bottom: none;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 14px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-      z-index: 1;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .btn-primary {
-      background: #35FFC0;
-      color: #0A0A0A;
-    }
-
-    .btn-primary:hover {
-      background: #22D3A8;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(53, 255, 192, 0.3);
-    }
-
-    .btn-secondary {
-      background: transparent;
-      color: #35FFC0;
-      border: 2px solid #35FFC0;
-    }
-
-    .btn-secondary:hover {
-      background: rgba(53, 255, 192, 0.1);
-      transform: translateY(-2px);
-    }
-
-    .faq {
-      margin-top: 80px;
-      padding: 60px 40px;
-      background: rgba(22, 27, 38, 0.5);
-      border: 1px solid rgba(53, 255, 192, 0.1);
-      border-radius: 16px;
-    }
-
-    .faq h2 {
-      font-size: 32px;
-      font-weight: 800;
-      margin-bottom: 40px;
-      text-align: center;
-    }
-
-    .faq-item {
-      margin-bottom: 24px;
-      padding: 20px;
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 12px;
-      border-left: 4px solid #35FFC0;
-    }
-
-    .faq-question {
-      font-weight: 600;
-      font-size: 16px;
-      margin-bottom: 12px;
-      color: #35FFC0;
-    }
-
-    .faq-answer {
-      font-size: 14px;
-      color: #CBD5E1;
-      line-height: 1.6;
-    }
-
-    .contact {
-      text-align: center;
-      margin-top: 40px;
-      padding: 20px;
-      background: rgba(53, 255, 192, 0.05);
-      border-radius: 12px;
-    }
-
-    .contact p {
-      font-size: 14px;
-      color: #94A3B8;
-      margin-bottom: 16px;
-    }
-
-    .contact a {
-      color: #35FFC0;
-      text-decoration: none;
-      font-weight: 600;
-      transition: color 0.3s ease;
-    }
-
-    .contact a:hover {
-      color: #22D3A8;
-    }
-
-    @media (max-width: 768px) {
-      .header h1 {
-        font-size: 36px;
-      }
-
-      .pricing-cards {
-        grid-template-columns: 1fr;
-      }
-
-      .card.popular {
-        transform: scale(1);
-      }
-
-      .price {
-        font-size: 36px;
-      }
-
-      .faq {
-        padding: 40px 20px;
-      }
-
-      .faq h2 {
-        font-size: 24px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ativar assinatura — Katalogo Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#07090C; --panel:#161B26; --line:rgba(255,255,255,.14);
+    --text:#FFFFFF; --text-dim:#94A3B8; --neon:#35FFC0; --neon2:#22D3A8;
+    --amber:#F59E0B; --red:#EF4444; --field:rgba(255,255,255,.05);
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#EEF1F6; --panel:#FFFFFF; --line:rgba(15,23,42,.12); --text:#0F172A; --text-dim:#475569; --field:rgba(15,23,42,.04); }
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .container{ width:100%; max-width:520px; }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:32px 24px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+  .header{ text-align:center; margin-bottom:24px; }
+  .header h1{ font-size:24px; font-weight:800; margin-bottom:8px; }
+  .header p{ font-size:14px; color:var(--text-dim); line-height:1.6; }
+  .aviso{ border-radius:12px; padding:12px 14px; margin-bottom:20px; font-size:13px; text-align:center; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); color:var(--amber); font-weight:600; }
+  .planos{ display:grid; gap:10px; margin-bottom:20px; }
+  .plano{ display:flex; align-items:center; gap:12px; padding:14px; border:1px solid var(--line); border-radius:12px; cursor:pointer; background:var(--field); transition:.2s; }
+  .plano:hover{ border-color:var(--neon); }
+  .plano.sel{ border-color:var(--neon); background:rgba(53,255,192,.1); box-shadow:0 0 0 3px rgba(53,255,192,.12); }
+  .radio{ width:18px; height:18px; border-radius:50%; border:2px solid var(--text-dim); flex-shrink:0; }
+  .plano.sel .radio{ background:var(--neon); border-color:var(--neon); }
+  .plano-info{ flex:1; }
+  .plano-nome{ font-weight:700; font-size:14px; }
+  .plano-desc{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .plano-preco{ font-weight:800; color:var(--neon); font-size:15px; white-space:nowrap; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12.5px; font-weight:600; color:var(--text-dim); margin-bottom:6px; }
+  .field input{ width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:var(--field); color:var(--text); font:inherit; font-size:15px; outline:none; }
+  .field input:focus{ border-color:var(--neon); box-shadow:0 0 0 3px rgba(53,255,192,.14); }
+  .btn{ width:100%; padding:14px; border:none; border-radius:10px; font:inherit; font-weight:800; font-size:15px; cursor:pointer; background:linear-gradient(135deg,var(--neon),var(--neon2)); color:#0A0A0A; transition:.2s; }
+  .btn:hover:not(:disabled){ box-shadow:0 8px 24px rgba(53,255,192,.3); transform:translateY(-1px); }
+  .btn:disabled{ opacity:.6; cursor:not-allowed; }
+  .btn-ghost{ background:transparent; color:var(--text-dim); border:1px solid var(--line); font-weight:600; font-size:14px; margin-top:10px; }
+  .erro{ display:none; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#FCA5A5; border-radius:10px; padding:12px; font-size:13px; margin-bottom:14px; }
+  .erro.show{ display:block; }
+  .qr-box{ background:#fff; border-radius:12px; padding:12px; width:220px; height:220px; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; }
+  .qr-box img{ width:100%; height:100%; display:block; }
+  .copia{ display:flex; gap:8px; margin-bottom:14px; }
+  .copia input{ flex:1; min-width:0; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:12px; }
+  .copia button{ padding:0 16px; border-radius:10px; border:none; background:var(--neon); color:#0A0A0A; font:inherit; font-weight:700; cursor:pointer; }
+  .status{ display:flex; align-items:center; justify-content:center; gap:10px; font-size:13px; color:var(--text-dim); margin-bottom:6px; }
+  .spinner{ width:14px; height:14px; border-radius:50%; border:2px solid rgba(148,163,184,.4); border-top-color:var(--neon); animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+  .ok{ text-align:center; padding:12px 0; }
+  .ok .check{ font-size:56px; margin-bottom:12px; }
+  .ok h2{ font-size:22px; margin-bottom:8px; }
+  .ok p{ color:var(--text-dim); font-size:14px; }
+  .hidden{ display:none !important; }
+  .nota{ font-size:12px; color:var(--text-dim); text-align:center; margin-top:12px; line-height:1.5; }
+</style>
 </head>
 <body>
-  <div class="container">
+<div class="container"><div class="card">
+
+  <!-- PASSO 1: escolher plano + dados -->
+  <div id="passoForm" class="hidden">
     <div class="header">
-      <h1>🚀 Faça Upgrade</h1>
-      <p>Desbloqueie o potencial total do seu catálogo com um plano pago</p>
+      <h1>Ativar assinatura</h1>
+      <p id="subtitulo">Escolha um plano e pague com Pix. Sua loja é liberada automaticamente.</p>
     </div>
+    <div class="aviso" id="avisoTrial"></div>
+    <div class="erro" id="erroMsg"></div>
+    <div class="planos" id="planos"></div>
+    <div class="field"><label for="fNome">Nome completo</label><input id="fNome" type="text" autocomplete="name"></div>
+    <div class="field"><label for="fCpf">CPF ou CNPJ</label><input id="fCpf" type="text" inputmode="numeric" autocomplete="off"></div>
+    <div class="field"><label for="fWhats">WhatsApp (com DDD)</label><input id="fWhats" type="tel" inputmode="numeric" autocomplete="tel"></div>
+    <button class="btn" id="btnGerar">Gerar Pix e ativar</button>
+    <button class="btn btn-ghost" id="btnVoltar">Voltar ao painel</button>
+    <div class="nota">Cobrança recorrente via Pix. Você pode trocar de plano depois, dentro do painel.</div>
+  </div>
 
-    <div class="pricing-cards">
-      <!-- Plano Mensal -->
-      <div class="card">
-        <div class="card-title">Mensal</div>
-        <div class="card-subtitle">Perfeito para começar</div>
-        <div class="price">R$49</div>
-        <div class="price-period">/mês</div>
-        <ul class="features">
-          <li>Catálogo ilimitado</li>
-          <li>Até 100 produtos</li>
-          <li>Customização de cores</li>
-          <li>URL própria</li>
-          <li>Suporte por email</li>
-        </ul>
-        <button class="btn btn-secondary" onclick="comecarUpgrade('mensal')">
-          Continuar com Pix
-        </button>
-      </div>
+  <!-- PASSO 2: Pix -->
+  <div id="passoPix" class="hidden">
+    <div class="header"><h1>Pague com Pix</h1><p>Escaneie o QR Code ou copie o código no app do seu banco.</p></div>
+    <div class="qr-box"><img id="qrImg" alt="QR Code Pix"></div>
+    <div class="copia"><input id="pixCodigo" readonly><button id="btnCopiar">Copiar</button></div>
+    <div class="status"><span class="spinner"></span><span>Aguardando pagamento… <b id="cronometro"></b></span></div>
+    <div class="nota">Assim que o Pix cair, esta tela libera seu painel sozinha.</div>
+    <button class="btn btn-ghost" id="btnTrocar">Escolher outro plano</button>
+  </div>
 
-      <!-- Plano Trimestral (Recomendado) -->
-      <div class="card popular">
-        <div class="badge">Melhor Valor</div>
-        <div class="card-title">Trimestral</div>
-        <div class="card-subtitle">Economize 10%</div>
-        <div class="price">R$134</div>
-        <div class="price-period">/3 meses</div>
-        <ul class="features">
-          <li>Catálogo ilimitado</li>
-          <li>Até 500 produtos</li>
-          <li>Customização completa</li>
-          <li>URL própria</li>
-          <li>Suporte prioritário</li>
-          <li>Integração WhatsApp</li>
-        </ul>
-        <button class="btn btn-primary" onclick="comecarUpgrade('trimestral')">
-          Continuar com Pix
-        </button>
-      </div>
-
-      <!-- Plano Anual -->
-      <div class="card">
-        <div class="card-title">Anual</div>
-        <div class="card-subtitle">Economize 20%</div>
-        <div class="price">R$499</div>
-        <div class="price-period">/ano</div>
-        <ul class="features">
-          <li>Catálogo ilimitado</li>
-          <li>Produtos ilimitados</li>
-          <li>Customização avançada</li>
-          <li>URLs múltiplas</li>
-          <li>Suporte 24/7</li>
-          <li>API access</li>
-        </ul>
-        <button class="btn btn-secondary" onclick="comecarUpgrade('anual')">
-          Continuar com Pix
-        </button>
-      </div>
-    </div>
-
-    <!-- FAQ -->
-    <div class="faq">
-      <h2>Perguntas Frequentes</h2>
-
-      <div class="faq-item">
-        <div class="faq-question">💳 Quais são os métodos de pagamento?</div>
-        <div class="faq-answer">
-          No momento, aceitamos Pix (instantâneo) e cartão de crédito. Fale conosco para outras opções.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-question">🔄 Posso mudar de plano a qualquer hora?</div>
-        <div class="faq-answer">
-          Sim! Você pode upgrade ou downgrade do seu plano a qualquer momento. Faremos o ajuste proporcional.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-question">❌ Posso cancelar quando quiser?</div>
-        <div class="faq-answer">
-          Claro! Sem compromisso de longo prazo. Cancele quando quiser — seu catálogo continuará ativo até o fim do período pago.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-question">📞 E se precisar de ajuda?</div>
-        <div class="faq-answer">
-          Entre em contato conosco via WhatsApp (11 91443-1895) ou email. Respondemos em até 2 horas.
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-question">🎯 Qual plano é melhor para mim?</div>
-        <div class="faq-answer">
-          Para a maioria dos lojistas, o Trimestral é o melhor custo-benefício. Se você tem muitos produtos, o Anual oferece 20% de economia.
-        </div>
-      </div>
-
-      <div class="contact">
-        <p>🤝 Precisa de algo diferente? Conversemos!</p>
-        <a href="https://wa.me/5511914431895?text=Olá!%20Gostaria%20de%20falar%20sobre%20um%20plano%20customizado" target="_blank">
-          Abrir no WhatsApp
-        </a>
-      </div>
+  <!-- PASSO 3: pago -->
+  <div id="passoPago" class="hidden">
+    <div class="ok">
+      <div class="check">✅</div>
+      <h2>Pagamento confirmado!</h2>
+      <p>Sua loja foi liberada. Redirecionando para o painel…</p>
     </div>
   </div>
 
-  <script>
-    function comecarUpgrade(plano) {
-      const precos = {
-        mensal: 'R$ 49,00',
-        trimestral: 'R$ 134,00',
-        anual: 'R$ 499,00'
-      };
+  <!-- Sem sessão / erro geral -->
+  <div id="passoSessao" class="hidden">
+    <div class="header"><h1>Entre no seu painel</h1><p id="msgSessao">Faça login para ativar sua assinatura.</p></div>
+    <button class="btn" id="btnLogin">Ir para o login</button>
+  </div>
 
-      const textos = {
-        mensal: 'plano mensal (R$ 49,00)',
-        trimestral: 'plano trimestral (R$ 134,00)',
-        anual: 'plano anual (R$ 499,00)'
-      };
+</div></div>
 
-      const mensagem = `Olá! Gostaria de fazer upgrade para o ${textos[plano]} do Katalogo Hub.`;
-      const url = `https://wa.me/5511914431895?text=${encodeURIComponent(mensagem)}`;
+<script>
+(function(){
+  const SUPABASE_CONFIG = {
+    url: "https://qqoepslbisxpswabrkqe.supabase.co",
+    publishableKey: "sb_publishable_t-LqIKyLqCT4Kx8Hgi7JcA_tvk3gjsy"
+  };
+  // Mesma URL/chave do admin.html => mesma sessão (localStorage) já logada.
+  const sb = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
 
-      window.open(url, '_blank');
+  // Precisa bater com renovar-assinatura / criar-assinatura / mudar-plano.
+  const PLANOS = [
+    { id:'mensal',     nome:'Plano mensal',     preco:'R$ 49,90',  desc:'cobrança todo mês' },
+    { id:'trimestral', nome:'Plano trimestral', preco:'R$ 134,90', desc:'cobrança a cada 3 meses' },
+    { id:'anual',      nome:'Plano anual',      preco:'R$ 499,00', desc:'cobrança 1x por ano (2 meses grátis)' },
+  ];
+
+  let planoSel = 'mensal';
+  let lojaId = null;
+  let pollTimer = null, cronTimer = null;
+
+  const $ = id => document.getElementById(id);
+  const passos = ['passoForm','passoPix','passoPago','passoSessao'];
+  function mostrar(id){ passos.forEach(p => $(p).classList.toggle('hidden', p !== id)); }
+  function erro(msg){ const e = $('erroMsg'); e.textContent = msg || ''; e.classList.toggle('show', !!msg); }
+  function irPainel(){ window.location.href = 'admin.html'; }
+
+  function renderPlanos(){
+    const box = $('planos');
+    box.innerHTML = '';
+    PLANOS.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'plano' + (p.id === planoSel ? ' sel' : '');
+      el.innerHTML = '<div class="radio"></div><div class="plano-info"><div class="plano-nome"></div><div class="plano-desc"></div></div><div class="plano-preco"></div>';
+      el.querySelector('.plano-nome').textContent = p.nome;
+      el.querySelector('.plano-desc').textContent = p.desc;
+      el.querySelector('.plano-preco').textContent = p.preco;
+      el.addEventListener('click', () => { planoSel = p.id; renderPlanos(); });
+      box.appendChild(el);
+    });
+  }
+
+  async function motivoDoErro(error, data){
+    if (data && data.erro) return data.erro;
+    try {
+      if (error && error.context && typeof error.context.json === 'function'){
+        const corpo = await error.context.json();
+        if (corpo && corpo.erro) return corpo.erro;
+      }
+    } catch(_){}
+    return 'Não consegui gerar seu Pix agora. Tente de novo em instantes.';
+  }
+
+  function iniciarCronometro(expiracaoISO){
+    clearInterval(cronTimer);
+    const el = $('cronometro');
+    if (!expiracaoISO){ el.textContent = ''; return; }
+    const fim = new Date(expiracaoISO).getTime();
+    const tick = () => {
+      const r = fim - Date.now();
+      if (r <= 0){ el.textContent = '(Pix expirado — gere outro)'; clearInterval(cronTimer); return; }
+      el.textContent = '(' + String(Math.floor(r/60000)).padStart(2,'0') + ':' + String(Math.floor((r%60000)/1000)).padStart(2,'0') + ')';
+    };
+    tick(); cronTimer = setInterval(tick, 1000);
+  }
+
+  function esperarPagamento(){
+    clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      const { data } = await sb.from('lojas').select('status').eq('id', lojaId).maybeSingle();
+      if (data && data.status === 'ativo'){
+        clearInterval(pollTimer); clearInterval(cronTimer);
+        mostrar('passoPago');
+        setTimeout(irPainel, 2000);
+      }
+    }, 4000);
+  }
+
+  async function gerarPix(){
+    erro('');
+    const nome = $('fNome').value.trim();
+    const cpf = $('fCpf').value.replace(/\D/g,'');
+    const whats = $('fWhats').value.replace(/\D/g,'');
+    if (nome.length < 3) return erro('Informe seu nome completo.');
+    if (cpf.length !== 11 && cpf.length !== 14) return erro('CPF ou CNPJ inválido. Confira os números.');
+    if (whats.length < 10 || whats.length > 11) return erro('WhatsApp inválido. Use DDD + número.');
+
+    const btn = $('btnGerar');
+    if (btn.disabled) return;
+    btn.disabled = true; btn.textContent = 'Gerando Pix...';
+    try {
+      const { data, error } = await sb.functions.invoke('renovar-assinatura', {
+        body: { nomeCompleto: nome, cpfCnpj: cpf, whatsapp: whats, plano: planoSel }
+      });
+      if (error || !data || data.erro || !data.sucesso){
+        erro(await motivoDoErro(error, data));
+        return;
+      }
+      $('qrImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
+      $('pixCodigo').value = data.pixCopiaECola || '';
+      mostrar('passoPix');
+      iniciarCronometro(data.expiracao);
+      esperarPagamento();
+    } catch(e){
+      console.error(e);
+      erro('Não consegui gerar seu Pix agora. Tente de novo em instantes.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Gerar Pix e ativar';
     }
-  </script>
+  }
+
+  async function copiar(){
+    const inp = $('pixCodigo');
+    try { await navigator.clipboard.writeText(inp.value); }
+    catch(_){ inp.select(); document.execCommand('copy'); }
+    $('btnCopiar').textContent = 'Copiado!';
+    setTimeout(() => { $('btnCopiar').textContent = 'Copiar'; }, 1800);
+  }
+
+  async function iniciar(){
+    $('btnLogin').addEventListener('click', irPainel);
+    $('btnVoltar').addEventListener('click', irPainel);
+    $('btnGerar').addEventListener('click', gerarPix);
+    $('btnCopiar').addEventListener('click', copiar);
+    $('btnTrocar').addEventListener('click', () => { clearInterval(pollTimer); clearInterval(cronTimer); mostrar('passoForm'); });
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session){ mostrar('passoSessao'); return; }
+
+    const { data: id, error: eLoja } = await sb.rpc('minha_loja_id');
+    if (eLoja || !id){
+      $('msgSessao').textContent = 'Sua conta não está vinculada a nenhuma loja. Fale com o suporte.';
+      mostrar('passoSessao'); return;
+    }
+    lojaId = id;
+
+    const { data: loja } = await sb.from('lojas').select('status, trial_expira_em').eq('id', lojaId).maybeSingle();
+    if (loja && loja.status === 'ativo'){ irPainel(); return; }
+
+    const aviso = $('avisoTrial');
+    if (loja && loja.trial_expira_em){
+      const exp = new Date(loja.trial_expira_em);
+      const dataTxt = exp.toLocaleDateString('pt-BR');
+      if (exp.getTime() < Date.now() || loja.status === 'bloqueado'){
+        aviso.textContent = '⏰ Seu teste grátis terminou em ' + dataTxt;
+      } else {
+        aviso.textContent = '⏰ Seu teste grátis vai até ' + dataTxt;
+      }
+    } else {
+      aviso.classList.add('hidden');
+    }
+
+    renderPlanos();
+    mostrar('passoForm');
+  }
+
+  iniciar().catch(e => { console.error(e); $('msgSessao').textContent = 'Erro ao carregar. Recarregue a página.'; mostrar('passoSessao'); });
+})();
+</script>
 </body>
 </html>

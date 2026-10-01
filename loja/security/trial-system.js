@@ -1,6 +1,6 @@
 /**
  * TRIAL SYSTEM
- * Gerencia planos de trial de 7 dias para novas lojas
+ * Gerencia planos de trial de 3 dias para novas lojas
  */
 
 const TrialSystem = (() => {
@@ -43,7 +43,7 @@ const TrialSystem = (() => {
           bloqueado: true,
           diasRestantes: 0,
           mensagem: 'Trial expirou. Faça upgrade para continuar',
-          urlUpgrade: '/upgrade.html'
+          urlUpgrade: 'upgrade.html'
         };
       }
 
@@ -64,7 +64,8 @@ const TrialSystem = (() => {
             status: 'bloqueado',
             bloqueado: true,
             diasRestantes: 0,
-            mensagem: 'Trial expirou. Faça upgrade para continuar'
+            mensagem: 'Trial expirou. Faça upgrade para continuar',
+            urlUpgrade: 'upgrade.html'
           };
         }
 
@@ -112,7 +113,7 @@ const TrialSystem = (() => {
     `;
     banner.innerHTML = `
       <span>⏰ Trial grátis: <strong>${diasRestantes}</strong> dia${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}!</span>
-      <a href="/upgrade.html" style="margin-left: 16px; color: white; text-decoration: underline; font-weight: bold;">
+      <a href="upgrade.html" style="margin-left: 16px; color: white; text-decoration: underline; font-weight: bold;">
         Fazer upgrade agora →
       </a>
     `;
@@ -139,12 +140,12 @@ const TrialSystem = (() => {
           <div style="font-size: 64px; margin-bottom: 20px;">🔒</div>
           <h1 style="font-size: 28px; margin-bottom: 16px;">Trial Expirado</h1>
           <p style="font-size: 18px; color: #94A3B8; margin-bottom: 32px;">
-            Seu período de teste de 7 dias terminou.
+            Seu período de teste grátis terminou.
           </p>
           <p style="font-size: 16px; color: #64748B; margin-bottom: 32px;">
             Faça upgrade do seu plano para continuar usando Katalogo Hub.
           </p>
-          <a href="/upgrade.html" style="
+          <a href="upgrade.html" style="
             display: inline-block;
             background: #35FFC0;
             color: #0A0A0A;

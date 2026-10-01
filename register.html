@@ -637,7 +637,7 @@
       const trialExpiracao = new Date();
       trialExpiracao.setDate(trialExpiracao.getDate() + 3);
 
-      const { error: lojaError } = await supabaseClient
+      const { data: lojaData, error: lojaError } = await supabaseClient
         .from('lojas')
         .insert([
           {
@@ -648,10 +648,51 @@
             trial_expira_em: trialExpiracao.toISOString(),
             data_criacao: new Date().toISOString()
           }
-        ]);
+        ])
+        .select('id')
+        .single();
 
       if (lojaError) {
         showAlert(`Erro ao criar loja: ${lojaError.message}`, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Criar Conta Grátis';
+        return;
+      }
+
+      const lojaId = lojaData.id;
+
+      // 2.1. Criar registro em loja_usuarios (vincula user ao loja_id)
+      const { error: lojaUsuariosError } = await supabaseClient
+        .from('loja_usuarios')
+        .insert([
+          {
+            user_id: userId,
+            loja_id: lojaId
+          }
+        ]);
+
+      if (lojaUsuariosError) {
+        showAlert(`Erro ao vincular usuário à loja: ${lojaUsuariosError.message}`, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Criar Conta Grátis';
+        return;
+      }
+
+      // 2.2. Criar registro em store_settings com configurações padrão
+      const { error: settingsError } = await supabaseClient
+        .from('store_settings')
+        .insert([
+          {
+            loja_id: lojaId,
+            modo: 'dark',
+            cor_primaria: '#35FFC0',
+            cor_primaria_clara: '#22D3A8',
+            cor_painel: '#35FFC0'
+          }
+        ]);
+
+      if (settingsError) {
+        showAlert(`Erro ao criar configurações: ${settingsError.message}`, 'error');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Criar Conta Grátis';
         return;
