@@ -423,13 +423,36 @@
   </div>
 </div>
 
+<script>
+  // Injetar SUPABASE_CONFIG no window se não existir
+  if (!window.SUPABASE_CONFIG) {
+    window.SUPABASE_CONFIG = {
+      url: 'https://qqoepslbisxpswabrkqe.supabase.co',
+      publishableKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxb2Vwc2xiaXN4cHN3YWJya3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ5NTI5ODAsImV4cCI6MjA0MDUyODk4MH0.FjPMaL6LNH6rP0-2ZfpQv_LDzNLBNtaQ0K0xCwt7f1U'
+    };
+  }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // ========== CONFIGURAÇÃO SUPABASE ==========
-  const SUPABASE_URL = 'https://qqoepslbisxpswabrkqe.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxb2Vwc2xiaXN4cHN3YWJya3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ5NTI5ODAsImV4cCI6MjA0MDUyODk4MH0.FjPMaL6LNH6rP0-2ZfpQv_LDzNLBNtaQ0K0xCwt7f1U';
+  // Aguardar que SUPABASE_CONFIG seja injetado no window (vem de load-env.js)
+  let supabaseClient;
 
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  function initSupabase() {
+    const config = window.SUPABASE_CONFIG || {
+      url: 'https://qqoepslbisxpswabrkqe.supabase.co',
+      publishableKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxb2Vwc2xiaXN4cHN3YWJya3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ5NTI5ODAsImV4cCI6MjA0MDUyODk4MH0.FjPMaL6LNH6rP0-2ZfpQv_LDzNLBNtaQ0K0xCwt7f1U'
+    };
+
+    supabaseClient = window.supabase.createClient(config.url, config.publishableKey);
+  }
+
+  // Inicializar quando Supabase estiver pronto
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSupabase);
+  } else {
+    initSupabase();
+  }
 
   // ========== ELEMENTOS DO DOM ==========
   const form = document.getElementById('registerForm');
