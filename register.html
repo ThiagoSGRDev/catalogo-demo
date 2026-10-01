@@ -715,6 +715,14 @@
         return;
       }
 
+      // 4. Email de boas-vindas (best-effort: nunca trava nem derruba o cadastro; espera no máx. 4s)
+      try {
+        await Promise.race([
+          supabaseClient.functions.invoke('enviar-boas-vindas'),
+          new Promise((resolve) => setTimeout(resolve, 4000))
+        ]);
+      } catch (_) { /* ignora: o cadastro já foi concluído */ }
+
       showAlert('Conta criada com sucesso! Redirecionando...', 'success');
       setTimeout(() => { window.location.href = 'admin.html'; }, 1200);
 
