@@ -586,6 +586,29 @@
     submitBtn.innerHTML = '<span class="loading"></span> Criando...';
 
     try {
+      // 0. Verificar se slug já existe
+      const slugCheck = await supabaseClient
+        .from('lojas')
+        .select('id')
+        .eq('slug', storeName.toLowerCase())
+        .limit(1);
+
+      if (slugCheck.error) {
+        showAlert(`Erro ao validar slug: ${slugCheck.error.message}`, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Criar Conta Grátis';
+        return;
+      }
+
+      if (slugCheck.data && slugCheck.data.length > 0) {
+        showAlert('Nome de loja já existe. Escolha outro.', 'error');
+        document.getElementById('storeNameError').textContent = 'Nome já está em uso';
+        document.getElementById('storeNameError').classList.add('show');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Criar Conta Grátis';
+        return;
+      }
+
       // 1. Criar usuário no Supabase Auth
       const { data: authData, error: authError } = await supabaseClient.auth.signUp({
         email,
@@ -596,8 +619,10 @@
       });
 
       if (authError) {
-        if (authError.message.includes('already registered')) {
+        if (authError.message.includes('already registered') || authError.message.includes('User already exists')) {
           showAlert('Este email já está cadastrado. Faça login aqui.', 'error');
+          document.getElementById('emailError').textContent = 'Email já em uso';
+          document.getElementById('emailError').classList.add('show');
         } else {
           showAlert(`Erro: ${authError.message}`, 'error');
         }
@@ -632,21 +657,31 @@
         return;
       }
 
-      // 3. Auto-login
-      const { error: signInError } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
+      // 3. Auto-login (pode falhar se email confirmation está ativado)
+      try {
+        const { error: signInError } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
 
-      if (signInError) {
-        showAlert('Conta criada! Faça login para continuar.', 'success');
+        if (signInError) {
+          // Se falhar no auto-login, redireciona mesmo assim (user pode logar manualmente)
+          showAlert('Conta criada! Redirecionando para o painel...', 'success');
+          setTimeout(() => {
+            window.location.href = 'admin.html';
+          }, 1500);
+          return;
+        }
+      } catch (signInException) {
+        // Se houver exceção, redireciona mesmo assim
+        showAlert('Conta criada! Redirecionando para o painel...', 'success');
         setTimeout(() => {
           window.location.href = 'admin.html';
-        }, 2000);
+        }, 1500);
         return;
       }
 
-      // 4. Redirecionar para admin
+      // 4. Redirecionar para admin após sucesso
       showAlert('Conta criada com sucesso! Redirecionando...', 'success');
       setTimeout(() => {
         window.location.href = 'admin.html';
