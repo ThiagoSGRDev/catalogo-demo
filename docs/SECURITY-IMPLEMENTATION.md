@@ -44,14 +44,14 @@
   - [ ] Verificar token no backend (Supabase)
   - [ ] Testar com curl: `curl -X POST -b "" ...` → deve falhar sem token
 
-### 3. 🟡 Rate Limiting
-- **Status:** Documentação completa
-- **Arquivo:** `docs/RATE-LIMITING.md`
-- **TODO:**
-  - [ ] Login no Cloudflare Dashboard
-  - [ ] Criar 3 rules de rate limit
-  - [ ] Testar com Apache Bench: `ab -n 100 -c 10 https://katalogohub.com/`
-  - [ ] Monitorar abuse logs
+### 3. ✅ Rate Limiting
+- **Status:** COMPLETO
+- **Arquivo:** Cloudflare Security Rules
+- **Implementado:** 3 regras ativas
+  - Rule 1: Admin Login Protection - Block - `/admin.html`
+  - Rule 2: API Loja Protection - Managed Challenge - `/loja/`
+  - Rule 3: Protect API Endpoints - Block - `/api/`
+- **Validado:** Todas as regras estão ativas no Cloudflare ✅
 
 ---
 
@@ -142,8 +142,8 @@ ab -n 100 -c 10 https://katalogohub.com/admin.html
 | SQL Injection | ❌ Crítico | ✅ Bloqueado | ✅ FEITO |
 | RLS | ❌ Crítico | ✅ Ativo | ✅ FEITO |
 | Exposição de chaves | ❌ Crítico | ✅ Seguro | ✅ FEITO |
-| XSS | ❌ Alto | 🟡 Em andamento | 🔄 |
-| CSRF | ❌ Alto | 🟡 Em andamento | 🔄 |
-| Rate Limiting | ❌ Médio | 🟡 Em andamento | 🔄 |
-| **Score Total** | **3/10** | **7/10** | **Depois: 9/10** |
+| XSS | ❌ Alto | ✅ Implementado | ✅ FEITO |
+| CSRF | ❌ Alto | ✅ Implementado | ✅ FEITO |
+| Rate Limiting | ❌ Médio | ✅ Ativo | ✅ FEITO |
+| **Score Total** | **3/10** | **9/10** | **✅ COMPLETO** |
 

@@ -977,6 +977,7 @@
 <!-- Security Modules -->
 <script src="loja/security/xss-protection.js"></script>
 <script src="loja/security/csrf-protection.js"></script>
+<script src="loja/security/trial-system.js"></script>
 
 </head>
 <body>
@@ -2430,6 +2431,16 @@
       return;
     }
     ADMIN_LOJA_ID = lojaIdData;
+
+    // Verificar trial
+    const statusTrial = await TrialSystem.verificarTrial(supabaseClient, ADMIN_LOJA_ID);
+    if (statusTrial.bloqueado) {
+      TrialSystem.bloquearAcesso(ADMIN_LOJA_ID);
+      return;
+    }
+    if (statusTrial.status === 'trial' && statusTrial.diasRestantes <= 3) {
+      TrialSystem.mostrarBannerTrial(statusTrial.diasRestantes);
+    }
 
     const { data: lojaInfo } = await supabaseClient.from('lojas').select('usa_catalogo_mestre, eh_catalogo_mestre, slug').eq('id', ADMIN_LOJA_ID).single();
     ADMIN_USA_MESTRE = !!(lojaInfo && lojaInfo.usa_catalogo_mestre);
