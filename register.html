@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Katalogo Hub — Criar Conta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg:#07090C;
+    --panel:#161B26;
+    --line:rgba(255, 255, 255, 0.14);
+    --text:#FFFFFF;
+    --text-dim:#94A3B8;
+    --neon-green:#35FFC0;
+    --neon-blue:#00D4FF;
+    --green:#22C55E;
+    --red:#EF4444;
+    --amber:#F59E0B;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-tema="escuro"]) {
+      --bg:#EEF1F6;
+      --panel:#FFFFFF;
+      --line:rgba(15,23,42,0.12);
+      --text:#0F172A;
+      --text-dim:#475569;
+    }
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 40px 32px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .logo {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--neon-green) 0%, var(--neon-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .header p {
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  input[type="email"],
+  input[type="text"],
+  input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+  }
+
+  input[type="email"]:focus,
+  input[type="text"]:focus,
+  input[type="password"]:focus {
+    outline: none;
+    border-color: var(--neon-green);
+    background: rgba(53, 255, 192, 0.05);
+    box-shadow: 0 0 0 3px rgba(53, 255, 192, 0.1);
+  }
+
+  .slug-container {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .slug-container input {
+    flex: 1;
+  }
+
+  .slug-suffix {
+    font-size: 13px;
+    color: var(--text-dim);
+    padding: 12px 14px;
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+
+  .help-text {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  .error-text {
+    font-size: 12px;
+    color: var(--red);
+    margin-top: 6px;
+    display: none;
+  }
+
+  .error-text.show {
+    display: block;
+  }
+
+  .strength-indicator {
+    height: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  .strength-bar {
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  .strength-bar.weak {
+    width: 33%;
+    background: var(--red);
+  }
+
+  .strength-bar.fair {
+    width: 66%;
+    background: var(--amber);
+  }
+
+  .strength-bar.strong {
+    width: 100%;
+    background: var(--green);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary {
+    background: var(--neon-green);
+    color: #0A0A0A;
+    margin-top: 24px;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: #22D3A8;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(53, 255, 192, 0.4);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .login-link {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .login-link a {
+    color: var(--neon-green);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .login-link a:hover {
+    color: #22D3A8;
+  }
+
+  .alert {
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    display: none;
+  }
+
+  .alert.show {
+    display: block;
+  }
+
+  .alert-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #FCA5A5;
+  }
+
+  .alert-success {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #86EFAC;
+  }
+
+  .loading {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background: currentColor;
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .loading::before,
+  .loading::after {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background: currentColor;
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+    margin: 0 4px;
+  }
+
+  .loading::before {
+    animation-delay: -0.3s;
+  }
+
+  .loading::after {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  @media (max-width: 480px) {
+    .card {
+      padding: 32px 20px;
+    }
+
+    .header h1 {
+      font-size: 20px;
+    }
+
+    .slug-container {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .slug-suffix {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <div class="logo">KH</div>
+      <h1>Sua Loja Digital</h1>
+      <p>Teste grátis por 3 dias</p>
+    </div>
+
+    <div id="alertBox" class="alert"></div>
+
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="seu@email.com"
+          required
+        >
+        <div class="error-text" id="emailError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Senha</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="••••••••"
+          required
+        >
+        <div class="strength-indicator">
+          <div class="strength-bar" id="strengthBar"></div>
+        </div>
+        <div class="help-text">Mínimo 8 caracteres</div>
+        <div class="error-text" id="passwordError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="storeName">Nome da Loja</label>
+        <input
+          type="text"
+          id="storeName"
+          name="storeName"
+          placeholder="Sua Loja"
+          required
+        >
+        <div class="help-text">Apenas letras, números e hífen</div>
+        <div class="error-text" id="storeNameError"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submitBtn">
+        Criar Conta Grátis
+      </button>
+    </form>
+
+    <div class="login-link">
+      Já tem conta? <a href="admin.html">Faça login aqui</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ========== CONFIGURAÇÃO SUPABASE ==========
+  const SUPABASE_URL = 'https://qqoepslbisxpswabrkqe.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxb2Vwc2xiaXN4cHN3YWJya3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ5NTI5ODAsImV4cCI6MjA0MDUyODk4MH0.FjPMaL6LNH6rP0-2ZfpQv_LDzNLBNtaQ0K0xCwt7f1U';
+
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ========== ELEMENTOS DO DOM ==========
+  const form = document.getElementById('registerForm');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const storeNameInput = document.getElementById('storeName');
+  const submitBtn = document.getElementById('submitBtn');
+  const alertBox = document.getElementById('alertBox');
+
+  // ========== VALIDAÇÕES ==========
+  function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
+
+  function validatePassword(password) {
+    return password.length >= 8;
+  }
+
+  function getPasswordStrength(password) {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+    return strength;
+  }
+
+  function validateStoreName(name) {
+    const re = /^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$/;
+    return re.test(name.toLowerCase());
+  }
+
+  // ========== FEEDBACK VISUAL ==========
+  passwordInput.addEventListener('input', () => {
+    const strength = getPasswordStrength(passwordInput.value);
+    const strengthBar = document.getElementById('strengthBar');
+    strengthBar.className = 'strength-bar';
+
+    if (strength <= 2) {
+      strengthBar.classList.add('weak');
+    } else if (strength <= 3) {
+      strengthBar.classList.add('fair');
+    } else {
+      strengthBar.classList.add('strong');
+    }
+  });
+
+  storeNameInput.addEventListener('input', () => {
+    const value = storeNameInput.value.toLowerCase();
+    const isValid = validateStoreName(value) || value === '';
+    const error = document.getElementById('storeNameError');
+
+    if (value && !isValid) {
+      error.textContent = 'Apenas letras minúsculas, números e hífen. Não pode começar ou terminar com hífen.';
+      error.classList.add('show');
+    } else {
+      error.classList.remove('show');
+    }
+  });
+
+  // ========== MOSTRAR ALERTA ==========
+  function showAlert(message, type) {
+    alertBox.textContent = message;
+    alertBox.className = `alert alert-${type} show`;
+    alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function hideAlert() {
+    alertBox.classList.remove('show');
+  }
+
+  // ========== VALIDAÇÃO E ENVIO ==========
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    const storeName = storeNameInput.value.trim();
+
+    // Limpar erros anteriores
+    document.querySelectorAll('.error-text').forEach(el => el.classList.remove('show'));
+    hideAlert();
+
+    let hasError = false;
+
+    // Validar email
+    if (!validateEmail(email)) {
+      document.getElementById('emailError').textContent = 'Email inválido';
+      document.getElementById('emailError').classList.add('show');
+      hasError = true;
+    }
+
+    // Validar senha
+    if (!validatePassword(password)) {
+      document.getElementById('passwordError').textContent = 'Mínimo 8 caracteres';
+      document.getElementById('passwordError').classList.add('show');
+      hasError = true;
+    }
+
+    // Validar nome da loja
+    if (!storeName || !validateStoreName(storeName)) {
+      document.getElementById('storeNameError').textContent = 'Nome de loja inválido';
+      document.getElementById('storeNameError').classList.add('show');
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    // Desabilitar botão
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading"></span> Criando...';
+
+    try {
+      // 1. Criar usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { store_name: storeName }
+        }
+      });
+
+      if (authError) {
+        if (authError.message.includes('already registered')) {
+          showAlert('Este email já está cadastrado. Faça login aqui.', 'error');
+        } else {
+          showAlert(`Erro: ${authError.message}`, 'error');
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Criar Conta Grátis';
+        return;
+      }
+
+      const userId = authData.user.id;
+
+      // 2. Criar registro da loja
+      const trialExpiracao = new Date();
+      trialExpiracao.setDate(trialExpiracao.getDate() + 3);
+
+      const { error: lojaError } = await supabaseClient
+        .from('lojas')
+        .insert([
+          {
+            user_id: userId,
+            nome: storeName,
+            slug: storeName.toLowerCase(),
+            status: 'trial',
+            trial_expira_em: trialExpiracao.toISOString(),
+            data_criacao: new Date().toISOString()
+          }
+        ]);
+
+      if (lojaError) {
+        showAlert(`Erro ao criar loja: ${lojaError.message}`, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Criar Conta Grátis';
+        return;
+      }
+
+      // 3. Auto-login
+      const { error: signInError } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) {
+        showAlert('Conta criada! Faça login para continuar.', 'success');
+        setTimeout(() => {
+          window.location.href = 'admin.html';
+        }, 2000);
+        return;
+      }
+
+      // 4. Redirecionar para admin
+      showAlert('Conta criada com sucesso! Redirecionando...', 'success');
+      setTimeout(() => {
+        window.location.href = 'admin.html';
+      }, 1500);
+
+    } catch (error) {
+      showAlert(`Erro inesperado: ${error.message}`, 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Criar Conta Grátis';
+    }
+  });
+
+  // Verificar se já está logado
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (session && event === 'SIGNED_IN') {
+      // Já está logado, ir para admin
+      window.location.href = 'admin.html';
+    }
+  });
+</script>
+</body>
+</html>
