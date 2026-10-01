@@ -412,6 +412,22 @@
         <div class="error-text" id="storeNameError"></div>
       </div>
 
+      <div class="form-group">
+        <label for="cpf">CPF</label>
+        <input
+          type="text"
+          id="cpf"
+          name="cpf"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="000.000.000-00"
+          maxlength="14"
+          required
+        >
+        <div class="help-text">Usado só para limitar 1 teste grátis por pessoa. Não aparece para ninguém.</div>
+        <div class="error-text" id="cpfError"></div>
+      </div>
+
       <button type="submit" class="btn btn-primary" id="submitBtn">
         Criar Conta Grátis
       </button>
@@ -459,6 +475,8 @@
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
   const storeNameInput = document.getElementById('storeName');
+  const cpfInput = document.getElementById('cpf');
+  let cadastroEmAndamento = false; // evita redirecionar antes da loja ser criada
   const submitBtn = document.getElementById('submitBtn');
   const alertBox = document.getElementById('alertBox');
   const passwordToggle = document.getElementById('passwordToggle');
@@ -501,8 +519,50 @@
   }
 
   function validateStoreName(name) {
-    const re = /^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$/;
+    const re = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/;
     return re.test(name.toLowerCase());
+  }
+
+  function validateCPF(raw) {
+    const c = String(raw || '').replace(/\D/g, '');
+    if (!/^\d{11}$/.test(c) || /^(\d)\1{10}$/.test(c)) return false;
+    for (const n of [9, 10]) {
+      let sum = 0;
+      for (let i = 0; i < n; i++) sum += parseInt(c[i], 10) * (n + 1 - i);
+      let r = (sum * 10) % 11;
+      if (r === 10) r = 0;
+      if (r !== parseInt(c[n], 10)) return false;
+    }
+    return true;
+  }
+
+  cpfInput.addEventListener('input', () => {
+    const d = cpfInput.value.replace(/\D/g, '').slice(0, 11);
+    let f = d;
+    if (d.length > 9) f = d.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+    else if (d.length > 6) f = d.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+    else if (d.length > 3) f = d.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+    cpfInput.value = f;
+  });
+
+  const MSG_CADASTRO = {
+    cpf_invalido: ['cpf', 'CPF inválido'],
+    cpf_em_uso: ['cpf', 'Este CPF já usou o teste grátis. Faça login ou assine um plano.'],
+    nome_em_uso: ['storeName', 'Nome de loja já está em uso. Escolha outro.'],
+    nome_reservado: ['storeName', 'Este nome não está disponível. Escolha outro.'],
+    nome_invalido: ['storeName', 'Nome de loja inválido (mínimo 3 caracteres: letras, números e hífen)'],
+    ja_tem_loja: [null, 'Este email já tem uma loja. Faça login em admin.html.']
+  };
+
+  function mostrarErroCadastro(codigo) {
+    const m = MSG_CADASTRO[codigo];
+    if (!m) { showAlert('Não foi possível criar a conta agora. Tente novamente.', 'error'); return; }
+    showAlert(m[1], 'error');
+    if (m[0]) {
+      const el = document.getElementById(m[0] + 'Error');
+      el.textContent = m[1];
+      el.classList.add('show');
+    }
   }
 
   // ========== FEEDBACK VISUAL ==========
@@ -545,200 +605,128 @@
   }
 
   // ========== VALIDAÇÃO E ENVIO ==========
+  function liberarBotao() {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Criar Conta Grátis';
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const email = emailInput.value.trim();
     const password = passwordInput.value;
     const storeName = storeNameInput.value.trim();
+    const cpf = cpfInput.value.replace(/\D/g, '');
 
-    // Limpar erros anteriores
     document.querySelectorAll('.error-text').forEach(el => el.classList.remove('show'));
     hideAlert();
 
     let hasError = false;
 
-    // Validar email
     if (!validateEmail(email)) {
       document.getElementById('emailError').textContent = 'Email inválido';
       document.getElementById('emailError').classList.add('show');
       hasError = true;
     }
-
-    // Validar senha
     if (!validatePassword(password)) {
       document.getElementById('passwordError').textContent = 'Mínimo 8 caracteres';
       document.getElementById('passwordError').classList.add('show');
       hasError = true;
     }
-
-    // Validar nome da loja
     if (!storeName || !validateStoreName(storeName)) {
-      document.getElementById('storeNameError').textContent = 'Nome de loja inválido';
+      document.getElementById('storeNameError').textContent = 'Nome de loja inválido (mínimo 3 caracteres)';
       document.getElementById('storeNameError').classList.add('show');
       hasError = true;
     }
-
+    if (!validateCPF(cpf)) {
+      document.getElementById('cpfError').textContent = 'CPF inválido';
+      document.getElementById('cpfError').classList.add('show');
+      hasError = true;
+    }
     if (hasError) return;
 
-    // Desabilitar botão
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="loading"></span> Criando...';
+    cadastroEmAndamento = true;
 
     try {
-      // 0. Verificar se slug já existe
-      const slugCheck = await supabaseClient
-        .from('lojas')
-        .select('id')
-        .eq('slug', storeName.toLowerCase())
-        .limit(1);
-
-      if (slugCheck.error) {
-        showAlert(`Erro ao validar slug: ${slugCheck.error.message}`, 'error');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Criar Conta Grátis';
+      // 1. Pré-validação no servidor (CPF já usou trial? nome de loja em uso?) ANTES de criar o usuário
+      const pre = await supabaseClient.rpc('verificar_cadastro', { p_nome: storeName, p_cpf: cpf });
+      if (pre.error) {
+        showAlert('Não foi possível validar o cadastro agora. Tente novamente.', 'error');
+        cadastroEmAndamento = false; liberarBotao();
+        return;
+      }
+      if (pre.data !== 'ok') {
+        mostrarErroCadastro(pre.data);
+        cadastroEmAndamento = false; liberarBotao();
         return;
       }
 
-      if (slugCheck.data && slugCheck.data.length > 0) {
-        showAlert('Nome de loja já existe. Escolha outro.', 'error');
-        document.getElementById('storeNameError').textContent = 'Nome já está em uso';
-        document.getElementById('storeNameError').classList.add('show');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Criar Conta Grátis';
-        return;
-      }
-
-      // 1. Criar usuário no Supabase Auth
+      // 2. Criar usuário no Supabase Auth (ou reaproveitar o de uma tentativa anterior que parou no meio)
+      let session = null;
       const { data: authData, error: authError } = await supabaseClient.auth.signUp({
         email,
         password,
-        options: {
-          data: { store_name: storeName }
-        }
+        options: { data: { store_name: storeName } }
       });
 
       if (authError) {
-        if (authError.message.includes('already registered') || authError.message.includes('User already exists')) {
+        const jaExiste = authError.message.includes('already registered') || authError.message.includes('User already exists');
+        if (!jaExiste) {
+          showAlert(`Erro: ${authError.message}`, 'error');
+          cadastroEmAndamento = false; liberarBotao();
+          return;
+        }
+        const retry = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (retry.error) {
           showAlert('Este email já está cadastrado. Faça login aqui.', 'error');
           document.getElementById('emailError').textContent = 'Email já em uso';
           document.getElementById('emailError').classList.add('show');
-        } else {
-          showAlert(`Erro: ${authError.message}`, 'error');
-        }
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Criar Conta Grátis';
-        return;
-      }
-
-      const userId = authData.user.id;
-
-      // 2. Criar registro da loja
-      const trialExpiracao = new Date();
-      trialExpiracao.setDate(trialExpiracao.getDate() + 3);
-
-      const { data: lojaData, error: lojaError } = await supabaseClient
-        .from('lojas')
-        .insert([
-          {
-            user_id: userId,
-            nome: storeName,
-            slug: storeName.toLowerCase(),
-            status: 'trial',
-            trial_expira_em: trialExpiracao.toISOString(),
-            data_criacao: new Date().toISOString()
-          }
-        ])
-        .select('id')
-        .single();
-
-      if (lojaError) {
-        showAlert(`Erro ao criar loja: ${lojaError.message}`, 'error');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Criar Conta Grátis';
-        return;
-      }
-
-      const lojaId = lojaData.id;
-
-      // 2.1. Criar registro em loja_usuarios (vincula user ao loja_id)
-      const { error: lojaUsuariosError } = await supabaseClient
-        .from('loja_usuarios')
-        .insert([
-          {
-            user_id: userId,
-            loja_id: lojaId
-          }
-        ]);
-
-      if (lojaUsuariosError) {
-        showAlert(`Erro ao vincular usuário à loja: ${lojaUsuariosError.message}`, 'error');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Criar Conta Grátis';
-        return;
-      }
-
-      // 2.2. Criar registro em store_settings com configurações padrão
-      const { error: settingsError } = await supabaseClient
-        .from('store_settings')
-        .insert([
-          {
-            loja_id: lojaId,
-            modo: 'dark',
-            cor_primaria: '#35FFC0',
-            cor_primaria_clara: '#22D3A8',
-            cor_painel: '#35FFC0'
-          }
-        ]);
-
-      if (settingsError) {
-        showAlert(`Erro ao criar configurações: ${settingsError.message}`, 'error');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Criar Conta Grátis';
-        return;
-      }
-
-      // 3. Auto-login (pode falhar se email confirmation está ativado)
-      try {
-        const { error: signInError } = await supabaseClient.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (signInError) {
-          // Se falhar no auto-login, redireciona mesmo assim (user pode logar manualmente)
-          showAlert('Conta criada! Redirecionando para o painel...', 'success');
-          setTimeout(() => {
-            window.location.href = 'admin.html';
-          }, 1500);
+          cadastroEmAndamento = false; liberarBotao();
           return;
         }
-      } catch (signInException) {
-        // Se houver exceção, redireciona mesmo assim
-        showAlert('Conta criada! Redirecionando para o painel...', 'success');
-        setTimeout(() => {
-          window.location.href = 'admin.html';
-        }, 1500);
+        session = retry.data.session;
+      } else {
+        session = authData.session;
+        // Supabase devolve user "falso" (sem identidades) quando o email já existe com confirmação ligada
+        if (authData.user && Array.isArray(authData.user.identities) && authData.user.identities.length === 0) {
+          showAlert('Este email já está cadastrado. Faça login aqui.', 'error');
+          cadastroEmAndamento = false; liberarBotao();
+          return;
+        }
+      }
+
+      if (!session) {
+        const login = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (login.error || !login.data.session) {
+          showAlert('Conta criada, mas não consegui entrar. Faça login em admin.html e tente novamente.', 'error');
+          cadastroEmAndamento = false; liberarBotao();
+          return;
+        }
+      }
+
+      // 3. Criar loja + vínculo + configurações de uma vez, no servidor (trial de 3 dias é definido lá)
+      const { error: lojaError } = await supabaseClient.rpc('criar_minha_loja', { p_nome: storeName, p_cpf: cpf });
+      if (lojaError) {
+        await supabaseClient.auth.signOut();
+        mostrarErroCadastro(lojaError.message);
+        cadastroEmAndamento = false; liberarBotao();
         return;
       }
 
-      // 4. Redirecionar para admin após sucesso
       showAlert('Conta criada com sucesso! Redirecionando...', 'success');
-      setTimeout(() => {
-        window.location.href = 'admin.html';
-      }, 1500);
+      setTimeout(() => { window.location.href = 'admin.html'; }, 1200);
 
     } catch (error) {
       showAlert(`Erro inesperado: ${error.message}`, 'error');
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Criar Conta Grátis';
+      cadastroEmAndamento = false; liberarBotao();
     }
   });
 
-  // Verificar se já está logado
+  // Já logado (e fora de um cadastro em andamento): ir para o painel
   supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (session && event === 'SIGNED_IN') {
-      // Já está logado, ir para admin
+    if (session && event === 'SIGNED_IN' && !cadastroEmAndamento) {
       window.location.href = 'admin.html';
     }
   });
