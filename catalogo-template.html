@@ -1849,11 +1849,11 @@
       </button>
     </div>
 
-    <div class="promo-stripe">
+    <div class="promo-stripe" id="promoStripeTop" style="display:none;">
       <div class="promo-stripe-track">
-        <span><i class="promo-sep">✦</i><span class="promo-stripe-texto">O maior hub de mantos</span></span>
-        <span><i class="promo-sep">✦</i><span class="promo-stripe-texto">O maior hub de mantos</span></span>
-        <span><i class="promo-sep">✦</i><span class="promo-stripe-texto">O maior hub de mantos</span></span>
+        <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
+        <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
+        <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
       </div>
     </div>
 
@@ -2592,12 +2592,14 @@
         if(subEl) subEl.textContent = data.frete_motoboy_descricao;
       }
 
-      // Textos dos marquees — opcionais. Faixa do topo mantém "O maior hub
-      // de mantos" como padrão se a loja não configurar nada (é o que a
-      // Katalogo Hub já usa hoje). Faixa do rodapé fica pura (sem texto,
-      // preferência atual da Katalogo Hub) a menos que a loja configure algo.
-      if(data.texto_barra_superior){
-        document.querySelectorAll('.promo-stripe-texto').forEach(el => { el.textContent = data.texto_barra_superior; });
+      // Textos dos marquees — opcionais. Faixa do topo só aparece se o
+      // lojista configurar algo no painel. Mesma lógica pro rodapé.
+      const textoBarraSuperior = (data.texto_barra_superior || '').trim();
+      if(textoBarraSuperior){
+        document.querySelectorAll('.promo-stripe-texto').forEach(el => { el.textContent = textoBarraSuperior; });
+        document.getElementById('promoStripeTop').style.display = 'flex';
+      } else {
+        document.getElementById('promoStripeTop').style.display = 'none';
       }
       const textoEntrega = (data.texto_entrega || '').trim();
       document.getElementById('deliveryNoteText').textContent = textoEntrega;
