@@ -1562,12 +1562,48 @@
       <div class="field">
         <label for="lojaTextoBarraInput">Texto da barra superior</label>
         <input type="text" id="lojaTextoBarraInput" placeholder="O maior hub de mantos">
-        <div class="field-hint">Fica rodando em loop logo abaixo do menu. Em branco, mantém o texto padrão.</div>
+        <div class="field-hint">Fica rodando em loop logo abaixo do menu. Em branco, nenhum texto aparece.</div>
+      </div>
+      <div class="field">
+        <label>Imagem de fundo — barra superior</label>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px;">
+          <div id="lojaImagemBarraSuperiorGrid"></div>
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('lojaImagemBarraSuperiorFile').click()">Enviar imagem</button>
+          <input type="file" id="lojaImagemBarraSuperiorFile" accept="image/*" style="display:none;" onchange="handleImagemBarraSuperior(event)">
+        </div>
+        <div class="field-hint">PNG ou JPG. Altura ideal: 36px. Se deixar em branco, usa gradiente só.</div>
+      </div>
+      <div class="field">
+        <label for="lojaTextoBarraPosicao">Posição vertical do texto</label>
+        <select id="lojaTextoBarraPosicao">
+          <option value="top">Topo</option>
+          <option value="middle" selected>Meio</option>
+          <option value="bottom">Rodapé</option>
+        </select>
+        <div class="field-hint">Onde o texto fica dentro do espaço da barra.</div>
+      </div>
+      <div class="field">
+        <label for="lojaTextoBarraAlinhamento">Alinhamento horizontal do texto</label>
+        <select id="lojaTextoBarraAlinhamento">
+          <option value="left">Esquerda</option>
+          <option value="center" selected>Centro</option>
+          <option value="right">Direita</option>
+        </select>
+        <div class="field-hint">Para qual lado o texto fica.</div>
       </div>
       <div class="field">
         <label for="lojaTextoRodapeInput">Texto do rodapé em loop</label>
         <input type="text" id="lojaTextoRodapeInput" placeholder="Frete grátis acima de R$ 299 · Compre 2 leve 3">
         <div class="field-hint">Fica rodando em loop na faixa final da página. Em branco, a faixa fica só com o gradiente, sem texto.</div>
+      </div>
+      <div class="field">
+        <label>Imagem de fundo — barra do rodapé</label>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px;">
+          <div id="lojaImagemBarraRodapeGrid"></div>
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('lojaImagemBarraRodapeFile').click()">Enviar imagem</button>
+          <input type="file" id="lojaImagemBarraRodapeFile" accept="image/*" style="display:none;" onchange="handleImagemBarraRodape(event)">
+        </div>
+        <div class="field-hint">PNG ou JPG. Altura ideal: 18px. Se deixar em branco, usa gradiente só.</div>
       </div>
       <div class="field">
         <label for="lojaTextoEntregaInput">Aviso de entrega na página do produto</label>
@@ -6327,6 +6363,8 @@
   // ============================================================
   let lojaLogoUrl = null;
   let lojaPaymentIcons = [];
+  let lojaImagemBarraSuperior = null;
+  let lojaImagemBarraRodape = null;
 
   // ---- Descrição padrão por tipo (tela Loja) ----
   const TIPOS_DESCRICAO = ['Torcedor', 'Jogador', 'Retrô', 'Feminina', 'Kit Treino', 'Conjunto de Treino', 'Kit Infantil'];
@@ -6384,7 +6422,7 @@
 
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, descricoes_por_tipo')
+      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     if(!error && data){
@@ -6400,13 +6438,103 @@
       document.getElementById('lojaTextoBarraInput').value = data.texto_barra_superior || '';
       document.getElementById('lojaTextoRodapeInput').value = data.texto_rodape_loop || '';
       document.getElementById('lojaTextoEntregaInput').value = data.texto_entrega || '';
+      document.getElementById('lojaTextoBarraPosicao').value = (data.posicao_texto_barra_superior || 'middle').toLowerCase();
+      document.getElementById('lojaTextoBarraAlinhamento').value = (data.alinhamento_texto_barra_superior || 'center').toLowerCase();
+      lojaImagemBarraSuperior = data.imagem_barra_superior || null;
+      lojaImagemBarraRodape = data.imagem_barra_rodape || null;
     }
     renderLojaLogoGrid();
     renderLojaPaymentGrid();
+    renderLojaImagemBarraSuperiorGrid();
+    renderLojaImagemBarraRodapeGrid();
     window.scrollTo(0,0);
   }
   function closeLojaOverlay(){
     document.getElementById('lojaOverlay').classList.add('hidden');
+  }
+
+  // ---- Imagens das barras (marquees) ----
+  function renderLojaImagemBarraSuperiorGrid(){
+    const grid = document.getElementById('lojaImagemBarraSuperiorGrid');
+    if(lojaImagemBarraSuperior){
+      grid.innerHTML = `
+        <div class="image-slot">
+          <img src="${lojaImagemBarraSuperior}" alt="">
+          <button class="remove-btn" onclick="removeLojaImagemBarraSuperior()" aria-label="Remover imagem">×</button>
+        </div>`;
+    } else {
+      grid.innerHTML = `
+        <div class="image-slot add-slot" onclick="document.getElementById('lojaImagemBarraSuperiorFile').click()">
+          <div class="add-slot-inner">
+            <span class="add-slot-plus">+</span>
+            <span class="add-slot-label">Imagem</span>
+          </div>
+        </div>`;
+    }
+  }
+
+  function renderLojaImagemBarraRodapeGrid(){
+    const grid = document.getElementById('lojaImagemBarraRodapeGrid');
+    if(lojaImagemBarraRodape){
+      grid.innerHTML = `
+        <div class="image-slot">
+          <img src="${lojaImagemBarraRodape}" alt="">
+          <button class="remove-btn" onclick="removeLojaImagemBarraRodape()" aria-label="Remover imagem">×</button>
+        </div>`;
+    } else {
+      grid.innerHTML = `
+        <div class="image-slot add-slot" onclick="document.getElementById('lojaImagemBarraRodapeFile').click()">
+          <div class="add-slot-inner">
+            <span class="add-slot-plus">+</span>
+            <span class="add-slot-label">Imagem</span>
+          </div>
+        </div>`;
+    }
+  }
+
+  function removeLojaImagemBarraSuperior(){
+    lojaImagemBarraSuperior = null;
+    renderLojaImagemBarraSuperiorGrid();
+  }
+
+  function removeLojaImagemBarraRodape(){
+    lojaImagemBarraRodape = null;
+    renderLojaImagemBarraRodapeGrid();
+  }
+
+  async function handleImagemBarraSuperior(event){
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+    await uploadImagemBarra(file, 'barra-superior', (url) => { lojaImagemBarraSuperior = url; renderLojaImagemBarraSuperiorGrid(); });
+  }
+
+  async function handleImagemBarraRodape(event){
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+    await uploadImagemBarra(file, 'barra-rodape', (url) => { lojaImagemBarraRodape = url; renderLojaImagemBarraRodapeGrid(); });
+  }
+
+  async function uploadImagemBarra(file, tipo, callback){
+    const path = `${ADMIN_LOJA_ID}/${tipo}-${Date.now()}.webp`;
+    document.getElementById(`lojaImagem${tipo === 'barra-superior' ? 'BarraSuperior' : 'BarraRodape'}Grid`).innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
+
+    let arquivoParaEnviar = file;
+    try {
+      const recortado = await recortarEspacoVazio(file);
+      arquivoParaEnviar = await comprimirImagem(recortado, 1200, 0.9);
+    }
+    catch(e){ console.error('Erro ao processar imagem de barra', e); }
+
+    const { error: uploadError } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, arquivoParaEnviar, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+    if(uploadError){
+      showToast('Erro ao enviar imagem: ' + uploadError.message, 'error');
+      (tipo === 'barra-superior' ? renderLojaImagemBarraSuperiorGrid : renderLojaImagemBarraRodapeGrid)();
+      return;
+    }
+    const { data: publicUrlData } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
+    callback(publicUrlData.publicUrl);
   }
 
   function renderLojaLogoGrid(){
@@ -6604,7 +6732,11 @@
         instagram: extrairUsuarioInstagram(document.getElementById('lojaInstagramInput').value) || null,
         payment_icons: lojaPaymentIcons,
         texto_barra_superior: document.getElementById('lojaTextoBarraInput').value.trim() || null,
+        posicao_texto_barra_superior: document.getElementById('lojaTextoBarraPosicao').value || 'middle',
+        alinhamento_texto_barra_superior: document.getElementById('lojaTextoBarraAlinhamento').value || 'center',
+        imagem_barra_superior: lojaImagemBarraSuperior,
         texto_rodape_loop: document.getElementById('lojaTextoRodapeInput').value.trim() || null,
+        imagem_barra_rodape: lojaImagemBarraRodape,
         texto_entrega: document.getElementById('lojaTextoEntregaInput').value.trim() || null,
         usa_estoque: document.getElementById('lojaUsaEstoque').checked,
         estoque_alerta_limite: Number(document.getElementById('lojaEstoqueAlerta').value) || 0,
