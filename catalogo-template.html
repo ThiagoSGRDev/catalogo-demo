@@ -1391,7 +1391,22 @@
      referência (~2% da largura da tela, ≈ 8px num celular). Nas outras telas o
      rodapé continua com a altura normal (18px). */
   :root{ --times-stripe-h: clamp(6px, 1.97vw, 9px); }
-  #timesView .times-stripe{ height:var(--times-stripe-h); }
+  .times-stripe{ height:var(--times-stripe-h); }
+
+  /* Botão de compartilhar o link da página (tela do time e tela do produto) */
+  .share-btn{ margin-left:auto; flex-shrink:0; }
+  .share-btn svg{ width:18px; height:18px; }
+  .product-title-row{ display:flex; align-items:flex-start; gap:12px; margin-top:20px; }
+  .product-title-row .product-title{ margin-top:0; flex:1; min-width:0; }
+  .product-title-row .share-btn{ margin-top:2px; }
+  .share-toast{
+    position:fixed; left:50%; bottom:calc(28px + env(safe-area-inset-bottom)); z-index:3000;
+    transform:translate(-50%, 16px); opacity:0; pointer-events:none;
+    background:rgba(10,13,16,0.92); color:#fff; border:1px solid var(--line);
+    padding:10px 18px; border-radius:999px; font-family:'Inter', sans-serif; font-size:13.5px;
+    transition:opacity .2s, transform .2s;
+  }
+  .share-toast.show{ opacity:1; transform:translate(-50%, 0); }
   body[data-view="times"] footer .promo-stripe-footer{ height:var(--times-stripe-h); }
   #timesView .search-bar{ margin-top:14px; }
   .times-nav-head{ display:flex; align-items:flex-start; justify-content:space-between; padding:22px 0 12px; }
@@ -1972,6 +1987,7 @@
   </div>
 
   <div id="teamListView">
+    <div class="promo-stripe-footer times-stripe" style="margin:0 -20px;"></div>
     <div class="team-list-header">
       <button class="back-btn" onclick="backToLeague()" aria-label="Voltar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -1981,6 +1997,9 @@
         <div class="name" id="teamListName"></div>
         <div class="team-list-subtitle">Mantos disponíveis</div>
       </div>
+      <button class="back-btn share-btn" onclick="shareLink(document.getElementById('teamListName').textContent)" aria-label="Compartilhar link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+      </button>
     </div>
     <input type="text" class="team-search" id="teamProductSearch" placeholder="Buscar no time" oninput="renderTeamProducts()">
     <div class="product-count-row">
@@ -2006,6 +2025,7 @@
   </div>
 
   <div id="productView">
+    <div class="promo-stripe-footer times-stripe" style="margin:0 -20px;"></div>
     <button class="back-btn" onclick="backToTeamList()" aria-label="Voltar" style="margin-top:20px;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
@@ -2020,7 +2040,12 @@
     </div>
     <div class="product-thumbs" id="productThumbs"></div>
     <div class="product-tag-lg" id="productTagLg"></div>
-    <div class="product-title" id="productTitleLg"></div>
+    <div class="product-title-row">
+      <div class="product-title" id="productTitleLg"></div>
+      <button class="back-btn share-btn" onclick="shareLink(document.getElementById('productTitleLg').textContent)" aria-label="Compartilhar link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+      </button>
+    </div>
     <div class="product-subtitle" id="productSubtitleLg"></div>
     <div class="product-price-lg" id="productPriceLg"></div>
 
@@ -3707,6 +3732,55 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     document.body.setAttribute('data-view', name);
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
     if(name === 'times') timesCentralizarDepoisDoLayout();
+  }
+
+  // --- COMPARTILHAR LINK DA PÁGINA ---
+  // A URL já carrega a tela atual (#/time/..., #/produto/...), então location.href
+  // é o link certo. Celular: abre o menu nativo de compartilhar. Sem suporte
+  // (computador): copia o link e avisa.
+  function mostrarAvisoCompartilhar(msg){
+    let el = document.getElementById('shareToast');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'shareToast';
+      el.className = 'share-toast';
+      el.setAttribute('role', 'status');
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(mostrarAvisoCompartilhar._t);
+    mostrarAvisoCompartilhar._t = setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  function copiarLinkFallback(url){
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed; top:0; left:0; opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta);
+    mostrarAvisoCompartilhar(ok ? 'Link copiado!' : 'Não consegui copiar o link');
+  }
+
+  function shareLink(titulo){
+    const url = location.href;
+    const title = (titulo || document.title || '').trim();
+    if(navigator.share){
+      // Cancelar o menu lança AbortError: normal, não é erro de verdade
+      navigator.share({ title, url }).catch(() => {});
+      return;
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url)
+        .then(() => mostrarAvisoCompartilhar('Link copiado!'))
+        .catch(() => copiarLinkFallback(url));
+    } else {
+      copiarLinkFallback(url);
+    }
   }
 
   // Navega para uma nova tela e registra no histórico do navegador, para que o
