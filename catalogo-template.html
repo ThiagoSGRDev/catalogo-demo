@@ -1387,6 +1387,12 @@
      rodapé desta view. Dados reais (Supabase: tabela `teams`,
      campos `escudo_url` e `imagem_url`) — ver seção de JS.
      ============================================================ */
+  /* Faixas da tela de times (topo e rodapé): finas, na proporção do catálogo de
+     referência (~2% da largura da tela, ≈ 8px num celular). Nas outras telas o
+     rodapé continua com a altura normal (18px). */
+  :root{ --times-stripe-h: clamp(6px, 1.97vw, 9px); }
+  #timesView .times-stripe{ height:var(--times-stripe-h); }
+  body[data-view="times"] footer .promo-stripe-footer{ height:var(--times-stripe-h); }
   #timesView .search-bar{ margin-top:14px; }
   .times-nav-head{ display:flex; align-items:flex-start; justify-content:space-between; padding:22px 0 12px; }
   .times-nav-label{
@@ -2064,12 +2070,8 @@
   </div>
 
   <div id="timesView">
-    <div class="footer-stripe" style="margin:0 -20px;">
-      <div class="footer-stripe-track">
-        <div class="footer-stripe-tile"></div>
-        <div class="footer-stripe-tile"></div>
-      </div>
-    </div>
+    <!-- Faixa de marquee do topo da tela de times: mesma imagem/animação da faixa do rodapé -->
+    <div class="promo-stripe-footer times-stripe" style="margin:0 -20px;"></div>
 
     <div class="search-bar">
       <button class="search-pill" onclick="openBusca()" aria-label="Buscar time ou camisa">
@@ -2690,18 +2692,21 @@
         // Imagem própria no rodapé: desliza em loop, MAS na mesma escala do "cover"
         // (imagem ocupando a largura da barra), pra continuar parecida com o que o
         // lojista enviou. Uma repetição = largura da imagem nessa escala.
-        const footerStripeEl = document.getElementById('footerPromoStripe');
+        // Vale pra todas as faixas de marquee de rodapé (rodapé global + topo da tela de times)
         const footerImg = new Image();
         const ajustarRodape = () => {
-          if(!footerStripeEl || !footerImg.naturalWidth || !footerImg.naturalHeight) return;
-          const cw = footerStripeEl.clientWidth || window.innerWidth;
-          const ch = footerStripeEl.clientHeight || 18;
-          const escala = Math.max(cw / footerImg.naturalWidth, ch / footerImg.naturalHeight);
-          const tileW = footerImg.naturalWidth * escala;
-          footerStripeEl.style.setProperty('--footer-tile-w', tileW + 'px');
-          // ~30px por segundo, igual em qualquer largura de tela
-          footerStripeEl.style.setProperty('--footer-scroll-dur', Math.max(6, tileW / 30) + 's');
-          footerStripeEl.classList.add('is-scrolling');
+          if(!footerImg.naturalWidth || !footerImg.naturalHeight) return;
+          document.querySelectorAll('.promo-stripe-footer').forEach(footerStripeEl => {
+            // Faixa dentro de view escondida (display:none) tem largura 0: usa a tela
+            const cw = footerStripeEl.clientWidth || window.innerWidth;
+            const ch = footerStripeEl.clientHeight || 18;
+            const escala = Math.max(cw / footerImg.naturalWidth, ch / footerImg.naturalHeight);
+            const tileW = footerImg.naturalWidth * escala;
+            footerStripeEl.style.setProperty('--footer-tile-w', tileW + 'px');
+            // ~30px por segundo, igual em qualquer largura de tela
+            footerStripeEl.style.setProperty('--footer-scroll-dur', Math.max(6, tileW / 30) + 's');
+            footerStripeEl.classList.add('is-scrolling');
+          });
         };
         footerImg.onload = ajustarRodape;
         footerImg.src = data.imagem_barra_rodape;
@@ -3699,6 +3704,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     document.getElementById('favoritesView').classList.toggle('active', name === 'favorites');
     document.getElementById('categoryView').classList.toggle('active', name === 'category');
     document.getElementById('timesView').classList.toggle('active', name === 'times');
+    document.body.setAttribute('data-view', name);
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
     if(name === 'times') timesCentralizarDepoisDoLayout();
   }
