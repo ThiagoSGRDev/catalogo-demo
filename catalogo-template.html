@@ -578,15 +578,15 @@
   .promo-stripe[data-text-position="bottom"] .promo-stripe-track{
     align-items:flex-end;
   }
-  /* Variantes de alinhamento horizontal */
-  .promo-stripe[data-text-align="left"] span{
-    justify-content:flex-start;
+  /* Variantes de alinhamento horizontal — controla onde o texto fica dentro de cada span */
+  .promo-stripe[data-text-align="left"] .promo-stripe-track > span{
+    text-align:left;
   }
-  .promo-stripe[data-text-align="center"] span{
-    justify-content:center;
+  .promo-stripe[data-text-align="center"] .promo-stripe-track > span{
+    text-align:center;
   }
-  .promo-stripe[data-text-align="right"] span{
-    justify-content:flex-end;
+  .promo-stripe[data-text-align="right"] .promo-stripe-track > span{
+    text-align:right;
   }
   .promo-stripe-footer .promo-stripe-track{
     animation:promoMarquee 16s linear infinite;
