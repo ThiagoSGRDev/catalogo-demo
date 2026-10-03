@@ -568,7 +568,7 @@
     /* Posição controlável via JS */
     align-items: var(--promo-text-align, center);
   }
-  /* Variantes de posição */
+  /* Variantes de posição vertical */
   .promo-stripe[data-text-position="top"] .promo-stripe-track{
     align-items:flex-start;
   }
@@ -577,6 +577,16 @@
   }
   .promo-stripe[data-text-position="bottom"] .promo-stripe-track{
     align-items:flex-end;
+  }
+  /* Variantes de alinhamento horizontal */
+  .promo-stripe[data-text-align="left"] span{
+    justify-content:flex-start;
+  }
+  .promo-stripe[data-text-align="center"] span{
+    justify-content:center;
+  }
+  .promo-stripe[data-text-align="right"] span{
+    justify-content:flex-end;
   }
   .promo-stripe-footer .promo-stripe-track{
     animation:promoMarquee 13.5s linear infinite;
@@ -2520,7 +2530,7 @@
     try {
       const { data, error } = await supabaseClient
         .from('store_settings')
-        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior')
+        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior')
         .eq('loja_id', LOJA_ID)
         .single();
       if(error || !data) return;
@@ -2622,9 +2632,11 @@
 
       // Posição do texto na barra superior (top, middle, bottom)
       const posicaoTexto = (data.posicao_texto_barra_superior || 'middle').toLowerCase();
+      const alinhamentoTexto = (data.alinhamento_texto_barra_superior || 'center').toLowerCase();
       const promoStripeEl = document.querySelector('.promo-stripe');
       if(promoStripeEl){
         promoStripeEl.setAttribute('data-text-position', posicaoTexto);
+        promoStripeEl.setAttribute('data-text-align', alinhamentoTexto);
       }
 
       // Imagens de fundo das barras (marquees)
