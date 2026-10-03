@@ -6477,22 +6477,19 @@
     // Aplica posição e alinhamento salvos
     updatePreviewMarquee();
 
-    // Listeners para drag
-    previewText.addEventListener('mousedown', (e) => {
+    // Função auxiliar para processar drag (mouse e touch)
+    function startDrag(clientX, clientY) {
       previewDragState.isDragging = true;
-      previewDragState.offsetX = e.clientX - previewText.offsetLeft;
-      previewDragState.offsetY = e.clientY - previewText.offsetTop;
+      previewDragState.offsetX = clientX - previewText.offsetLeft;
+      previewDragState.offsetY = clientY - previewText.offsetTop;
       previewText.style.cursor = 'grabbing';
-    });
+    }
 
-    document.addEventListener('mousemove', (e) => {
+    function updateDrag(clientX, clientY) {
       if(!previewDragState.isDragging) return;
 
-      const container = document.getElementById('marqueePreviewContainer');
-      const previewText = document.getElementById('marqueePreviewText');
-
-      let newX = e.clientX - previewDragState.offsetX;
-      let newY = e.clientY - previewDragState.offsetY;
+      let newX = clientX - previewDragState.offsetX;
+      let newY = clientY - previewDragState.offsetY;
 
       // Limita movimento horizontal
       const maxX = container.offsetWidth - previewText.offsetWidth;
@@ -6524,12 +6521,38 @@
       } else {
         document.getElementById('lojaTextoBarraAlinhamento').value = 'center';
       }
-    });
+    }
 
-    document.addEventListener('mouseup', () => {
+    function endDrag() {
       previewDragState.isDragging = false;
       previewText.style.cursor = 'grab';
+    }
+
+    // Mouse events
+    previewText.addEventListener('mousedown', (e) => {
+      startDrag(e.clientX, e.clientY);
     });
+
+    document.addEventListener('mousemove', (e) => {
+      updateDrag(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mouseup', endDrag);
+
+    // Touch events (celular/tablet)
+    previewText.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      startDrag(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+      if(!previewDragState.isDragging) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      updateDrag(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    document.addEventListener('touchend', endDrag);
 
     // Atualiza texto quando input muda
     document.getElementById('lojaTextoBarraInput').addEventListener('input', () => {
