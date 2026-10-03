@@ -345,17 +345,20 @@
      aparecem nas vitrines dos lojistas de verdade (ex.: Manto Dez).
      ============================================================ */
   .demo-selo{
-    position:fixed; left:16px; bottom:16px; z-index:80;
-    display:flex; align-items:center; gap:8px;
-    background:rgba(10,13,16,0.9); backdrop-filter:blur(6px);
-    border:1.5px solid var(--gold); color:var(--gold-text);
-    font-family:'Space Mono', monospace; font-size:11px; font-weight:700;
+    /* Versão discreta: pequeno, translúcido e no canto. Continua sendo o link
+       fixo da demo pra página de vendas, sem competir com o conteúdo. */
+    position:fixed; left:12px; bottom:12px; z-index:80;
+    display:flex; align-items:center; gap:6px;
+    background:rgba(10,13,16,0.75); backdrop-filter:blur(6px);
+    border:1px solid rgba(var(--gold-rgb),0.6); color:var(--gold-text);
+    font-family:'Space Mono', monospace; font-size:10px; font-weight:700;
     letter-spacing:.04em; text-transform:uppercase;
-    padding:9px 14px; border-radius:999px; text-decoration:none;
-    box-shadow:0 6px 20px rgba(0,0,0,0.35);
+    padding:5px 10px; border-radius:999px; text-decoration:none;
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    opacity:.85;
   }
   .demo-selo[hidden]{ display:none; }
-  .demo-selo span{ width:7px; height:7px; border-radius:50%; background:var(--gold); flex-shrink:0; }
+  .demo-selo span{ width:5px; height:5px; border-radius:50%; background:var(--gold); flex-shrink:0; }
 
   .demo-popup-fundo{
     position:fixed; inset:0; z-index:180; background:rgba(0,0,0,0.6);
@@ -1419,7 +1422,7 @@
   /* Selo "Isto é uma demonstração" (fixo, canto inferior): sobe a barra de
      compra do produto pra ela não ser coberta pelo selo */
   body.has-demo-selo .product-buy-bar{
-    bottom:calc(58px + env(safe-area-inset-bottom));
+    bottom:calc(44px + env(safe-area-inset-bottom));
     padding-bottom:14px;
   }
   #timesView .search-bar{ margin-top:14px; }
@@ -1578,7 +1581,7 @@
   <div id="loadingGate"></div>
 
   <a class="demo-selo" id="demoSelo" href="landing-vendas.html#planos" hidden>
-    <span></span>Isto é uma demonstração
+    <span></span>Demonstração
   </a>
 
   <div class="demo-popup-fundo" id="demoPopupFundo" hidden>
