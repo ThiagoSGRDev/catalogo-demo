@@ -10,7 +10,7 @@
 <style>
   @font-face{
     font-family:'Super Bouncer';
-    src:url('super-bouncer.ttf') format('truetype');
+    src:url('/super-bouncer.ttf') format('truetype');
     font-display:swap;
   }
   /* ============================================================
@@ -152,8 +152,8 @@
     --sombra-media:var(--sombra-media);
     --fundo-hero:linear-gradient(160deg, #0F1A1D 0%, #0A0D10 55%, #0D1420 100%);
     --fundo-fora:#000000;                 /* área fora do app em tela grande */
-    --promo-bg-image:url('bg-marquee.jpg');
-    --promo-bg-image-footer:url('bg-marquee.jpg');
+    --promo-bg-image:url('/bg-marquee.jpg');
+    --promo-bg-image-footer:url('/bg-marquee.jpg');
   }
   *{box-sizing:border-box; margin:0; padding:0;}
 
@@ -1407,7 +1407,21 @@
     transition:opacity .2s, transform .2s;
   }
   .share-toast.show{ opacity:1; transform:translate(-50%, 0); }
-  body[data-view="times"] footer .promo-stripe-footer{ height:var(--times-stripe-h); }
+  /* Rodapé fino em TODAS as telas (inclusive a principal), como na referência */
+  footer .promo-stripe-footer{ height:var(--times-stripe-h); }
+
+  /* Cabeçalho da tela do time: linha de cima (voltar + compartilhar) e linha do
+     time (escudo, nome e setas pra trocar de time) */
+  .team-list-topo{ display:flex; align-items:center; justify-content:space-between; padding-top:20px; }
+  #teamListView .team-list-header{ padding-top:14px; }
+  .team-nav-arrows{ display:flex; gap:8px; margin-left:auto; flex-shrink:0; }
+
+  /* Selo "Isto é uma demonstração" (fixo, canto inferior): sobe a barra de
+     compra do produto pra ela não ser coberta pelo selo */
+  body.has-demo-selo .product-buy-bar{
+    bottom:calc(58px + env(safe-area-inset-bottom));
+    padding-bottom:14px;
+  }
   #timesView .search-bar{ margin-top:14px; }
   .times-nav-head{ display:flex; align-items:flex-start; justify-content:space-between; padding:22px 0 12px; }
   .times-nav-label{
@@ -1976,6 +1990,7 @@
   </div>
 
   <div id="leagueTeamsView">
+    <div class="promo-stripe-footer times-stripe" style="margin:0 -20px;"></div>
     <div class="team-list-header">
       <button class="back-btn" onclick="backToHome()" aria-label="Voltar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -1988,18 +2003,28 @@
 
   <div id="teamListView">
     <div class="promo-stripe-footer times-stripe" style="margin:0 -20px;"></div>
-    <div class="team-list-header">
+    <div class="team-list-topo">
       <button class="back-btn" onclick="backToLeague()" aria-label="Voltar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-      <div class="badge" id="teamListBadge"></div>
-      <div>
-        <div class="name" id="teamListName"></div>
-        <div class="team-list-subtitle">Mantos disponíveis</div>
-      </div>
       <button class="back-btn share-btn" onclick="shareLink(document.getElementById('teamListName').textContent)" aria-label="Compartilhar link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
       </button>
+    </div>
+    <div class="team-list-header">
+      <div class="badge" id="teamListBadge"></div>
+      <div style="min-width:0;">
+        <div class="name" id="teamListName"></div>
+        <div class="team-list-subtitle">Mantos disponíveis</div>
+      </div>
+      <div class="team-nav-arrows">
+        <button class="back-btn" onclick="trocarTimeLista(-1)" aria-label="Time anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button class="back-btn" onclick="trocarTimeLista(1)" aria-label="Próximo time">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
     </div>
     <input type="text" class="team-search" id="teamProductSearch" placeholder="Buscar no time" oninput="renderTeamProducts()">
     <div class="product-count-row">
@@ -2139,6 +2164,7 @@
   </div>
 
   <div id="favoritesView">
+    <div class="promo-stripe-footer times-stripe" style="margin:0 -20px;"></div>
     <div class="team-list-header">
       <button class="back-btn" onclick="goBack()" aria-label="Voltar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -2154,6 +2180,7 @@
   </div>
 
   <div id="categoryView">
+    <div class="promo-stripe-footer times-stripe" style="margin:0 -20px;"></div>
     <div class="team-list-header">
       <button class="back-btn" onclick="goBack()" aria-label="Voltar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -2293,7 +2320,15 @@
   // como LOJA_SLUG é lido, o resto (LOJA_ID e os filtros) continua igual.
   // ============================================================
   // Suporta tanto ?loja=katalogohub quanto /loja/katalogo-demo (redireciona para katalogohub)
-  let LOJA_SLUG = new URLSearchParams(location.search).get('loja');
+  // URL limpa: /catalogo/loja/<loja>/<tela...> (ex.: /catalogo/loja/katalogohub/produto/noruega-torcedor).
+  // Precisa da regra de rewrite do host (vercel.json / _redirects). O formato antigo
+  // (catalogo-template.html?loja=x#/produto/y) continua funcionando.
+  const CAMINHO_LIMPO = location.pathname.match(/^\/catalogo\/loja\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/.*)?$/i);
+  const USA_URL_LIMPA = !!CAMINHO_LIMPO;
+  const SLUG_NA_URL = CAMINHO_LIMPO ? CAMINHO_LIMPO[1] : null;
+  let LOJA_SLUG = CAMINHO_LIMPO
+    ? (SLUG_NA_URL === 'katalogo-demo' ? 'katalogohub' : SLUG_NA_URL)
+    : new URLSearchParams(location.search).get('loja');
   if (!LOJA_SLUG) {
     // Tenta extrair da URL path (/loja/[slug]/ ou /loja/[slug])
     const pathMatch = window.location.pathname.match(/\/loja\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/)?/);
@@ -3767,7 +3802,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   }
 
   function shareLink(titulo){
-    const url = location.href;
+    const url = urlCompartilhavel(rotaDaUrl());
     const title = (titulo || document.title || '').trim();
     if(navigator.share){
       // Cancelar o menu lança AbortError: normal, não é erro de verdade
@@ -3793,8 +3828,30 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   function navigateTo(name, route, push){
     showView(name);
     if(push === false) return;
-    const hash = (route && route.length) ? ('#/' + route.join('/')) : '';
-    history.pushState({ view: name, route: route || null }, "", location.pathname + location.search + hash);
+    history.pushState({ view: name, route: route || null }, "", urlDaRota(route));
+  }
+
+  // URL de uma rota no formato em uso pela página: limpo (/catalogo/loja/x/produto/y)
+  // se ela foi aberta assim; senão o formato antigo (?loja=x#/produto/y).
+  function urlDaRota(route){
+    const temRota = route && route.length;
+    if(USA_URL_LIMPA){
+      return '/catalogo/loja/' + SLUG_NA_URL + (temRota ? '/' + route.map(encodeURIComponent).join('/') : '');
+    }
+    return location.pathname + location.search + (temRota ? '#/' + route.join('/') : '');
+  }
+
+  // Link curto pra compartilhar: SEMPRE no formato limpo, não importa como a página foi aberta
+  function urlCompartilhavel(route){
+    const temRota = route && route.length;
+    return location.origin + '/catalogo/loja/' + LOJA_SLUG + (temRota ? '/' + route.map(encodeURIComponent).join('/') : '');
+  }
+
+  // Rota da tela atual, lida da URL (caminho limpo ou #hash antigo)
+  function rotaDaUrl(){
+    const m = location.pathname.match(/^\/catalogo\/loja\/[^/]+\/?(.*)$/i);
+    const raw = (USA_URL_LIMPA && m) ? m[1] : location.hash.replace(/^#\/?/, '');
+    return raw.split('/').filter(Boolean).map(s => { try { return decodeURIComponent(s); } catch(e){ return s; } });
   }
 
   // Volta uma tela usando o histórico do navegador (funciona com gesto de voltar do celular)
@@ -3860,7 +3917,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   function backToHome(){
     currentTeam = null; currentLiga = null; currentSubliga = null;
     showView('home');
-    history.pushState({ view: 'home', route: null }, "", location.pathname + location.search);
+    history.pushState({ view: 'home', route: null }, "", urlDaRota(null));
   }
   function backToLeague(){ goBack(); }
   function backToTeamList(){ goBack(); }
@@ -3909,6 +3966,22 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   function fecharFiltrosProduto(){
     document.getElementById('filtrosBackdrop').classList.remove('open');
     document.getElementById('filtrosSheet').classList.remove('open');
+  }
+
+  // Setas do cabeçalho da tela do time: vai pro time anterior/próximo da MESMA
+  // liga (ordem alfabética, igual à tela de times). Troca a URL sem empilhar
+  // histórico, pra o "voltar" continuar voltando uma tela de verdade.
+  async function trocarTimeLista(dir){
+    if(!currentTeam) return;
+    const equipes = TEAMS.filter(t => t.liga === currentTeam.liga)
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    if(equipes.length < 2) return;
+    const i = equipes.findIndex(t => t.nome === currentTeam.nome);
+    const prox = equipes[(i + dir + equipes.length) % equipes.length];
+    const route = ['time', slugify(prox.nome)];
+    await chooseTeam(prox, false);
+    history.replaceState({ view: 'team', route }, "", urlDaRota(route));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function chooseTeam(team, push){
@@ -4956,7 +5029,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       // o ID do produto salvo (itens antigos guardados no carrinho antes dessa
       // mudança não têm, e nesse caso o link é simplesmente omitido).
       if(item.produtoId){
-        const linkProduto = `${location.origin}${location.pathname}?loja=${LOJA_SLUG}#/produto/${slugify(item.produtoId)}`;
+        const linkProduto = urlCompartilhavel(['produto', slugify(item.produtoId)]);
         msg += `  Ver produto: ${encodeURIComponent(linkProduto)}%0A`;
       }
     });
@@ -5162,15 +5235,14 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // e faz links compartilhados (produto/categoria/time) abrirem na tela
   // certa, inclusive vindos de apps como WhatsApp/Instagram.
   async function restaurarTelaInicial(){
-    const raw = location.hash.replace(/^#\/?/, '');
-    if(!raw){
-      history.replaceState({ view: 'home', route: null }, "", location.pathname + location.search);
+    const route = rotaDaUrl();
+    if(!route.length){
+      history.replaceState({ view: 'home', route: null }, "", urlDaRota(null));
       return;
     }
-    const route = raw.split('/').filter(Boolean).map(s => decodeURIComponent(s));
     const viewPorPrefixo = { time: 'team', categoria: 'category', produto: 'product', times: 'times' };
     const view = viewPorPrefixo[route[0]] || 'home';
-    history.replaceState({ view, route }, "", location.pathname + location.search + location.hash);
+    history.replaceState({ view, route }, "", urlDaRota(route));
     await handleHistoryState({ view, route });
   }
 
@@ -5222,6 +5294,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   function iniciarDemoLoja(){
     if(!EH_LOJA_DEMO) return;
     document.getElementById('demoSelo').hidden = false;
+    document.body.classList.add('has-demo-selo');
   }
 
   function abrirDemoPopup(){
@@ -5251,7 +5324,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
   function backToTop(){
     showView('home');
-    history.pushState({ view: 'home', route: null }, "", location.pathname + location.search);
+    history.pushState({ view: 'home', route: null }, "", urlDaRota(null));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 

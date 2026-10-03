@@ -2,6 +2,10 @@
 /loja/:slug /catalogo-template.html 200
 /loja/:slug/ /catalogo-template.html 200
 
+# URL limpa do catálogo: /catalogo/loja/<loja>/<tela...> (ex.: /catalogo/loja/katalogohub/produto/x)
+/catalogo/loja/:slug /catalogo-template.html 200
+/catalogo/loja/:slug/* /catalogo-template.html 200
+
 # Landing, admin, etc
 / /landing-vendas.html 200
 /admin /admin.html 200

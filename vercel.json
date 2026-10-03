@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/catalogo/loja/:slug", "destination": "/catalogo-template.html" },
+    { "source": "/catalogo/loja/:slug/:path*", "destination": "/catalogo-template.html" }
+  ]
+}
