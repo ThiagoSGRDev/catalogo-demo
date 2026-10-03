@@ -6544,14 +6544,21 @@
     const posicao = document.getElementById('lojaTextoBarraPosicao').value;
     const alinhamento = document.getElementById('lojaTextoBarraAlinhamento').value;
 
-    // Posição vertical
+    // Limpa transforms que conflitam com drag
+    previewText.style.transform = 'none';
+    previewText.style.bottom = 'auto';
+
+    // Posição vertical usando top/left apenas
     if(posicao === 'top'){
       previewText.style.top = '4px';
     } else if(posicao === 'bottom'){
-      previewText.style.bottom = '4px';
+      const containerHeight = container.offsetHeight;
+      const textHeight = previewText.offsetHeight;
+      previewText.style.top = Math.max(0, containerHeight - textHeight - 4) + 'px';
     } else {
-      previewText.style.top = '50%';
-      previewText.style.transform = 'translateY(-50%)';
+      const containerHeight = container.offsetHeight;
+      const textHeight = previewText.offsetHeight;
+      previewText.style.top = Math.max(0, (containerHeight - textHeight) / 2) + 'px';
     }
 
     // Alinhamento horizontal
@@ -6559,11 +6566,15 @@
       previewText.style.left = '12px';
       previewText.style.right = 'auto';
     } else if(alinhamento === 'right'){
-      previewText.style.right = '12px';
-      previewText.style.left = 'auto';
+      const containerWidth = container.offsetWidth;
+      const textWidth = previewText.offsetWidth;
+      previewText.style.left = Math.max(0, containerWidth - textWidth - 12) + 'px';
+      previewText.style.right = 'auto';
     } else {
-      previewText.style.left = '50%';
-      previewText.style.transform = 'translateX(-50%)' + (posicao === 'middle' ? '' : '');
+      const containerWidth = container.offsetWidth;
+      const textWidth = previewText.offsetWidth;
+      previewText.style.left = Math.max(0, (containerWidth - textWidth) / 2) + 'px';
+      previewText.style.right = 'auto';
     }
   }
 
