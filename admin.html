@@ -6,7 +6,7 @@
 <title>Katalogo Hub — Painel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Playfair+Display:ital,wght@1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bungee&family=Playfair+Display:ital,wght@1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Anton&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
@@ -1575,7 +1575,7 @@
       </div>
       <div class="field">
         <label for="lojaTextoBarraPosicao">Posição vertical do texto</label>
-        <select id="lojaTextoBarraPosicao">
+        <select id="lojaTextoBarraPosicao" onchange="updatePreviewMarquee()">
           <option value="top">Topo</option>
           <option value="middle" selected>Meio</option>
           <option value="bottom">Rodapé</option>
@@ -1593,8 +1593,8 @@
       </div>
       <div class="field">
         <label>Prévia do marquee — arraste o texto para posicionar</label>
-        <div id="marqueePreviewContainer" style="position:relative; width:100%; height:60px; background:linear-gradient(90deg,#1a1a1a,#333,#1a1a1a); border:1px solid rgba(255,255,255,0.2); border-radius:8px; overflow:hidden; margin-top:8px; display:flex; align-items:center; justify-content:center;">
-          <div id="marqueePreviewText" style="position:absolute; cursor:grab; white-space:nowrap; font-weight:bold; color:#00E5FF; text-shadow:0 0 10px rgba(0,229,255,0.5); user-select:none; padding:0 24px;">
+        <div id="marqueePreviewContainer" style="position:relative; width:100%; height:54px; background-color:#1a1a1a; background-image:linear-gradient(#00E5FF,#00E5FF), url('bg-marquee.jpg'); background-size:cover, cover; background-position:center, center 35%; background-repeat:no-repeat, no-repeat; background-blend-mode:color, normal; border:1px solid rgba(255,255,255,0.2); border-radius:8px; overflow:hidden; margin-top:8px; touch-action:none;">
+          <div id="marqueePreviewText" style="position:absolute; left:0; top:0; cursor:grab; white-space:nowrap; font-family:'Super Bouncer','Bungee',sans-serif; font-weight:900; font-size:22px; letter-spacing:.01em; text-transform:uppercase; color:#fff; text-shadow:0 0 3px rgba(0,0,0,0.85), 0 1px 2px rgba(0,0,0,0.9); filter:drop-shadow(0 2px 4px rgba(0,0,0,0.65)); user-select:none; -webkit-user-select:none; touch-action:none; padding:0 24px; line-height:1.2;">
             Seu texto aqui
           </div>
         </div>
@@ -6466,6 +6466,18 @@
   // ---- Prévia interativa do marquee ----
   let previewDragState = { isDragging: false, offsetX: 0, offsetY: 0 };
 
+  let previewBound = false;
+
+  // Fundo da prévia = mesma receita do catálogo (cor da loja + imagem, blend "color")
+  function updatePreviewBackground(){
+    const container = document.getElementById('marqueePreviewContainer');
+    if(!container) return;
+    const corInput = document.getElementById('apparenceCorPrimaria');
+    const cor = (corInput && corInput.value) || '#00E5FF';
+    const img = (typeof lojaImagemBarraSuperior !== 'undefined' && lojaImagemBarraSuperior) ? lojaImagemBarraSuperior : 'bg-marquee.jpg';
+    container.style.backgroundImage = `linear-gradient(${cor}, ${cor}), url('${img}')`;
+  }
+
   function initMarqueePreview(){
     const previewText = document.getElementById('marqueePreviewText');
     const container = document.getElementById('marqueePreviewContainer');
@@ -6474,8 +6486,10 @@
     const textoAtual = document.getElementById('lojaTextoBarraInput').value.trim() || 'Seu texto aqui';
     previewText.textContent = textoAtual;
 
-    // Aplica posição e alinhamento salvos
+    // Fundo real + posição/alinhamento salvos
+    updatePreviewBackground();
     updatePreviewMarquee();
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(updatePreviewMarquee);
 
     // Função auxiliar para processar drag (mouse e touch)
     function startDrag(clientX, clientY) {
@@ -6528,6 +6542,10 @@
       previewText.style.cursor = 'grab';
     }
 
+    // Listeners ligados uma única vez (initMarqueePreview roda a cada abertura do painel)
+    if(previewBound) return;
+    previewBound = true;
+
     // Mouse events
     previewText.addEventListener('mousedown', (e) => {
       startDrag(e.clientX, e.clientY);
@@ -6558,6 +6576,7 @@
     document.getElementById('lojaTextoBarraInput').addEventListener('input', () => {
       const textoAtual = document.getElementById('lojaTextoBarraInput').value.trim() || 'Seu texto aqui';
       previewText.textContent = textoAtual;
+      updatePreviewMarquee();
     });
   }
 
@@ -6619,6 +6638,7 @@
           </div>
         </div>`;
     }
+    updatePreviewBackground();
   }
 
   function renderLojaImagemBarraRodapeGrid(){
