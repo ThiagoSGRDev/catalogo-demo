@@ -233,6 +233,35 @@
   #loginView .forgot-link{ font-size:13px; color:var(--neon-green) !important; opacity:.9; }
   #loginView .forgot-link:hover{ opacity:1; text-decoration:underline; }
 
+  /* ===== Login v2: estilo referência (alinhado à esquerda, campos sublinhados, ícones à direita) ===== */
+  #loginView .login-card{ padding:36px 30px 32px; }
+  #loginView .login-logo{ margin-bottom:28px; }
+  #loginView .login-title{
+    font-family:'Anton',sans-serif; font-weight:400; font-size:34px; letter-spacing:.01em;
+    text-transform:uppercase; color:#fff; margin:0 0 6px; font-style:italic;
+  }
+  #loginView .login-subtitle{ margin:0 0 28px; font-size:15px; color:var(--text-dim); }
+  #loginView .field{ margin-bottom:22px; }
+  #loginView .in-wrap input,
+  #loginView .field input{
+    background:transparent !important; border:none; border-bottom:1px solid rgba(255,255,255,0.18);
+    border-radius:0; padding:10px 40px 12px 0; box-shadow:none !important;
+  }
+  #loginView .in-wrap input:focus,
+  #loginView .field input:focus{ border-bottom-color:var(--neon-green); }
+  #loginView .in-wrap .in-ico{ left:auto; right:2px; width:22px; height:22px; }
+  #loginView .in-wrap input{ padding-left:0; }
+  #loginView .password-field .in-wrap input{ padding-right:44px; }
+  #loginView .password-toggle{ right:0; }
+  #loginView .forgot-row{ text-align:right; margin:-4px 0 22px; }
+  #loginView .forgot-link{ color:var(--text-dim) !important; font-size:13px; font-weight:500; }
+  #loginView .forgot-link:hover{ color:var(--neon-green) !important; text-decoration:none; }
+  #loginView .btn-primary{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    letter-spacing:.12em; font-size:16px; margin-top:0;
+  }
+  #loginView .login-footer-hint{ text-transform:none; letter-spacing:0; font-size:12px; font-weight:500; margin-top:20px; }
+
 
   /* ---- Botões base ---- */
   .field{ margin-bottom:18px; }
@@ -1026,11 +1055,12 @@
     <div class="login-logo">
       <img src="logo.svg" alt="Katalogo Hub" class="login-logo-img" onerror="this.style.display='none'; document.getElementById('loginLogoFallback').style.display='block';">
       <div id="loginLogoFallback" class="login-logo-fallback" style="display:none;">KATALOGO <span>HUB</span></div>
-      <div class="sub">Painel administrativo</div>
     </div>
 
     <!-- Formulário normal de login -->
     <div id="loginFormView">
+      <h1 class="login-title">Entrar</h1>
+      <p class="login-subtitle">Acesse o painel da sua conta.</p>
       <div id="loginError" class="login-error hidden"></div>
       <div class="field">
         <label for="loginEmail">E-mail</label>
@@ -1039,17 +1069,15 @@
       <div class="field">
         <label for="loginPassword">Senha</label>
         <div class="password-field">
-          <div class="in-wrap"><svg class="in-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin();"></div>
+          <div class="in-wrap"><input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin();"></div>
           <button type="button" class="password-toggle" onclick="togglePasswordVisibility()" aria-label="Mostrar senha">
             <svg id="pwEyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
       </div>
-      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Entrar</button>
-      <div style="text-align:center; margin-top:16px;">
-        <a href="#" class="forgot-link" onclick="abrirRecuperarSenha(); return false;">Esqueceu a senha?</a>
-      </div>
-      <div class="login-footer-hint">Acesso restrito aos lojistas do Katalogo Hub</div>
+      <div class="forgot-row"><a href="#" class="forgot-link" onclick="abrirRecuperarSenha(); return false;">Esqueci a senha</a></div>
+      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Entrar <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <div class="login-footer-hint">Acesso restrito aos lojistas do Katalogo Hub.</div>
     </div>
 
     <!-- Pedir e-mail pra receber o link de recuperação -->
@@ -2477,7 +2505,7 @@
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
     btn.disabled = false;
-    btn.textContent = 'Entrar';
+    btn.innerHTML = 'Entrar <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 
     if(error){
       errBox.textContent = 'E-mail ou senha incorretos.';
