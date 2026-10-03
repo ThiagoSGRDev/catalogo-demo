@@ -2238,8 +2238,8 @@
   // Suporta tanto ?loja=katalogohub quanto /loja/katalogo-demo (redireciona para katalogohub)
   let LOJA_SLUG = new URLSearchParams(location.search).get('loja');
   if (!LOJA_SLUG) {
-    // Tenta extrair da URL path (/loja/[slug])
-    const pathMatch = window.location.pathname.match(/\/loja\/([a-z0-9]+(?:-[a-z0-9]+)*)/);
+    // Tenta extrair da URL path (/loja/[slug]/ ou /loja/[slug])
+    const pathMatch = window.location.pathname.match(/\/loja\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/)?/);
     if (pathMatch && pathMatch[1]) {
       LOJA_SLUG = pathMatch[1] === 'katalogo-demo' ? 'katalogohub' : pathMatch[1];
     } else {

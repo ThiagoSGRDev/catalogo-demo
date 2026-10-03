@@ -1,0 +1,10 @@
+# Rota para todas as lojas — aceita com ou sem barra final
+/loja/:slug /catalogo-template.html 200
+/loja/:slug/ /catalogo-template.html 200
+
+# Landing, admin, etc
+/ /landing-vendas.html 200
+/admin /admin.html 200
+/admin/ /admin.html 200
+/register /register.html 200
+/register/ /register.html 200
