@@ -562,7 +562,7 @@
   .promo-stripe-track{
     position:relative; z-index:5; height:100%;
     display:flex; align-items:center; gap:48px;
-    width:fit-content;
+    width:200%;
     background:transparent;
     animation:promoMarquee 16s linear infinite;
     /* Posição controlável via JS */
@@ -593,7 +593,7 @@
   }
   @keyframes promoMarquee{
     0%{ transform:translateX(0); }
-    100%{ transform:translateX(calc(-100% - 48px)); }
+    100%{ transform:translateX(-50%); }
   }
   .promo-stripe span{
     display:inline-flex; align-items:center; gap:10px;
@@ -1890,8 +1890,6 @@
       <div class="promo-stripe-track">
         <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
         <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
-        <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
-        <span style="width:200%; flex-shrink:0;"></span>
       </div>
     </div>
 
