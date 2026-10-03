@@ -8,7 +8,8 @@
 
 # Landing, admin, etc
 / /landing-vendas.html 200
-/admin /admin.html 200
-/admin/ /admin.html 200
+/admin /dashboard/ 301
+/admin/ /dashboard/ 301
+/dashboard /dashboard/ 301
 /register /register.html 200
 /register/ /register.html 200

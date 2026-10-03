@@ -434,7 +434,7 @@
     </form>
 
     <div class="login-link">
-      Já tem conta? <a href="admin.html">Faça login aqui</a>
+      Já tem conta? <a href="/dashboard/">Faça login aqui</a>
     </div>
   </div>
 </div>
@@ -551,7 +551,7 @@
     nome_em_uso: ['storeName', 'Nome de loja já está em uso. Escolha outro.'],
     nome_reservado: ['storeName', 'Este nome não está disponível. Escolha outro.'],
     nome_invalido: ['storeName', 'Nome de loja inválido (mínimo 3 caracteres: letras, números e hífen)'],
-    ja_tem_loja: [null, 'Este email já tem uma loja. Faça login em admin.html.']
+    ja_tem_loja: [null, 'Este email já tem uma loja. Faça login em katalogohub.com/dashboard.']
   };
 
   function mostrarErroCadastro(codigo) {
@@ -700,7 +700,7 @@
       if (!session) {
         const login = await supabaseClient.auth.signInWithPassword({ email, password });
         if (login.error || !login.data.session) {
-          showAlert('Conta criada, mas não consegui entrar. Faça login em admin.html e tente novamente.', 'error');
+          showAlert('Conta criada, mas não consegui entrar. Faça login em katalogohub.com/dashboard e tente novamente.', 'error');
           cadastroEmAndamento = false; liberarBotao();
           return;
         }
@@ -724,7 +724,7 @@
       } catch (_) { /* ignora: o cadastro já foi concluído */ }
 
       showAlert('Conta criada com sucesso! Redirecionando...', 'success');
-      setTimeout(() => { window.location.href = 'admin.html'; }, 1200);
+      setTimeout(() => { window.location.href = '/dashboard/'; }, 1200);
 
     } catch (error) {
       showAlert(`Erro inesperado: ${error.message}`, 'error');
@@ -735,7 +735,7 @@
   // Já logado (e fora de um cadastro em andamento): ir para o painel
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (session && event === 'SIGNED_IN' && !cadastroEmAndamento) {
-      window.location.href = 'admin.html';
+      window.location.href = '/dashboard/';
     }
   });
 </script>

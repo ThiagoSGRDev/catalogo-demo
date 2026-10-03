@@ -112,7 +112,7 @@
     url: "https://qqoepslbisxpswabrkqe.supabase.co",
     publishableKey: "sb_publishable_t-LqIKyLqCT4Kx8Hgi7JcA_tvk3gjsy"
   };
-  // Mesma URL/chave do admin.html => mesma sessão (localStorage) já logada.
+  // Mesma URL/chave do painel (/dashboard/) => mesma sessão (localStorage) já logada.
   const sb = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
 
   // Precisa bater com renovar-assinatura / criar-assinatura / mudar-plano.
@@ -130,7 +130,7 @@
   const passos = ['passoForm','passoPix','passoPago','passoSessao'];
   function mostrar(id){ passos.forEach(p => $(p).classList.toggle('hidden', p !== id)); }
   function erro(msg){ const e = $('erroMsg'); e.textContent = msg || ''; e.classList.toggle('show', !!msg); }
-  function irPainel(){ window.location.href = 'admin.html'; }
+  function irPainel(){ window.location.href = '/dashboard/'; }
 
   function renderPlanos(){
     const box = $('planos');

@@ -1,6 +1,24 @@
 {
   "rewrites": [
-    { "source": "/catalogo/loja/:slug", "destination": "/catalogo-template.html" },
-    { "source": "/catalogo/loja/:slug/:path*", "destination": "/catalogo-template.html" }
+    {
+      "source": "/catalogo/loja/:slug",
+      "destination": "/catalogo-template.html"
+    },
+    {
+      "source": "/catalogo/loja/:slug/:path*",
+      "destination": "/catalogo-template.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/admin",
+      "destination": "/dashboard/",
+      "permanent": true
+    },
+    {
+      "source": "/admin/",
+      "destination": "/dashboard/",
+      "permanent": true
+    }
   ]
 }

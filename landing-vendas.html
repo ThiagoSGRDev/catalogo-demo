@@ -366,7 +366,7 @@
 <header class="topo">
   <div class="wrap">
     <img src="logo.svg" alt="Katalogo Hub" class="topo-logo" width="99" height="38">
-    <a class="topo-entrar" href="admin.html">Já sou assinante</a>
+    <a class="topo-entrar" href="/dashboard/">Já sou assinante</a>
   </div>
 </header>
 
@@ -607,7 +607,7 @@
   <div class="wrap">
     <img src="logo.svg" alt="Katalogo Hub" width="73" height="28">
     <span>© <span id="anoAtual">2026</span> Katalogo Hub. Catálogo para lojistas de camisas.</span>
-    <a href="admin.html" style="color:var(--texto-dim);">Já sou assinante</a>
+    <a href="/dashboard/" style="color:var(--texto-dim);">Já sou assinante</a>
   </div>
 </footer>
 
@@ -923,7 +923,7 @@
 
       document.getElementById('checkoutQrImg').src = data.qrCodeBase64 ? ('data:image/png;base64,' + data.qrCodeBase64) : '';
       document.getElementById('checkoutPixCopiaECola').value = data.pixCopiaECola || '';
-      document.getElementById('checkoutLinkPainel').href = 'https://thiagosgrdev.github.io/catalogo-demo/admin.html';
+      document.getElementById('checkoutLinkPainel').href = 'https://www.katalogohub.com/dashboard/';
 
       document.getElementById('checkoutPassoForm').style.display = 'none';
       document.getElementById('checkoutPassoPix').style.display = '';
