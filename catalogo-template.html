@@ -2910,7 +2910,7 @@
     if(modoClaro){
       // Fundo branco: precisa de luminância BAIXA o bastante pra não sumir.
       let tentativas = 0;
-      while(luminancia() > 0.42 && tentativas < 12){
+      while(luminancia() > 0.2 && tentativas < 14){
         r = Math.max(0, r - 18); g = Math.max(0, g - 18); b = Math.max(0, b - 18);
         tentativas++;
       }
