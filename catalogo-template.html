@@ -153,6 +153,7 @@
     --fundo-hero:linear-gradient(160deg, #0F1A1D 0%, #0A0D10 55%, #0D1420 100%);
     --fundo-fora:#000000;                 /* área fora do app em tela grande */
     --promo-bg-image:url('bg-marquee.jpg');
+    --promo-bg-image-footer:url('bg-marquee.jpg');
   }
   *{box-sizing:border-box; margin:0; padding:0;}
 
@@ -548,11 +549,24 @@
     background-repeat:no-repeat, no-repeat;
     background-blend-mode:color, normal;
   }
+  /* Barra do rodapé: metade da altura, imagem própria */
+  .promo-stripe-footer{
+    position:relative; overflow:hidden;
+    height:18px;
+    background-image:linear-gradient(var(--gold), var(--gold)), var(--promo-bg-image-footer);
+    background-size:cover, cover;
+    background-position:center, center 35%;
+    background-repeat:no-repeat, no-repeat;
+    background-blend-mode:color, normal;
+  }
   .promo-stripe-track{
     position:relative; z-index:5; height:100%;
     display:flex; align-items:center; gap:48px;
     width:max-content;
     background:transparent;
+    animation:promoMarquee 13.5s linear infinite;
+  }
+  .promo-stripe-footer .promo-stripe-track{
     animation:promoMarquee 13.5s linear infinite;
   }
   @keyframes promoMarquee{
@@ -2141,16 +2155,11 @@
 
   <footer>
     <div class="footer-copyright">Copyright © <span id="footerYear">2026</span> Katalogo Hub - Todos os direitos reservados</div>
-    <div class="footer-stripe">
-      <div class="footer-stripe-track">
-        <div class="footer-stripe-tile"></div>
-        <div class="footer-stripe-tile"></div>
-      </div>
-      <div class="footer-stripe-texto-wrap" id="footerStripeTextoWrap" style="display:none;">
-        <div class="footer-stripe-texto-track">
-          <span id="footerStripeTexto1"></span>
-          <span id="footerStripeTexto2"></span>
-        </div>
+    <div class="promo-stripe-footer" id="footerPromoStripe">
+      <div class="promo-stripe-track">
+        <span style="width:0; height:0; display:none;"></span>
+        <span style="width:0; height:0; display:none;"></span>
+        <span style="width:0; height:0; display:none;"></span>
       </div>
     </div>
   </footer>
@@ -2499,7 +2508,7 @@
     try {
       const { data, error } = await supabaseClient
         .from('store_settings')
-        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega')
+        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape')
         .eq('loja_id', LOJA_ID)
         .single();
       if(error || !data) return;
@@ -2598,14 +2607,18 @@
       if(textoBarraSuperior){
         document.querySelectorAll('.promo-stripe-texto').forEach(el => { el.textContent = textoBarraSuperior; });
       }
+
+      // Imagens de fundo das barras (marquees)
+      if(data.imagem_barra_superior){
+        document.documentElement.style.setProperty('--promo-bg-image', `url('${data.imagem_barra_superior}')`);
+      }
+      if(data.imagem_barra_rodape){
+        document.documentElement.style.setProperty('--promo-bg-image-footer', `url('${data.imagem_barra_rodape}')`);
+      }
+
       const textoEntrega = (data.texto_entrega || '').trim();
       document.getElementById('deliveryNoteText').textContent = textoEntrega;
       document.getElementById('deliveryNote').hidden = !textoEntrega;
-      if(data.texto_rodape_loop){
-        document.getElementById('footerStripeTexto1').textContent = data.texto_rodape_loop;
-        document.getElementById('footerStripeTexto2').textContent = data.texto_rodape_loop;
-        document.getElementById('footerStripeTextoWrap').style.display = 'flex';
-      }
       // Logo da loja: mesma ideia dos preços — se o lojista cadastrou uma no
       // painel, ela substitui a logo/nome padrão no topo e no rodapé.
       if(data.logo_url){
