@@ -201,7 +201,7 @@
 
   /* ===== Home do painel ===== */
   .home{ max-width:960px; margin:0 auto; padding:20px 16px 40px; }
-  .home-title{ font-family:'Anton',sans-serif; font-weight:400; font-size:28px; letter-spacing:.01em; text-transform:uppercase; margin:0; }
+  .home-title{ font-family:'Anton',sans-serif; font-weight:400; font-size:34px; font-style:italic; letter-spacing:.01em; text-transform:uppercase; margin:0; }
   .home-title span{ color:var(--neon-green); }
   .home-sub{ margin:4px 0 18px; font-size:14px; color:var(--text-dim); }
   .home-link{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
@@ -228,7 +228,8 @@
   .home-quick button{ display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:14px;
     padding:14px; color:inherit; font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:left; transition:border-color .2s; }
   .home-quick button:hover{ border-color:var(--neon-green); }
-  .home-quick button span{ font-size:18px; }
+  .home-quick button span{ width:34px; height:34px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:50%; background:rgba(53,255,192,.1); color:var(--neon-green); }
+  .home-quick button span svg{ width:18px; height:18px; }
   .home-quick button.mais{ display:none; }
   .home-quick.aberto button.mais{ display:flex; }
   .home-mais{ display:block; margin:14px auto 0; background:none; border:none; color:var(--neon-green); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
@@ -1198,8 +1199,8 @@
     <section id="homeSection" class="home">
       <div class="home-head">
         <div>
-          <h1 class="home-title">Olá, <span id="homeLojaNome">—</span></h1>
-          <p class="home-sub">Resumo de hoje da sua loja.</p>
+          <h1 class="home-title">Dashboard</h1>
+          <p class="home-sub">Visão geral da sua loja.</p>
         </div>
       </div>
 
@@ -1226,16 +1227,16 @@
 
       <h2 class="home-h2">Acesso rápido</h2>
       <div class="home-quick" id="homeQuick">
-        <button type="button" onclick="openForm(null)"><span>＋</span>Novo produto</button>
-        <button type="button" onclick="mostrarSecao('produtos')"><span>👕</span>Produtos</button>
-        <button type="button" onclick="openApparenceOverlay()"><span>🎨</span>Aparência</button>
-        <button type="button" onclick="openLojaOverlay()"><span>🏪</span>Minha loja</button>
-        <button type="button" class="mais" onclick="openHeroOverlay()"><span>🖼️</span>Banner hero</button>
-        <button type="button" class="mais" onclick="openTeamsOverlay()"><span>🛡️</span>Times</button>
-        <button type="button" class="mais" onclick="openLigasOverlay()"><span>🏆</span>Ligas</button>
-        <button type="button" class="mais" onclick="openPrecosOverlay()"><span>💲</span>Preços</button>
-        <button type="button" class="mais" onclick="openImportOverlay()"><span>⬇️</span>Importar</button>
-        <button type="button" class="mais" onclick="abrirAtividade()"><span>📈</span>Atividade</button>
+        <button type="button" onclick="openForm(null)"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>Novo produto</button>
+        <button type="button" onclick="mostrarSecao('produtos')"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0Z"/></svg></span>Produtos</button>
+        <button type="button" onclick="openApparenceOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.5-2-.3-1 .3-2 1.4-2H17a4 4 0 0 0 4-4c0-5-4-10-9-10Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg></span>Aparência</button>
+        <button type="button" onclick="openLojaOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1-5h14l1 5"/><path d="M4 9a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 6 0 2.5 2.5 0 0 0 5 0"/><path d="M5 12v8h14v-8"/></svg></span>Minha loja</button>
+        <button type="button" class="mais" onclick="openHeroOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 16-5-5-9 9"/></svg></span>Banner hero</button>
+        <button type="button" class="mais" onclick="openTeamsOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/></svg></span>Times</button>
+        <button type="button" class="mais" onclick="openLigasOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 6H4v1a3 3 0 0 0 4 3M16 6h4v1a3 3 0 0 1-4 3M12 13v4M8 21h8M10 17h4"/></svg></span>Ligas</button>
+        <button type="button" class="mais" onclick="openPrecosOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M16 7.5C15 6.5 13.7 6 12 6c-2.2 0-4 1-4 3s1.8 2.7 4 3 4 1 4 3-1.8 3-4 3c-1.7 0-3.2-.6-4-1.7"/></svg></span>Preços</button>
+        <button type="button" class="mais" onclick="openImportOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></svg></span>Importar</button>
+        <button type="button" class="mais" onclick="abrirAtividade()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg></span>Atividade</button>
       </div>
       <button type="button" class="home-mais" id="homeMaisBtn" onclick="alternarAcessoRapido()">Ver mais</button>
     </section>
@@ -3544,8 +3545,6 @@
     document.getElementById('homeMaisBtn').textContent = aberto ? 'Ver menos' : 'Ver mais';
   }
   async function carregarHome(){
-    const nome = document.getElementById('topLojaNome').textContent;
-    document.getElementById('homeLojaNome').textContent = nome && nome !== '—' ? nome : 'lojista';
     const url = urlPublicaCatalogo();
     const link = document.getElementById('homeLinkCatalogo');
     link.textContent = url.replace('https://','') || '—';
