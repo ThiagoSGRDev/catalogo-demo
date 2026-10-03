@@ -549,6 +549,18 @@
     background-repeat:no-repeat, no-repeat;
     background-blend-mode:color, normal;
   }
+  /* Escrita em PNG sem fundo, por cima do fundo. Posição = centro em % (mesmo
+     cálculo da prévia do painel). Quando existe, substitui o texto em loop. */
+  .promo-stripe-overlay{
+    position:absolute; z-index:6;
+    height:80%; width:auto;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,0.65));
+  }
+  .promo-stripe-overlay[hidden]{ display:none; }
+  .promo-stripe.has-overlay .promo-stripe-track{ display:none; }
   /* Barra do rodapé: metade da altura, imagem própria */
   .promo-stripe-footer{
     position:relative; overflow:hidden;
@@ -1891,6 +1903,7 @@
         <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
         <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
       </div>
+      <img class="promo-stripe-overlay" alt="" hidden>
     </div>
 
     <div class="hero">
@@ -2530,7 +2543,7 @@
     try {
       const { data, error } = await supabaseClient
         .from('store_settings')
-        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior')
+        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y')
         .eq('loja_id', LOJA_ID)
         .single();
       if(error || !data) return;
@@ -2637,6 +2650,16 @@
       if(promoStripeEl){
         promoStripeEl.setAttribute('data-text-position', posicaoTexto);
         promoStripeEl.setAttribute('data-text-align', alinhamentoTexto);
+        const overlayEl = promoStripeEl.querySelector('.promo-stripe-overlay');
+        if(overlayEl && data.imagem_texto_barra_superior){
+          overlayEl.src = data.imagem_texto_barra_superior;
+          const ox = data.texto_barra_x == null ? 50 : Number(data.texto_barra_x);
+          const oy = data.texto_barra_y == null ? 50 : Number(data.texto_barra_y);
+          overlayEl.style.left = ox + '%';
+          overlayEl.style.top = oy + '%';
+          overlayEl.hidden = false;
+          promoStripeEl.classList.add('has-overlay');
+        }
       }
 
       // Imagens de fundo das barras (marquees)

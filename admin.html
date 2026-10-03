@@ -1574,8 +1574,17 @@
         <div class="field-hint">PNG ou JPG. Altura ideal: 36px. Se deixar em branco, usa gradiente só.</div>
       </div>
       <div class="field">
+        <label>Imagem da escrita — barra superior (PNG sem fundo)</label>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px;">
+          <div id="lojaImagemTextoBarraGrid"></div>
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('lojaImagemTextoBarraFile').click()">Enviar escrita</button>
+          <input type="file" id="lojaImagemTextoBarraFile" accept="image/png,image/webp" style="display:none;" onchange="handleImagemTextoBarra(event)">
+        </div>
+        <div class="field-hint">Fica por cima do fundo e você arrasta só ela na prévia. Se enviar, ela substitui o texto digitado.</div>
+      </div>
+      <div class="field">
         <label for="lojaTextoBarraPosicao">Posição vertical do texto</label>
-        <select id="lojaTextoBarraPosicao" onchange="updatePreviewMarquee()">
+        <select id="lojaTextoBarraPosicao" onchange="resetPreviewPos()">
           <option value="top">Topo</option>
           <option value="middle" selected>Meio</option>
           <option value="bottom">Rodapé</option>
@@ -1584,7 +1593,7 @@
       </div>
       <div class="field">
         <label for="lojaTextoBarraAlinhamento">Alinhamento horizontal do texto</label>
-        <select id="lojaTextoBarraAlinhamento" onchange="updatePreviewMarquee()">
+        <select id="lojaTextoBarraAlinhamento" onchange="resetPreviewPos()">
           <option value="left">Esquerda</option>
           <option value="center" selected>Centro</option>
           <option value="right">Direita</option>
@@ -6374,6 +6383,7 @@
   let lojaPaymentIcons = [];
   let lojaImagemBarraSuperior = null;
   let lojaImagemBarraRodape = null;
+  let lojaImagemTextoBarra = null;
 
   // ---- Descrição padrão por tipo (tela Loja) ----
   const TIPOS_DESCRICAO = ['Torcedor', 'Jogador', 'Retrô', 'Feminina', 'Kit Treino', 'Conjunto de Treino', 'Kit Infantil'];
@@ -6431,7 +6441,7 @@
 
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior')
+      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     if(!error && data){
@@ -6451,7 +6461,11 @@
       document.getElementById('lojaTextoBarraAlinhamento').value = (data.alinhamento_texto_barra_superior || 'center').toLowerCase();
       lojaImagemBarraSuperior = data.imagem_barra_superior || null;
       lojaImagemBarraRodape = data.imagem_barra_rodape || null;
+      lojaImagemTextoBarra = data.imagem_texto_barra_superior || null;
+      previewXY.x = data.texto_barra_x == null ? null : Number(data.texto_barra_x);
+      previewXY.y = data.texto_barra_y == null ? null : Number(data.texto_barra_y);
     }
+    renderLojaImagemTextoBarraGrid();
     renderLojaLogoGrid();
     renderLojaPaymentGrid();
     renderLojaImagemBarraSuperiorGrid();
@@ -6467,6 +6481,37 @@
   let previewDragState = { isDragging: false, offsetX: 0, offsetY: 0 };
 
   let previewBound = false;
+  // Posição livre da escrita, em % do centro dentro da barra (null = usa os selects)
+  const previewXY = { x: null, y: null };
+  // Altura da imagem da escrita em relação à barra (igual no catálogo)
+  const OVERLAY_ALTURA_PCT = 80;
+
+  function resetPreviewPos(){
+    previewXY.x = null; previewXY.y = null;
+    updatePreviewMarquee();
+  }
+
+  // Preenche o elemento arrastável: imagem da escrita (se houver) ou o texto digitado
+  function renderPreviewConteudo(){
+    const el = document.getElementById('marqueePreviewText');
+    if(!el) return;
+    if(lojaImagemTextoBarra){
+      el.style.height = OVERLAY_ALTURA_PCT + '%';
+      el.style.padding = '0';
+      el.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = lojaImagemTextoBarra;
+      img.alt = '';
+      img.draggable = false;
+      img.style.cssText = 'height:100%; width:auto; display:block; pointer-events:none; -webkit-user-drag:none;';
+      img.onload = updatePreviewMarquee;
+      el.appendChild(img);
+    } else {
+      el.style.height = '';
+      el.style.padding = '0 24px';
+      el.textContent = document.getElementById('lojaTextoBarraInput').value.trim() || 'Seu texto aqui';
+    }
+  }
 
   // Fundo da prévia = mesma receita do catálogo (cor da loja + imagem, blend "color")
   function updatePreviewBackground(){
@@ -6482,9 +6527,8 @@
     const previewText = document.getElementById('marqueePreviewText');
     const container = document.getElementById('marqueePreviewContainer');
 
-    // Atualiza texto com o do input
-    const textoAtual = document.getElementById('lojaTextoBarraInput').value.trim() || 'Seu texto aqui';
-    previewText.textContent = textoAtual;
+    // Conteúdo arrastável (imagem da escrita ou texto digitado)
+    renderPreviewConteudo();
 
     // Fundo real + posição/alinhamento salvos
     updatePreviewBackground();
@@ -6538,6 +6582,12 @@
     }
 
     function endDrag() {
+      if(previewDragState.isDragging){
+        // Guarda o centro da escrita em % da barra (vale pra qualquer largura de tela)
+        const cw = container.offsetWidth || 1, ch = container.offsetHeight || 1;
+        previewXY.x = Math.round(((previewText.offsetLeft + previewText.offsetWidth / 2) / cw) * 1000) / 10;
+        previewXY.y = Math.round(((previewText.offsetTop + previewText.offsetHeight / 2) / ch) * 1000) / 10;
+      }
       previewDragState.isDragging = false;
       previewText.style.cursor = 'grab';
     }
@@ -6574,8 +6624,7 @@
 
     // Atualiza texto quando input muda
     document.getElementById('lojaTextoBarraInput').addEventListener('input', () => {
-      const textoAtual = document.getElementById('lojaTextoBarraInput').value.trim() || 'Seu texto aqui';
-      previewText.textContent = textoAtual;
+      renderPreviewConteudo();
       updatePreviewMarquee();
     });
   }
@@ -6589,6 +6638,18 @@
     // Limpa transforms que conflitam com drag
     previewText.style.transform = 'none';
     previewText.style.bottom = 'auto';
+    previewText.style.right = 'auto';
+
+    // Posição livre arrastada (centro em %) tem prioridade sobre os selects
+    if(previewXY.x !== null && previewXY.y !== null){
+      const cw = container.offsetWidth, ch = container.offsetHeight;
+      const w = previewText.offsetWidth, h = previewText.offsetHeight;
+      const left = Math.max(0, Math.min(cw - w, (previewXY.x / 100) * cw - w / 2));
+      const top = Math.max(0, Math.min(ch - h, (previewXY.y / 100) * ch - h / 2));
+      previewText.style.left = left + 'px';
+      previewText.style.top = top + 'px';
+      return;
+    }
 
     // Posição vertical usando top/left apenas
     if(posicao === 'top'){
@@ -6658,6 +6719,56 @@
           </div>
         </div>`;
     }
+  }
+
+  // ---- Imagem da escrita (PNG sem fundo, arrastável) ----
+  function renderLojaImagemTextoBarraGrid(){
+    const grid = document.getElementById('lojaImagemTextoBarraGrid');
+    if(lojaImagemTextoBarra){
+      grid.innerHTML = `
+        <div class="image-slot" style="background:#555;">
+          <img src="${lojaImagemTextoBarra}" alt="" style="object-fit:contain;">
+          <button class="remove-btn" onclick="removeLojaImagemTextoBarra()" aria-label="Remover imagem">×</button>
+        </div>`;
+    } else {
+      grid.innerHTML = `
+        <div class="image-slot add-slot" onclick="document.getElementById('lojaImagemTextoBarraFile').click()">
+          <div class="add-slot-inner">
+            <span class="add-slot-plus">+</span>
+            <span class="add-slot-label">Escrita</span>
+          </div>
+        </div>`;
+    }
+    renderPreviewConteudo();
+    updatePreviewMarquee();
+  }
+
+  function removeLojaImagemTextoBarra(){
+    lojaImagemTextoBarra = null;
+    renderLojaImagemTextoBarraGrid();
+  }
+
+  async function handleImagemTextoBarra(event){
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+    document.getElementById('lojaImagemTextoBarraGrid').innerHTML = `<div class="image-slot"><div class="uploading"><span class="spinner"></span></div></div>`;
+    // Sem recortarEspacoVazio: ele trata branco como "vazio" e apagaria uma escrita branca
+    let arquivoParaEnviar = file;
+    try { arquivoParaEnviar = await comprimirImagem(file, 1200, 0.92); }
+    catch(e){ console.error('Erro ao processar imagem da escrita', e); }
+
+    const path = `${ADMIN_LOJA_ID}/texto-barra-superior-${Date.now()}.webp`;
+    const { error: uploadError } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, arquivoParaEnviar, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+    if(uploadError){
+      showToast('Erro ao enviar imagem: ' + uploadError.message, 'error');
+      renderLojaImagemTextoBarraGrid();
+      return;
+    }
+    const { data: publicUrlData } = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path);
+    lojaImagemTextoBarra = publicUrlData.publicUrl;
+    previewXY.x = null; previewXY.y = null;
+    renderLojaImagemTextoBarraGrid();
   }
 
   function removeLojaImagemBarraSuperior(){
@@ -6903,6 +7014,9 @@
         posicao_texto_barra_superior: document.getElementById('lojaTextoBarraPosicao').value || 'middle',
         alinhamento_texto_barra_superior: document.getElementById('lojaTextoBarraAlinhamento').value || 'center',
         imagem_barra_superior: lojaImagemBarraSuperior,
+        imagem_texto_barra_superior: lojaImagemTextoBarra,
+        texto_barra_x: previewXY.x,
+        texto_barra_y: previewXY.y,
         texto_rodape_loop: document.getElementById('lojaTextoRodapeInput').value.trim() || null,
         imagem_barra_rodape: lojaImagemBarraRodape,
         texto_entrega: document.getElementById('lojaTextoEntregaInput').value.trim() || null,
