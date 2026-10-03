@@ -2543,7 +2543,7 @@
     try {
       const { data, error } = await supabaseClient
         .from('store_settings')
-        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y')
+        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
         .eq('loja_id', LOJA_ID)
         .single();
       if(error || !data) return;
@@ -2657,6 +2657,8 @@
           const oy = data.texto_barra_y == null ? 50 : Number(data.texto_barra_y);
           overlayEl.style.left = ox + '%';
           overlayEl.style.top = oy + '%';
+          const esc = Number(data.texto_barra_escala);
+          if(esc >= 30 && esc <= 100) overlayEl.style.height = esc + '%';
           overlayEl.hidden = false;
           promoStripeEl.classList.add('has-overlay');
         }

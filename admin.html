@@ -1583,6 +1583,11 @@
         <div class="field-hint">Fica por cima do fundo e você arrasta só ela na prévia. Se enviar, ela substitui o texto digitado.</div>
       </div>
       <div class="field">
+        <label for="lojaTextoBarraEscala">Tamanho da escrita: <span id="lojaTextoBarraEscalaValor">80</span>%</label>
+        <input type="range" id="lojaTextoBarraEscala" min="30" max="100" step="1" value="80" oninput="onEscalaChange()" style="width:100%;">
+        <div class="field-hint">Altura da escrita em relação à altura da barra. A prévia mostra o resultado na hora.</div>
+      </div>
+      <div class="field">
         <label for="lojaTextoBarraPosicao">Posição vertical do texto</label>
         <select id="lojaTextoBarraPosicao" onchange="resetPreviewPos()">
           <option value="top">Topo</option>
@@ -6441,7 +6446,7 @@
 
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y')
+      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     if(!error && data){
@@ -6464,6 +6469,8 @@
       lojaImagemTextoBarra = data.imagem_texto_barra_superior || null;
       previewXY.x = data.texto_barra_x == null ? null : Number(data.texto_barra_x);
       previewXY.y = data.texto_barra_y == null ? null : Number(data.texto_barra_y);
+      document.getElementById('lojaTextoBarraEscala').value = data.texto_barra_escala == null ? 80 : Number(data.texto_barra_escala);
+      document.getElementById('lojaTextoBarraEscalaValor').textContent = getEscala();
     }
     renderLojaImagemTextoBarraGrid();
     renderLojaLogoGrid();
@@ -6483,8 +6490,17 @@
   let previewBound = false;
   // Posição livre da escrita, em % do centro dentro da barra (null = usa os selects)
   const previewXY = { x: null, y: null };
-  // Altura da imagem da escrita em relação à barra (igual no catálogo)
-  const OVERLAY_ALTURA_PCT = 80;
+  // Altura da imagem da escrita em % da altura da barra (igual no catálogo)
+  function getEscala(){
+    const v = Number(document.getElementById('lojaTextoBarraEscala').value);
+    return v >= 30 && v <= 100 ? v : 80;
+  }
+  function onEscalaChange(){
+    document.getElementById('lojaTextoBarraEscalaValor').textContent = getEscala();
+    const el = document.getElementById('marqueePreviewText');
+    if(lojaImagemTextoBarra && el) el.style.height = getEscala() + '%';
+    updatePreviewMarquee();
+  }
 
   function resetPreviewPos(){
     previewXY.x = null; previewXY.y = null;
@@ -6496,7 +6512,7 @@
     const el = document.getElementById('marqueePreviewText');
     if(!el) return;
     if(lojaImagemTextoBarra){
-      el.style.height = OVERLAY_ALTURA_PCT + '%';
+      el.style.height = getEscala() + '%';
       el.style.padding = '0';
       el.innerHTML = '';
       const img = document.createElement('img');
@@ -7017,6 +7033,7 @@
         imagem_texto_barra_superior: lojaImagemTextoBarra,
         texto_barra_x: previewXY.x,
         texto_barra_y: previewXY.y,
+        texto_barra_escala: getEscala(),
         texto_rodape_loop: document.getElementById('lojaTextoRodapeInput').value.trim() || null,
         imagem_barra_rodape: lojaImagemBarraRodape,
         texto_entrega: document.getElementById('lojaTextoEntregaInput').value.trim() || null,
