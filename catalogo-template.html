@@ -576,14 +576,14 @@
      --footer-tile-w = largura de uma repetição (calculada no JS pela proporção
      da imagem), assim o loop emenda sem salto. */
   .promo-stripe-footer.is-scrolling{
-    background-size:cover, auto 100%;
-    background-position:center, 0 50%;
+    background-size:cover, var(--footer-tile-w, 100%) auto;
+    background-position:center, 0 35%;
     background-repeat:no-repeat, repeat-x;
     animation:footerBgScroll var(--footer-scroll-dur, 20s) linear infinite;
   }
   @keyframes footerBgScroll{
-    from{ background-position:center, 0 50%; }
-    to{ background-position:center, calc(-1 * var(--footer-tile-w, 300px)) 50%; }
+    from{ background-position:center, 0 35%; }
+    to{ background-position:center, calc(-1 * var(--footer-tile-w, 300px)) 35%; }
   }
   @media (prefers-reduced-motion: reduce){
     .promo-stripe-footer.is-scrolling{ animation:none; }
@@ -2687,20 +2687,25 @@
       }
       if(data.imagem_barra_rodape){
         document.documentElement.style.setProperty('--promo-bg-image-footer', `url('${data.imagem_barra_rodape}')`);
-        // Imagem própria no rodapé: faz ela deslizar em loop (largura de uma repetição
-        // = largura natural proporcional à altura da barra, pra emendar sem salto)
+        // Imagem própria no rodapé: desliza em loop, MAS na mesma escala do "cover"
+        // (imagem ocupando a largura da barra), pra continuar parecida com o que o
+        // lojista enviou. Uma repetição = largura da imagem nessa escala.
         const footerStripeEl = document.getElementById('footerPromoStripe');
         const footerImg = new Image();
-        footerImg.onload = () => {
+        const ajustarRodape = () => {
           if(!footerStripeEl || !footerImg.naturalWidth || !footerImg.naturalHeight) return;
-          const alturaBarra = footerStripeEl.clientHeight || 18;
-          const tileW = footerImg.naturalWidth * (alturaBarra / footerImg.naturalHeight);
+          const cw = footerStripeEl.clientWidth || window.innerWidth;
+          const ch = footerStripeEl.clientHeight || 18;
+          const escala = Math.max(cw / footerImg.naturalWidth, ch / footerImg.naturalHeight);
+          const tileW = footerImg.naturalWidth * escala;
           footerStripeEl.style.setProperty('--footer-tile-w', tileW + 'px');
-          // ~40px por segundo, igual em qualquer tamanho de imagem
-          footerStripeEl.style.setProperty('--footer-scroll-dur', Math.max(6, tileW / 40) + 's');
+          // ~30px por segundo, igual em qualquer largura de tela
+          footerStripeEl.style.setProperty('--footer-scroll-dur', Math.max(6, tileW / 30) + 's');
           footerStripeEl.classList.add('is-scrolling');
         };
+        footerImg.onload = ajustarRodape;
         footerImg.src = data.imagem_barra_rodape;
+        window.addEventListener('resize', ajustarRodape);
       }
 
       const textoEntrega = (data.texto_entrega || '').trim();
