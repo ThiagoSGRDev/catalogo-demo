@@ -235,6 +235,18 @@
   .home-mais{ display:block; margin:14px auto 0; background:none; border:none; color:var(--neon-green); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
   @media(min-width:720px){ .home-cards{ grid-template-columns:repeat(4,1fr); } .home-quick{ grid-template-columns:repeat(4,1fr); } }
 
+
+  .home .mini-hero{ margin:0 0 16px; box-shadow:none; border-radius:16px; }
+  .home .mini-hero::after{ display:none; }
+  .home-url{ white-space:normal !important; overflow-wrap:anywhere; flex:1 1 100%; }
+  .home-link-info{ flex-wrap:wrap; }
+  .saudacao strong{ padding:0 6px 2px 4px; }
+  .hm-delta{ display:block; font-style:normal; font-size:12px; color:var(--text-faint); margin-top:4px; min-height:16px; }
+  .hm-delta.up{ color:var(--neon-green); } .hm-delta.down{ color:#FCA5A5; }
+  .hm-spark{ display:block; width:100%; height:28px; margin-top:8px; }
+  .hm-spark path{ fill:none; stroke:var(--neon-green); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; vector-effect:non-scaling-stroke; }
+  .hm-spark .area{ fill:rgba(53,255,192,.12); stroke:none; }
+
   /* ===== Login moderno (override) ===== */
   #loginView{
     background:
@@ -1204,6 +1216,11 @@
         </div>
       </div>
 
+    <section class="mini-hero" id="miniHero">
+      <div class="mini-hero-media" id="miniHeroMedia"></div>
+      
+    </section>
+
       <div class="home-link">
         <div class="home-link-info">
           <span class="home-badge"><i></i>Online</span>
@@ -1216,10 +1233,10 @@
       </div>
 
       <div class="home-cards">
-        <div class="home-card"><small>Visitas hoje</small><strong id="hmVisitas">—</strong></div>
-        <div class="home-card"><small>Produtos vistos</small><strong id="hmVistos">—</strong></div>
-        <div class="home-card"><small>Cliques no WhatsApp</small><strong id="hmCliques">—</strong></div>
-        <div class="home-card"><small>Produtos ativos</small><strong id="hmProdutos">—</strong></div>
+        <div class="home-card"><small>Visitas hoje</small><strong id="hmVisitas">—</strong><em class="hm-delta" id="hmVisitasD"></em><svg class="hm-spark" id="hmVisitasS" viewBox="0 0 100 28" preserveAspectRatio="none"></svg></div>
+        <div class="home-card"><small>Produtos vistos</small><strong id="hmVistos">—</strong><em class="hm-delta" id="hmVistosD"></em><svg class="hm-spark" id="hmVistosS" viewBox="0 0 100 28" preserveAspectRatio="none"></svg></div>
+        <div class="home-card"><small>Cliques no WhatsApp</small><strong id="hmCliques">—</strong><em class="hm-delta" id="hmCliquesD"></em><svg class="hm-spark" id="hmCliquesS" viewBox="0 0 100 28" preserveAspectRatio="none"></svg></div>
+        <div class="home-card"><small>Produtos ativos</small><strong id="hmProdutos">—</strong><em class="hm-delta" id="hmProdutosD"></em></div>
       </div>
 
       <h2 class="home-h2">Mais procurados <span>últimos 7 dias</span></h2>
@@ -1242,11 +1259,6 @@
     </section>
 
     <div id="produtosSection" class="hidden">
-    <section class="mini-hero" id="miniHero">
-      <div class="mini-hero-media" id="miniHeroMedia"></div>
-      <div class="mini-hero-titulo">Painel <span>Gestor</span></div>
-    </section>
-
     <div class="toolbar">
       <div class="toolbar-row">
         <input type="text" class="search-input" id="searchInput" placeholder="Buscar produto ou time..." oninput="onSearchInput()">
@@ -3544,6 +3556,22 @@
     const aberto = q.classList.toggle('aberto');
     document.getElementById('homeMaisBtn').textContent = aberto ? 'Ver menos' : 'Ver mais';
   }
+
+  function desenharSpark(id, serie){
+    const svg = document.getElementById(id); if(!svg) return;
+    const max = Math.max(...serie, 1), n = serie.length - 1;
+    const pts = serie.map((v,i) => [ (i/n)*100, 26 - (v/max)*24 ]);
+    const linha = pts.map((p,i) => (i?'L':'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    svg.innerHTML = '<path class="area" d="'+linha+' L100 28 L0 28 Z"/><path d="'+linha+'"/>';
+  }
+  function mostrarDelta(id, hoje, ontem){
+    const el = document.getElementById(id); if(!el) return;
+    el.className = 'hm-delta';
+    if(!ontem && !hoje){ el.textContent = 'vs. ontem: sem dados'; return; }
+    const d = ontem ? Math.round(((hoje - ontem) / ontem) * 100) : 100;
+    el.textContent = 'vs. ontem: ' + (d > 0 ? '+' : '') + d + '%';
+    el.classList.add(d > 0 ? 'up' : (d < 0 ? 'down' : ''));
+  }
   async function carregarHome(){
     const url = urlPublicaCatalogo();
     const link = document.getElementById('homeLinkCatalogo');
@@ -3559,10 +3587,20 @@
     const top = document.getElementById('homeTop');
     if(error){ top.innerHTML = '<div class="field-hint">Não consegui carregar os dados.</div>'; return; }
     const ev = data || [];
-    const hoje = ev.filter(e => new Date(e.criado_em) >= inicioHoje);
-    document.getElementById('hmVisitas').textContent = hoje.filter(e => e.tipo === 'visita').length;
-    document.getElementById('hmVistos').textContent = hoje.filter(e => e.tipo === 'ver_produto').length;
-    document.getElementById('hmCliques').textContent = hoje.filter(e => e.tipo === 'clique_whatsapp').length;
+    // série de 7 dias (do mais antigo ao de hoje) por tipo
+    const dia0 = new Date(inicioHoje);
+    const serie = tipo => Array.from({length:7}, (_,i) => {
+      const ini = new Date(dia0); ini.setDate(ini.getDate() - (6 - i));
+      const fim = new Date(ini); fim.setDate(fim.getDate() + 1);
+      return ev.filter(e => e.tipo === tipo && new Date(e.criado_em) >= ini && new Date(e.criado_em) < fim).length;
+    });
+    [['hmVisitas','visita'],['hmVistos','ver_produto'],['hmCliques','clique_whatsapp']].forEach(([id,tipo]) => {
+      const sr = serie(tipo);
+      document.getElementById(id).textContent = sr[6];
+      desenharSpark(id + 'S', sr);
+      mostrarDelta(id + 'D', sr[6], sr[5]);
+    });
+    document.getElementById('hmProdutosD').textContent = 'de ' + (PRODUCTS_CACHE || []).length + ' cadastrados';
 
     const cont = {};
     ev.filter(e => e.produto_id).forEach(e => { cont[e.produto_id] = (cont[e.produto_id]||0) + 1; });
