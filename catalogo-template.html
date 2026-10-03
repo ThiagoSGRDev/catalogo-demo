@@ -571,6 +571,23 @@
     background-repeat:no-repeat, no-repeat;
     background-blend-mode:color, normal;
   }
+  /* Rodapé com imagem própria enviada no painel: a imagem (feita pra 18px de
+     altura) repete na horizontal e desliza em loop, como uma faixa de marquee.
+     --footer-tile-w = largura de uma repetição (calculada no JS pela proporção
+     da imagem), assim o loop emenda sem salto. */
+  .promo-stripe-footer.is-scrolling{
+    background-size:cover, auto 100%;
+    background-position:center, 0 50%;
+    background-repeat:no-repeat, repeat-x;
+    animation:footerBgScroll var(--footer-scroll-dur, 20s) linear infinite;
+  }
+  @keyframes footerBgScroll{
+    from{ background-position:center, 0 50%; }
+    to{ background-position:center, calc(-1 * var(--footer-tile-w, 300px)) 50%; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .promo-stripe-footer.is-scrolling{ animation:none; }
+  }
   .promo-stripe-track{
     position:relative; z-index:5; height:100%;
     display:flex; align-items:center; gap:48px;
@@ -2670,6 +2687,20 @@
       }
       if(data.imagem_barra_rodape){
         document.documentElement.style.setProperty('--promo-bg-image-footer', `url('${data.imagem_barra_rodape}')`);
+        // Imagem própria no rodapé: faz ela deslizar em loop (largura de uma repetição
+        // = largura natural proporcional à altura da barra, pra emendar sem salto)
+        const footerStripeEl = document.getElementById('footerPromoStripe');
+        const footerImg = new Image();
+        footerImg.onload = () => {
+          if(!footerStripeEl || !footerImg.naturalWidth || !footerImg.naturalHeight) return;
+          const alturaBarra = footerStripeEl.clientHeight || 18;
+          const tileW = footerImg.naturalWidth * (alturaBarra / footerImg.naturalHeight);
+          footerStripeEl.style.setProperty('--footer-tile-w', tileW + 'px');
+          // ~40px por segundo, igual em qualquer tamanho de imagem
+          footerStripeEl.style.setProperty('--footer-scroll-dur', Math.max(6, tileW / 40) + 's');
+          footerStripeEl.classList.add('is-scrolling');
+        };
+        footerImg.src = data.imagem_barra_rodape;
       }
 
       const textoEntrega = (data.texto_entrega || '').trim();
