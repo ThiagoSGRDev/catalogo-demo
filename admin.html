@@ -198,6 +198,42 @@
     padding:12px 16px; border-radius:10px; font-size:13px; margin-bottom:16px; font-weight:500;
   }
 
+
+  /* ===== Home do painel ===== */
+  .home{ max-width:960px; margin:0 auto; padding:20px 16px 40px; }
+  .home-title{ font-family:'Anton',sans-serif; font-weight:400; font-size:28px; letter-spacing:.01em; text-transform:uppercase; margin:0; }
+  .home-title span{ color:var(--neon-green); }
+  .home-sub{ margin:4px 0 18px; font-size:14px; color:var(--text-dim); }
+  .home-link{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+    background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px 16px; margin-bottom:16px; }
+  .home-link-info{ display:flex; align-items:center; gap:10px; min-width:0; flex:1 1 240px; }
+  .home-badge{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--neon-green); background:rgba(53,255,192,.1); border:1px solid rgba(53,255,192,.3); padding:4px 10px; border-radius:999px; flex:none; }
+  .home-badge i{ width:7px; height:7px; border-radius:50%; background:var(--neon-green); box-shadow:0 0 8px var(--neon-green); }
+  .home-url{ font-size:13px; color:var(--text-dim); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .home-link-btns{ display:flex; gap:8px; }
+  .home-link-btns .btn{ padding:10px 16px; width:auto; text-decoration:none; display:inline-flex; align-items:center; }
+  .home-cards{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:24px; }
+  .home-card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; }
+  .home-card small{ display:block; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
+  .home-card strong{ font-family:'Anton',sans-serif; font-weight:400; font-size:32px; color:var(--neon-green); }
+  .home-h2{ font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin:0 0 10px; }
+  .home-h2 span{ color:var(--text-faint); font-weight:500; text-transform:none; letter-spacing:0; margin-left:6px; }
+  .home-top{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:6px 16px; margin-bottom:24px; }
+  .home-top .row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .home-top .row:last-child{ border-bottom:none; }
+  .home-top .row b{ margin-left:auto; color:var(--neon-green); font-weight:700; }
+  .home-top .row span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .home-quick{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .home-quick button{ display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:14px; color:inherit; font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:left; transition:border-color .2s; }
+  .home-quick button:hover{ border-color:var(--neon-green); }
+  .home-quick button span{ font-size:18px; }
+  .home-quick button.mais{ display:none; }
+  .home-quick.aberto button.mais{ display:flex; }
+  .home-mais{ display:block; margin:14px auto 0; background:none; border:none; color:var(--neon-green); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  @media(min-width:720px){ .home-cards{ grid-template-columns:repeat(4,1fr); } .home-quick{ grid-template-columns:repeat(4,1fr); } }
+
   /* ===== Login moderno (override) ===== */
   #loginView{
     background:
@@ -1119,8 +1155,9 @@
   <nav class="rail" id="rail" aria-label="Menu do painel">
     <button type="button" class="rail-toggle" id="railToggle" onclick="toggleRail()" aria-label="Abrir menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 17 5-5-5-5M6 17l5-5-5-5"/></svg></button>
     <div class="rail-items">
+      <button class="rail-item active" id="railInicio" type="button" onclick="if(railTap(event)) mostrarSecao('home')"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg></span><span class="rail-label">Início</span></button>
       <button type="button" class="rail-item primario" data-sem-ativo onclick="if(railTap(event)) openForm(null)"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="rail-label">Novo produto</span></button>
-      <button class="rail-item active" type="button"  onclick="if(railTap(event)) irParaProdutos()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 5 2 9l3 2 1-1v11h12V10l1 1 3-2-2-4-4-2c0 2-1.8 3-4 3S8 5 8 3Z"/></svg></span><span class="rail-label">Produtos</span></button>
+      <button class="rail-item" id="railProdutos" type="button" onclick="if(railTap(event)) mostrarSecao('produtos')"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 5 2 9l3 2 1-1v11h12V10l1 1 3-2-2-4-4-2c0 2-1.8 3-4 3S8 5 8 3Z"/></svg></span><span class="rail-label">Produtos</span></button>
       <button type="button" class="rail-item" onclick="if(railTap(event)) abrirAtividade()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 5-6"/></svg></span><span class="rail-label">Atividade</span></button>
       <a class="rail-item" id="btnVerCatalogo" data-sem-ativo href="#" target="_blank" rel="noopener" onclick="return railTap(event)"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2zM22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/></svg></span><span class="rail-label">Ver catálogo</span></a>
       <button class="rail-item" type="button"  onclick="if(railTap(event)) openHeroOverlay()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg></span><span class="rail-label">Banner hero</span></button>
@@ -1158,6 +1195,52 @@
   </header>
 
   <main>
+    <section id="homeSection" class="home">
+      <div class="home-head">
+        <div>
+          <h1 class="home-title">Olá, <span id="homeLojaNome">—</span></h1>
+          <p class="home-sub">Resumo de hoje da sua loja.</p>
+        </div>
+      </div>
+
+      <div class="home-link">
+        <div class="home-link-info">
+          <span class="home-badge"><i></i>Online</span>
+          <a id="homeLinkCatalogo" class="home-url" href="#" target="_blank" rel="noopener">—</a>
+        </div>
+        <div class="home-link-btns">
+          <button type="button" class="btn btn-secondary" onclick="copiarLinkCatalogo()">Copiar</button>
+          <a id="homeVerCatalogo" class="btn btn-primary" href="#" target="_blank" rel="noopener">Ver catálogo</a>
+        </div>
+      </div>
+
+      <div class="home-cards">
+        <div class="home-card"><small>Visitas hoje</small><strong id="hmVisitas">—</strong></div>
+        <div class="home-card"><small>Produtos vistos</small><strong id="hmVistos">—</strong></div>
+        <div class="home-card"><small>Cliques no WhatsApp</small><strong id="hmCliques">—</strong></div>
+        <div class="home-card"><small>Produtos ativos</small><strong id="hmProdutos">—</strong></div>
+      </div>
+
+      <h2 class="home-h2">Mais procurados <span>últimos 7 dias</span></h2>
+      <div class="home-top" id="homeTop"><div class="field-hint">Carregando…</div></div>
+
+      <h2 class="home-h2">Acesso rápido</h2>
+      <div class="home-quick" id="homeQuick">
+        <button type="button" onclick="openForm(null)"><span>＋</span>Novo produto</button>
+        <button type="button" onclick="mostrarSecao('produtos')"><span>👕</span>Produtos</button>
+        <button type="button" onclick="openApparenceOverlay()"><span>🎨</span>Aparência</button>
+        <button type="button" onclick="openLojaOverlay()"><span>🏪</span>Minha loja</button>
+        <button type="button" class="mais" onclick="openHeroOverlay()"><span>🖼️</span>Banner hero</button>
+        <button type="button" class="mais" onclick="openTeamsOverlay()"><span>🛡️</span>Times</button>
+        <button type="button" class="mais" onclick="openLigasOverlay()"><span>🏆</span>Ligas</button>
+        <button type="button" class="mais" onclick="openPrecosOverlay()"><span>💲</span>Preços</button>
+        <button type="button" class="mais" onclick="openImportOverlay()"><span>⬇️</span>Importar</button>
+        <button type="button" class="mais" onclick="abrirAtividade()"><span>📈</span>Atividade</button>
+      </div>
+      <button type="button" class="home-mais" id="homeMaisBtn" onclick="alternarAcessoRapido()">Ver mais</button>
+    </section>
+
+    <div id="produtosSection" class="hidden">
     <section class="mini-hero" id="miniHero">
       <div class="mini-hero-media" id="miniHeroMedia"></div>
       <div class="mini-hero-titulo">Painel <span>Gestor</span></div>
@@ -1197,6 +1280,7 @@
     <div class="product-count" id="productCount"></div>
     <div class="product-list" id="productList"></div>
     <nav class="pager" id="pager" aria-label="Páginas de produtos"></nav>
+    </div>
   </main>
 
   <button class="fab" onclick="openForm(null)" aria-label="Novo produto">+</button>
@@ -2591,6 +2675,7 @@
     await Promise.all([loadTeams(), loadProducts(), loadTopbarLoja()]);
     renderProductList();
     loadMiniHero();
+    mostrarSecao('home');
   }
 
   // ============================================================
@@ -3428,8 +3513,66 @@
     document.getElementById('filterChips').classList.toggle('aberta');
   }
 
-  function irParaProdutos(){
-    window.scrollTo({ top:0, behavior:'smooth' });
+
+  // ============================================================
+  // HOME DO PAINEL
+  // ============================================================
+  function mostrarSecao(nome){
+    const home = nome === 'home';
+    document.getElementById('homeSection').classList.toggle('hidden', !home);
+    document.getElementById('produtosSection').classList.toggle('hidden', home);
+    document.querySelectorAll('.rail-item').forEach(i => i.classList.remove('active'));
+    const rail = document.getElementById(home ? 'railInicio' : 'railProdutos');
+    if(rail) rail.classList.add('active');
+    window.scrollTo({ top:0 });
+    if(home) carregarHome();
+  }
+  function irParaProdutos(){ mostrarSecao('produtos'); }
+  function urlPublicaCatalogo(){
+    return ADMIN_LOJA_SLUG ? 'https://www.katalogohub.com/catalogo/loja/' + encodeURIComponent(ADMIN_LOJA_SLUG) : '';
+  }
+  function copiarLinkCatalogo(){
+    const url = urlPublicaCatalogo();
+    if(!url) return;
+    (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject())
+      .then(() => showToast('Link copiado!'))
+      .catch(() => showToast(url));
+  }
+  function alternarAcessoRapido(){
+    const q = document.getElementById('homeQuick');
+    const aberto = q.classList.toggle('aberto');
+    document.getElementById('homeMaisBtn').textContent = aberto ? 'Ver menos' : 'Ver mais';
+  }
+  async function carregarHome(){
+    const nome = document.getElementById('topLojaNome').textContent;
+    document.getElementById('homeLojaNome').textContent = nome && nome !== '—' ? nome : 'lojista';
+    const url = urlPublicaCatalogo();
+    const link = document.getElementById('homeLinkCatalogo');
+    link.textContent = url.replace('https://','') || '—';
+    link.href = url || '#';
+    document.getElementById('homeVerCatalogo').href = url || '#';
+    document.getElementById('hmProdutos').textContent = (PRODUCTS_CACHE || []).filter(p => p.disponivel).length;
+
+    const inicioHoje = new Date(); inicioHoje.setHours(0,0,0,0);
+    const sete = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+    const { data, error } = await supabaseClient.from('eventos')
+      .select('tipo, produto_id, criado_em').gte('criado_em', sete).order('criado_em',{ascending:false}).limit(5000);
+    const top = document.getElementById('homeTop');
+    if(error){ top.innerHTML = '<div class="field-hint">Não consegui carregar os dados.</div>'; return; }
+    const ev = data || [];
+    const hoje = ev.filter(e => new Date(e.criado_em) >= inicioHoje);
+    document.getElementById('hmVisitas').textContent = hoje.filter(e => e.tipo === 'visita').length;
+    document.getElementById('hmVistos').textContent = hoje.filter(e => e.tipo === 'ver_produto').length;
+    document.getElementById('hmCliques').textContent = hoje.filter(e => e.tipo === 'clique_whatsapp').length;
+
+    const cont = {};
+    ev.filter(e => e.produto_id).forEach(e => { cont[e.produto_id] = (cont[e.produto_id]||0) + 1; });
+    const rank = Object.entries(cont).sort((a,b) => b[1]-a[1]).slice(0,5);
+    top.innerHTML = rank.length ? rank.map(([id,q]) => {
+      const p = (PRODUCTS_CACHE||[]).find(x => String(x.id) === String(id));
+      const t = (p ? p.titulo : 'Produto removido').replace(/</g,'&lt;');
+      return '<div class="row"><span>'+t+'</span><b>'+q+'</b></div>';
+    }).join('') : '<div class="field-hint" style="padding:10px 0;">Ainda sem atividade. Divulgue o link do seu catálogo.</div>';
   }
 
   // ============================================================
