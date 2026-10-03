@@ -562,9 +562,9 @@
   .promo-stripe-track{
     position:relative; z-index:5; height:100%;
     display:flex; align-items:center; gap:48px;
-    width:max-content;
+    width:fit-content;
     background:transparent;
-    animation:promoMarquee 13.5s linear infinite;
+    animation:promoMarquee 16s linear infinite;
     /* Posição controlável via JS */
     align-items: var(--promo-text-align, center);
   }
@@ -589,15 +589,16 @@
     justify-content:flex-end;
   }
   .promo-stripe-footer .promo-stripe-track{
-    animation:promoMarquee 13.5s linear infinite;
+    animation:promoMarquee 16s linear infinite;
   }
   @keyframes promoMarquee{
-    from{ transform:translateX(0); }
-    to{ transform:translateX(-33.3333%); }
+    0%{ transform:translateX(0); }
+    100%{ transform:translateX(calc(-100% - 48px)); }
   }
   .promo-stripe span{
     display:inline-flex; align-items:center; gap:10px;
     flex-shrink:0; white-space:nowrap;
+    padding:0 24px;
     font-family:'Super Bouncer', 'Bungee', sans-serif; font-weight:900; font-size:15px;
     letter-spacing:.01em; text-transform:uppercase; color:#FFFFFF;
     /* Contorno escuro: garante leitura mesmo se a textura da faixa não
@@ -1890,6 +1891,7 @@
         <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
         <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
         <span><i class="promo-sep">✦</i><span class="promo-stripe-texto"></span></span>
+        <span style="width:200%; flex-shrink:0;"></span>
       </div>
     </div>
 
@@ -2179,9 +2181,9 @@
     <div class="footer-copyright">Copyright © <span id="footerYear">2026</span> Katalogo Hub - Todos os direitos reservados</div>
     <div class="promo-stripe-footer" id="footerPromoStripe">
       <div class="promo-stripe-track">
-        <span style="width:0; height:0; display:none;"></span>
-        <span style="width:0; height:0; display:none;"></span>
-        <span style="width:0; height:0; display:none;"></span>
+        <span style="width:1px; flex-shrink:0;"></span>
+        <span style="width:1px; flex-shrink:0;"></span>
+        <span style="width:1px; flex-shrink:0;"></span>
       </div>
     </div>
   </footer>
