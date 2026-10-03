@@ -2204,7 +2204,17 @@
   // path bonito (/s/katalogohub) sem mexer no resto do código — só troca
   // como LOJA_SLUG é lido, o resto (LOJA_ID e os filtros) continua igual.
   // ============================================================
-  const LOJA_SLUG = new URLSearchParams(location.search).get('loja') || 'katalogohub';
+  // Suporta tanto ?loja=katalogohub quanto /loja/katalogo-demo (redireciona para katalogohub)
+  let LOJA_SLUG = new URLSearchParams(location.search).get('loja');
+  if (!LOJA_SLUG) {
+    // Tenta extrair da URL path (/loja/[slug])
+    const pathMatch = window.location.pathname.match(/\/loja\/([a-z0-9]+(?:-[a-z0-9]+)*)/);
+    if (pathMatch && pathMatch[1]) {
+      LOJA_SLUG = pathMatch[1] === 'katalogo-demo' ? 'katalogohub' : pathMatch[1];
+    } else {
+      LOJA_SLUG = 'katalogohub';
+    }
+  }
   let LOJA_ID = null;
   let LOJAS_VISIVEIS = []; // [minha loja] + [loja mestre, se essa loja usar o catálogo compartilhado]
   // Texto padrão por tipo de camisa: o da loja vence; tipo que ela deixou
