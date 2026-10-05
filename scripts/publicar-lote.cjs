@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * publicar-lote.js — liga as fotos que já estão no Storage aos produtos do
+ * publicar-lote.cjs — liga as fotos que já estão no Storage aos produtos do
  * scripts/data/resultados.jsonl e publica TUDO COMO RASCUNHO (disponivel=false).
  *
  * Uso (na raiz do projeto):
- *   node scripts/publicar-lote.js                       -> SIMULA (não grava nada)
- *   node scripts/publicar-lote.js --limite 10           -> simula só os 10 primeiros válidos
- *   node scripts/publicar-lote.js --executar --limite 10   -> grava de verdade (10 produtos)
- *   node scripts/publicar-lote.js --executar            -> grava o lote inteiro
+ *   node scripts/publicar-lote.cjs                       -> SIMULA (não grava nada)
+ *   node scripts/publicar-lote.cjs --limite 10           -> simula só os 10 primeiros válidos
+ *   node scripts/publicar-lote.cjs --executar --limite 10   -> grava de verdade (10 produtos)
+ *   node scripts/publicar-lote.cjs --executar            -> grava o lote inteiro
  *   (opcional) --sem-criar-times -> NÃO cria times novos (produto sem time é pulado)
  *   Por padrão, time que não existe é criado (nome tirado do título, liga "Seleções" ou "Outros"); você ajusta depois no painel.
  *
