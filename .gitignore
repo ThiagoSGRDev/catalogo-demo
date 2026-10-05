@@ -38,3 +38,6 @@ npm-debug.log*
 # Temporary
 .tmp/
 temp/
+
+# Dados locais da importacao
+scripts/data/
