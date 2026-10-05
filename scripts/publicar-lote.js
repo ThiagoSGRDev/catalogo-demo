@@ -8,7 +8,8 @@
  *   node scripts/publicar-lote.js --limite 10           -> simula só os 10 primeiros válidos
  *   node scripts/publicar-lote.js --executar --limite 10   -> grava de verdade (10 produtos)
  *   node scripts/publicar-lote.js --executar            -> grava o lote inteiro
- *   (opcional) --criar-times  -> cria o time quando o clube foi detectado mas não existe no banco
+ *   (opcional) --sem-criar-times -> NÃO cria times novos (produto sem time é pulado)
+ *   Por padrão, time que não existe é criado (nome tirado do título, liga "Seleções" ou "Outros"); você ajusta depois no painel.
  *
  * Segurança:
  *  - Só lê/escreve na loja do ADMIN_EMAIL (as políticas RLS já garantem isso).
@@ -25,7 +26,7 @@ const DATA = path.join(__dirname, 'data');
 // ---------- argumentos ----------
 const args = process.argv.slice(2);
 const EXECUTAR = args.includes('--executar');
-const CRIAR_TIMES = args.includes('--criar-times');
+const CRIAR_TIMES = !args.includes('--sem-criar-times'); // por padrão cria os times que faltam
 const iLim = args.indexOf('--limite');
 const LIMITE = iLim >= 0 ? parseInt(args[iLim + 1], 10) : Infinity;
 
@@ -167,6 +168,39 @@ function tamanhosDoProduto(r, tipo) {
   return t.length ? t : ['P', 'M', 'G', 'GG', '2XL'];
 }
 
+
+// Tira o nome do time do título quando a detecção não achou (ex.: "Camisa Seleção Cabo Verde Away 2026/27 Mendes 20" -> "Cabo Verde")
+function derivarTime(titulo) {
+  let t = (titulo || '').replace(/\s+/g, ' ').trim();
+  const selecao = /sele[cç][aã]o/i.test(t);
+  const prefixos = /^(camisa|camiseta|kit infantil|kit treino|kit|conjunto|jaqueta|agasalho|short|shorts|sele[cç][aã]o|retr[oô]|feminina|feminino|infantil|jogador|torcedor)\s+/i;
+  while (prefixos.test(t)) t = t.replace(prefixos, '');
+  const corte = t.search(/\s(home|away|third|fourth|goleiro|gk|treino|pr[eé][- ]?jogo|preta|preto|branca|branco|azul|vermelha|vermelho|verde|amarela|amarelo|rosa|laranja|cinza|dourada|especial|edi[cç][aã]o|comemorativ\w*|retr[oô]|feminina|feminino|infantil|\d{2,4}(\/\d{2,4})?)(\s|$)/i);
+  if (corte > 0) t = t.slice(0, corte);
+  t = t.replace(/[^\p{L}\p{N} .&'-]/gu, '').trim();
+  if (!t || t.length < 2) return null;
+  return { nome: t, liga: selecao ? 'Seleções' : 'Outros' };
+}
+
+
+// Grafias do título -> nome do time que já existe no banco (evita criar time duplicado)
+const ALIAS = {
+  'paris saint germain': 'psg', 'paris saint-germain': 'psg', 'tottenham': 'tottenham hotspur',
+  'newcastle': 'newcastle united', 'bayern': 'bayern de munique', 'bayern munich': 'bayern de munique',
+  'inter': 'inter de milao', 'inter milan': 'inter de milao', 'internazionale': 'inter de milao',
+  'ac milan': 'milan', 'atletico madrid': 'atletico de madrid', 'atletico mg': 'atletico mineiro',
+  'atletico mineiro': 'atletico mineiro', 'athletico pr': 'athletico paranaense', 'brighton': 'brighton hove albion',
+  'bournemouth': 'afc bournemouth', 'west ham': 'west ham united', 'wolves': 'wolverhampton',
+  'marseille': 'olympique de marseille', 'vasco': 'vasco da gama', 'gremio': 'gremio',
+  'brazil': 'brasil', 'germany': 'alemanha', 'france': 'franca', 'spain': 'espanha', 'england': 'inglaterra',
+  'italy': 'italia', 'japan': 'japao', 'mexico': 'mexico', 'usa': 'estados unidos', 'eua': 'estados unidos',
+  'united states': 'estados unidos', 'morocco': 'marrocos', 'belgium': 'belgica', 'croatia': 'croacia',
+  'netherlands': 'holanda', 'paises baixos': 'holanda', 'sweden': 'suecia', 'switzerland': 'suica',
+  'south korea': 'coreia do sul', 'korea republic': 'coreia do sul', 'saudi arabia': 'arabia saudita',
+  'egypt': 'egito', 'nigeria': 'nigeria', 'norway': 'noruega', 'australia': 'australia', 'canada': 'canada',
+  'colombia': 'colombia', 'uruguay': 'uruguai', 'paraguay': 'paraguai', 'costa rica': 'costa rica',
+};
+
 // ---------- principal ----------
 (async () => {
   console.log(EXECUTAR ? '== MODO EXECUTAR (grava no banco) ==' : '== MODO SIMULAÇÃO (não grava nada) ==');
@@ -214,24 +248,32 @@ function tamanhosDoProduto(r, tipo) {
     // time: 1) clube detectado na importação; 2) nome de time do banco dentro do título
     let time = null;
     const nomeDet = r.clubeDetectado && r.clubeDetectado.nome;
-    if (nomeDet) time = timesIdx.find((t) => t.chave === norm(nomeDet)) || null;
+    if (nomeDet) { const k = norm(nomeDet); time = timesIdx.find((t) => t.chave === (ALIAS[k] || k)) || null; }
     if (!time) time = timesIdx.find((t) => contem(tNorm, t.chave)) || null;
-    if (!time && r.clubeDetectado && CRIAR_TIMES) {
-      const c = r.clubeDetectado;
-      const nome = c.nome.replace(/\b\p{L}/gu, (x) => x.toUpperCase());
-      const sigla = nome.replace(/[^\p{L}]/gu, '').slice(0, 3).toUpperCase() || 'TIM';
-      if (EXECUTAR) {
-        const [novo] = await api('POST', '/rest/v1/teams', {
-          nome, liga: c.liga, subliga: c.subliga || null, continente: c.continente || null,
-          cor: '#00E5FF', sigla, escudo_url: null, loja_id: lojaId,
-        }, { Prefer: 'return=representation' });
-        time = { ...novo, chave: norm(novo.nome) };
-        timesIdx.push(time);
-        timesIdx.sort((a, b) => b.chave.length - a.chave.length);
-      } else {
-        time = { id: '(novo)', nome, chave: norm(nome) };
+    if (!time && CRIAR_TIMES) {
+      const c = (r.clubeDetectado && r.clubeDetectado.nome) ? r.clubeDetectado : derivarTime(titulo);
+      if (c) {
+        const nome = c.nome.replace(/\b\p{L}/gu, (x) => x.toUpperCase());
+        const chaveNome = norm(nome);
+        const existente = timesIdx.find((t) => t.chave === (ALIAS[chaveNome] || chaveNome));
+        if (existente) {
+          time = existente;
+        } else {
+          const sigla = nome.replace(/[^\p{L}]/gu, '').slice(0, 3).toUpperCase() || 'TIM';
+          if (EXECUTAR) {
+            const [novo] = await api('POST', '/rest/v1/teams', {
+              nome, liga: c.liga, subliga: c.subliga || null, continente: c.continente || null,
+              cor: '#00E5FF', sigla, escudo_url: null, loja_id: lojaId,
+            }, { Prefer: 'return=representation' });
+            time = { ...novo, chave: norm(novo.nome) };
+          } else {
+            time = { id: '(novo)', nome, chave: norm(nome) };
+          }
+          timesIdx.push(time);
+          timesIdx.sort((a, b) => b.chave.length - a.chave.length);
+          rel.timesCriados.push(nome);
+        }
       }
-      rel.timesCriados.push(nome);
     }
     if (!time) { rel.semTime.push({ titulo, url: r.url, clubeDetectado: nomeDet || null }); continue; }
 
@@ -283,11 +325,12 @@ function tamanhosDoProduto(r, tipo) {
     'Sem foto no Storage': rel.semFoto.length,
     'Sem time identificado': rel.semTime.length,
     'Fotos incompletas (usadas mesmo assim)': rel.fotosIncompletas.length,
-    'Times a criar/criados': rel.timesCriados.length,
+    'Times novos (criados/a criar)': rel.timesCriados.length,
     'Erros': rel.erros.length,
   });
   console.log('Relatório completo em:', saida);
   if (rel.publicados[0]) console.log('Exemplo:', JSON.stringify(rel.publicados[0]));
   if (rel.semTime.length) console.log('Exemplos sem time:', rel.semTime.slice(0, 5).map((x) => x.titulo).join(' | '));
+  if (rel.timesCriados.length) console.log('Times novos:', rel.timesCriados.join(', '));
   if (rel.erros.length) console.log('Primeiro erro:', JSON.stringify(rel.erros[0]));
 })().catch((e) => { console.error('\nERRO FATAL:', e.message); process.exit(1); });
