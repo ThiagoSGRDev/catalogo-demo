@@ -171,11 +171,11 @@ function tamanhosDoProduto(r, tipo) {
 
 // Tira o nome do time do título quando a detecção não achou (ex.: "Camisa Seleção Cabo Verde Away 2026/27 Mendes 20" -> "Cabo Verde")
 function derivarTime(titulo) {
-  let t = (titulo || '').replace(/\s+/g, ' ').trim();
+  let t = (titulo || '').split(',')[0].replace(/\s+/g, ' ').trim();
   const selecao = /sele[cç][aã]o/i.test(t);
   const prefixos = /^(camisa|camiseta|kit infantil|kit treino|kit|conjunto|jaqueta|agasalho|short|shorts|sele[cç][aã]o|retr[oô]|feminina|feminino|infantil|jogador|torcedor)\s+/i;
   while (prefixos.test(t)) t = t.replace(prefixos, '');
-  const corte = t.search(/\s(home|away|third|fourth|goleiro|gk|treino|pr[eé][- ]?jogo|preta|preto|branca|branco|azul|vermelha|vermelho|verde|amarela|amarelo|rosa|laranja|cinza|dourada|especial|edi[cç][aã]o|comemorativ\w*|retr[oô]|feminina|feminino|infantil|\d{2,4}(\/\d{2,4})?)(\s|$)/i);
+  const corte = t.search(/\s(home|away|third|fourth|goleiro|gk|treino|pr[eé][- ]?jogo|preta|preto|branca|branco|azul|vermelha|vermelho|amarela|amarelo|rosa|laranja|cinza|dourada|especial|edi[cç][aã]o|comemorativ\w*|retr[oô]|feminina|feminino|infantil|\d{2,4}(\/\d{2,4})?)(\s|$)/i);
   if (corte > 0) t = t.slice(0, corte);
   t = t.replace(/[^\p{L}\p{N} .&'-]/gu, '').trim();
   if (!t || t.length < 2) return null;
@@ -185,6 +185,7 @@ function derivarTime(titulo) {
 
 // Grafias do título -> nome do time que já existe no banco (evita criar time duplicado)
 const ALIAS = {
+  'the reds': 'liverpool', 'the gunners': 'arsenal',
   'paris saint germain': 'psg', 'paris saint-germain': 'psg', 'tottenham': 'tottenham hotspur',
   'newcastle': 'newcastle united', 'bayern': 'bayern de munique', 'bayern munich': 'bayern de munique',
   'inter': 'inter de milao', 'inter milan': 'inter de milao', 'internazionale': 'inter de milao',
@@ -200,6 +201,28 @@ const ALIAS = {
   'egypt': 'egito', 'nigeria': 'nigeria', 'norway': 'noruega', 'australia': 'australia', 'canada': 'canada',
   'colombia': 'colombia', 'uruguay': 'uruguai', 'paraguay': 'paraguai', 'costa rica': 'costa rica',
 };
+
+// Nomes de seleções com acento (o título do fornecedor às vezes vem sem) -> chave normalizada vira o nome certo
+const NOMES_CERTOS = ['Irã','Jordânia','Bósnia e Herzegovina','República Democrática do Congo','Iraque','Costa do Marfim','Islândia',
+  'Nova Zelândia','Jamaica','Áustria','Gana','Polônia','República Tcheca','Hungria','Ucrânia','África do Sul','Argélia','Grécia',
+  'Curaçao','Emirados Árabes','Albânia','Chile','Catar','Panamá','Venezuela','Tunísia','Honduras','Irlanda','Turquia','Guatemala',
+  'Eslovênia','Dinamarca','Indonésia','Uzbequistão','Senegal','Equador','Guiné','Escócia','Gales','Israel','Cabo Verde','Peru',
+  'Camarões','Mali','Angola','Moçambique','Sérvia','Suíça','Finlândia','Romênia','Eslováquia','Rússia','Bolívia','Líbano','Síria',
+  'Tailândia','Vietnã','China','Índia','Coreia do Norte','Irlanda do Norte','Macedônia do Norte','Montenegro','Kosovo','Geórgia'];
+const MAPA_NOMES = new Map(NOMES_CERTOS.map((n) => [norm(n), n]));
+const MINUSCULAS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'la', 'del']);
+function titleCase(t) {
+  return t.split(' ').map((w, i) => {
+    const l = w.toLowerCase();
+    if (i > 0 && MINUSCULAS.has(l)) return l;
+    return l.charAt(0).toUpperCase() + l.slice(1);
+  }).join(' ');
+}
+function nomeFinal(nome, veioDoDetector) {
+  const certo = MAPA_NOMES.get(norm(nome));
+  if (certo) return certo;
+  return veioDoDetector ? titleCase(nome) : nome;
+}
 
 // ---------- principal ----------
 (async () => {
@@ -253,7 +276,7 @@ const ALIAS = {
     if (!time && CRIAR_TIMES) {
       const c = (r.clubeDetectado && r.clubeDetectado.nome) ? r.clubeDetectado : derivarTime(titulo);
       if (c) {
-        const nome = c.nome.replace(/\b\p{L}/gu, (x) => x.toUpperCase());
+        const nome = nomeFinal(c.nome, !!(r.clubeDetectado && r.clubeDetectado.nome));
         const chaveNome = norm(nome);
         const existente = timesIdx.find((t) => t.chave === (ALIAS[chaveNome] || chaveNome));
         if (existente) {
