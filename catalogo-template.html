@@ -2743,6 +2743,31 @@
   // conexão com o banco existe, antes de qualquer outra coisa, pra reduzir
   // o "flash" da cor padrão antes da cor real aparecer.
   // ============================================================
+  // MARQUEE TRAVADO: as faixas (topo e rodapé) são definidas só pelo Katalogo Hub.
+  // Loja que não é a mestre e não foi liberada (lojas.marquee_liberado) e ainda
+  // não tem faixa própria herda o conjunto INTEIRO do mestre, sempre atualizado.
+  // Loja com faixa própria antiga (ex.: Manto Dez) continua exatamente como está.
+  const CAMPOS_MARQUEE = ['texto_barra_superior','imagem_barra_superior','imagem_texto_barra_superior','texto_barra_x','texto_barra_y','texto_barra_escala','posicao_texto_barra_superior','alinhamento_texto_barra_superior','texto_rodape_loop','imagem_barra_rodape'];
+  async function herdarMarqueeDoMestre(data){
+    try {
+      const { data: lj } = await supabaseClient.from('lojas')
+        .select('eh_catalogo_mestre, marquee_liberado').eq('id', LOJA_ID).single();
+      if(!lj || lj.eh_catalogo_mestre || lj.marquee_liberado) return;
+      const temPropria = !!((data.texto_barra_superior || '').trim() || data.imagem_barra_superior
+        || data.imagem_texto_barra_superior || data.imagem_barra_rodape || (data.texto_rodape_loop || '').trim());
+      if(temPropria) return;
+      const { data: mestre } = await supabaseClient.from('lojas')
+        .select('id').eq('eh_catalogo_mestre', true).limit(1).maybeSingle();
+      if(!mestre) return;
+      const { data: ms } = await supabaseClient.from('store_settings')
+        .select(CAMPOS_MARQUEE.join(',')).eq('loja_id', mestre.id).maybeSingle();
+      if(!ms) return;
+      CAMPOS_MARQUEE.forEach(c => { data[c] = ms[c]; });
+    } catch(e){
+      console.error('Nao consegui herdar o marquee do mestre', e);
+    }
+  }
+
   async function aplicarAparencia(){
     if(!supabaseReady) return;
     try {
@@ -2752,6 +2777,7 @@
         .eq('loja_id', LOJA_ID)
         .single();
       if(error || !data) return;
+      await herdarMarqueeDoMestre(data);
       const root = document.documentElement;
       const modoClaro = data.modo === 'light';
       // Sem isso, todo o bloco CSS html[data-theme="clean-light"] nunca era

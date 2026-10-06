@@ -1023,6 +1023,7 @@
   .foto-studio-zoom-row input[type="range"]{ flex:1; }
   .foto-studio-status{ text-align:center; font-size:12.5px; color:var(--text-dim); margin-top:12px; min-height:18px; }
 
+  .marquee-travado{ opacity:.45; pointer-events:none; user-select:none; }
   .confirm-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:200; display:flex; align-items:flex-end;
     justify-content:center;
@@ -1768,6 +1769,9 @@
     </div>
     <div class="form-section">
       <h3>Faixas deslizantes (marquee)</h3>
+      <div id="avisoMarqueeTravado" class="field-hint hidden" style="border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:14px; line-height:1.5;">
+        🔒 As faixas do seu catálogo são definidas pelo Katalogo Hub e usam o padrão da plataforma. Esta opção está bloqueada por enquanto.
+      </div>
       <div class="field">
         <label for="lojaTextoBarraInput">Texto da barra superior</label>
         <input type="text" id="lojaTextoBarraInput" placeholder="O maior hub de mantos">
@@ -2698,6 +2702,7 @@
   let ADMIN_USA_ESTOQUE = false; // chave "Controlar estoque" da tela Loja
   let ADMIN_USA_MESTRE = false;
   let ADMIN_EH_MESTRE = false; // loja mestre (Katalogo Hub): recorte com modelo pesado
+  let ADMIN_MARQUEE_LIBERADO = false; // false = faixas (marquee) travadas para esta loja
   let ADMIN_LOJA_SLUG = null;
 
   async function enterApp(){
@@ -2723,9 +2728,11 @@
       TrialSystem.mostrarBannerTrial(statusTrial.diasRestantes);
     }
 
-    const { data: lojaInfo } = await supabaseClient.from('lojas').select('usa_catalogo_mestre, eh_catalogo_mestre, slug').eq('id', ADMIN_LOJA_ID).single();
+    const { data: lojaInfo } = await supabaseClient.from('lojas').select('usa_catalogo_mestre, eh_catalogo_mestre, marquee_liberado, slug').eq('id', ADMIN_LOJA_ID).single();
     ADMIN_USA_MESTRE = !!(lojaInfo && lojaInfo.usa_catalogo_mestre);
     ADMIN_EH_MESTRE  = !!(lojaInfo && lojaInfo.eh_catalogo_mestre);
+    // Faixas (marquee): só o mestre (Katalogo Hub) edita, ou loja que ele liberou. Na dúvida, travado.
+    ADMIN_MARQUEE_LIBERADO = ADMIN_EH_MESTRE || !!(lojaInfo && lojaInfo.marquee_liberado);
     ADMIN_LOJA_SLUG = lojaInfo ? lojaInfo.slug : null;
     const btnMestre = document.getElementById('btnCatalogoMestre');
     if(btnMestre) btnMestre.style.display = ADMIN_USA_MESTRE ? '' : 'none';
@@ -6856,7 +6863,24 @@
     renderLojaImagemBarraSuperiorGrid();
     renderLojaImagemBarraRodapeGrid();
     initMarqueePreview();
+    aplicarTravaMarquee();
     window.scrollTo(0,0);
+  }
+
+  // Trava visual das faixas (marquee) para lojas que não são o Katalogo Hub.
+  // A opção continua na tela (só desabilitada); o catálogo mostra o padrão do Katalogo Hub.
+  const IDS_CAMPOS_MARQUEE = ['lojaTextoBarraInput','lojaImagemBarraSuperiorGrid','lojaImagemTextoBarraGrid','lojaTextoBarraEscala','lojaTextoBarraPosicao','lojaTextoBarraAlinhamento','marqueePreviewContainer','lojaTextoRodapeInput','lojaImagemBarraRodapeGrid'];
+  function aplicarTravaMarquee(){
+    const travar = !ADMIN_MARQUEE_LIBERADO;
+    IDS_CAMPOS_MARQUEE.forEach(id => {
+      const el = document.getElementById(id);
+      const campo = el && el.closest('.field');
+      if(!campo) return;
+      campo.classList.toggle('marquee-travado', travar);
+      campo.querySelectorAll('input, select, button').forEach(c => { c.disabled = travar; });
+    });
+    const aviso = document.getElementById('avisoMarqueeTravado');
+    if(aviso) aviso.classList.toggle('hidden', !travar);
   }
   function closeLojaOverlay(){
     document.getElementById('lojaOverlay').classList.add('hidden');
@@ -7404,16 +7428,19 @@
         email_contato: document.getElementById('lojaEmailInput').value.trim() || null,
         instagram: extrairUsuarioInstagram(document.getElementById('lojaInstagramInput').value) || null,
         payment_icons: lojaPaymentIcons,
-        texto_barra_superior: document.getElementById('lojaTextoBarraInput').value.trim() || null,
-        posicao_texto_barra_superior: document.getElementById('lojaTextoBarraPosicao').value || 'middle',
-        alinhamento_texto_barra_superior: document.getElementById('lojaTextoBarraAlinhamento').value || 'center',
-        imagem_barra_superior: lojaImagemBarraSuperior,
-        imagem_texto_barra_superior: lojaImagemTextoBarra,
-        texto_barra_x: previewXY.x,
-        texto_barra_y: previewXY.y,
-        texto_barra_escala: getEscala(),
-        texto_rodape_loop: document.getElementById('lojaTextoRodapeInput').value.trim() || null,
-        imagem_barra_rodape: lojaImagemBarraRodape,
+        // Faixas (marquee): só vão no salvar se esta loja pode editar (Katalogo Hub ou liberada).
+        ...(ADMIN_MARQUEE_LIBERADO ? {
+          texto_barra_superior: document.getElementById('lojaTextoBarraInput').value.trim() || null,
+          posicao_texto_barra_superior: document.getElementById('lojaTextoBarraPosicao').value || 'middle',
+          alinhamento_texto_barra_superior: document.getElementById('lojaTextoBarraAlinhamento').value || 'center',
+          imagem_barra_superior: lojaImagemBarraSuperior,
+          imagem_texto_barra_superior: lojaImagemTextoBarra,
+          texto_barra_x: previewXY.x,
+          texto_barra_y: previewXY.y,
+          texto_barra_escala: getEscala(),
+          texto_rodape_loop: document.getElementById('lojaTextoRodapeInput').value.trim() || null,
+          imagem_barra_rodape: lojaImagemBarraRodape
+        } : {}),
         texto_entrega: document.getElementById('lojaTextoEntregaInput').value.trim() || null,
         usa_estoque: document.getElementById('lojaUsaEstoque').checked,
         estoque_alerta_limite: Number(document.getElementById('lojaEstoqueAlerta').value) || 0,
