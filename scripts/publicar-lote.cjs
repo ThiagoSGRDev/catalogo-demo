@@ -224,6 +224,14 @@ function nomeFinal(nome, veioDoDetector) {
   return veioDoDetector ? titleCase(nome) : nome;
 }
 
+// A loja usa a liga direta (Premier League, La Liga, Ligue 1...), não "Europa" + subliga.
+function ligaDaLoja(c) {
+  if (c.liga !== 'Europa') return c.liga;
+  const m = { 'Bundesliga': 'Bundesliga', 'La Liga': 'La Liga', 'Ligue 1': 'Ligue 1', 'Premier League': 'Premier League',
+    'Serie A': 'Série A', 'Primeira Liga': 'Liga Portugal' };
+  return m[c.subliga] || 'Outros';
+}
+
 // ---------- principal ----------
 (async () => {
   console.log(EXECUTAR ? '== MODO EXECUTAR (grava no banco) ==' : '== MODO SIMULAÇÃO (não grava nada) ==');
@@ -285,7 +293,7 @@ function nomeFinal(nome, veioDoDetector) {
           const sigla = nome.replace(/[^\p{L}]/gu, '').slice(0, 3).toUpperCase() || 'TIM';
           if (EXECUTAR) {
             const [novo] = await api('POST', '/rest/v1/teams', {
-              nome, liga: c.liga, subliga: c.subliga || null, continente: c.continente || null,
+              nome, liga: ligaDaLoja(c), subliga: null, continente: c.continente || null,
               cor: '#00E5FF', sigla, escudo_url: null, loja_id: lojaId,
             }, { Prefer: 'return=representation' });
             time = { ...novo, chave: norm(novo.nome) };
