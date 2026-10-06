@@ -590,6 +590,28 @@
     font-weight:700; font-size:14px; text-transform:uppercase; letter-spacing:.03em; cursor:pointer;
     box-shadow:0 0 22px rgba(var(--gold-rgb),calc(var(--glow-mult) * 0.35)), 0 0 40px rgba(var(--gold-rgb),calc(var(--glow-mult) * 0.15));
   }
+  /* EM ESTOQUE: botão secundário abaixo de "Ver modelos" + faixa de aviso */
+  .btn-estoque{
+    display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:12px;
+    background:transparent; color:var(--gold); border:2px solid var(--gold); border-radius:999px;
+    padding:13px; font-family:'Anton', sans-serif; font-weight:700; font-size:14px;
+    text-transform:uppercase; letter-spacing:.03em; cursor:pointer;
+  }
+  .btn-estoque[hidden]{ display:none; }
+  .btn-estoque svg{ width:20px; height:20px; }
+  #faixaEstoque{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin:12px 0 0; padding:10px 14px; border:1px solid var(--gold); border-radius:12px;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase;
+  }
+  #faixaEstoque[hidden]{ display:none; }
+  #faixaEstoque button{
+    background:var(--gold); color:var(--ink); border:none; border-radius:999px; padding:7px 14px;
+    font-family:'Anton', sans-serif; font-size:12px; text-transform:uppercase; cursor:pointer; white-space:nowrap;
+  }
+  html[data-theme="clean-light"] .btn-estoque{ color:#12161C; border-color:#12161C; }
+  html[data-theme="clean-light"] #faixaEstoque{ border-color:#12161C; }
+  html[data-theme="clean-light"] #faixaEstoque button{ background:#12161C; color:#FFFFFF; }
   /* PROMO STRIPE */
   /* Imagem de fundo autoral (bg-marquee.jpg) — trocável via --promo-bg-image.
      Texto em marquee por cima, fundo transparente, sem disputar espaço com a
@@ -2025,6 +2047,11 @@
 
   <div class="wrap">
 
+  <div id="faixaEstoque" hidden>
+    <span>Mostrando só o que está em estoque</span>
+    <button type="button" onclick="sairEmEstoque()">Ver tudo</button>
+  </div>
+
   <div id="homeView" class="active">
 
     <div class="liga-section">
@@ -2043,6 +2070,10 @@
       </div>
       <div class="liga-dots" id="ligaDots"></div>
       <button class="ver-times-btn" onclick="verModelos()">Ver modelos ›</button>
+      <button class="btn-estoque" id="btnEmEstoque" onclick="abrirEmEstoque()" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h13v13H1z"/><path d="M14 8h4l4 4v4h-8z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg>
+        Em estoque
+      </button>
     </div>
 
   </div>
@@ -2528,14 +2559,48 @@
   let ESGOTADOS = new Map(); // product_id -> Set(tamanhos zerados)
   let ULTIMAS = new Map();    // product_id -> Map(tamanho -> unidades restantes, só dentro do limite da loja)
 
+  // "EM ESTOQUE": produtos com pelo menos 1 tamanho com quantidade > 0 nesta loja.
+  // Vem do mesmo estoque_publico() (linha com esgotado=false = tem unidade);
+  // a quantidade real nunca chega aqui. Em branco = sob encomenda, não conta.
+  let EM_ESTOQUE = new Map();   // product_id -> Set(tamanhos com estoque)
+  let SO_EM_ESTOQUE = false;    // modo ligado pelo botão "Em estoque"
+  function passaEstoque(id){ return !SO_EM_ESTOQUE || EM_ESTOQUE.has(id); }
+  function timeTemEstoque(t){ return !SO_EM_ESTOQUE || !teamsWithProducts || teamsWithProducts.has(t.nome); }
+  function atualizarBotaoEstoque(){
+    const btn = document.getElementById('btnEmEstoque');
+    const faixa = document.getElementById('faixaEstoque');
+    if(btn) btn.hidden = SO_EM_ESTOQUE || EM_ESTOQUE.size === 0;
+    if(faixa) faixa.hidden = !SO_EM_ESTOQUE;
+  }
+  async function definirModoEstoque(ligado){
+    SO_EM_ESTOQUE = !!ligado && EM_ESTOQUE.size > 0;
+    atualizarBotaoEstoque();
+    teamsWithProducts = await loadTeamsWithProducts();
+    renderLigaCarousel();
+    renderDrawerLigas();
+  }
+  async function abrirEmEstoque(){
+    await definirModoEstoque(true);
+    if(SO_EM_ESTOQUE) openTodosProdutos();
+  }
+  async function sairEmEstoque(){
+    await definirModoEstoque(false);
+    backToHome();
+  }
+
   async function carregarEstoque(){
     ESGOTADOS = new Map();
     ULTIMAS = new Map();
+    EM_ESTOQUE = new Map();
     if(!LOJA_ID) return;
     try {
       const { data, error } = await supabaseClient.rpc('estoque_publico', { p_loja: LOJA_ID });
       if(error) throw error;
       (data || []).forEach(r => {
+        if(!r.esgotado){
+          if(!EM_ESTOQUE.has(r.product_id)) EM_ESTOQUE.set(r.product_id, new Set());
+          EM_ESTOQUE.get(r.product_id).add(r.tamanho);
+        }
         if(r.esgotado){
           if(!ESGOTADOS.has(r.product_id)) ESGOTADOS.set(r.product_id, new Set());
           ESGOTADOS.get(r.product_id).add(r.tamanho);
@@ -2548,9 +2613,12 @@
       // Falha aqui mostra tudo como disponível (comportamento de antes).
       console.error('Nao consegui ler o estoque da loja', e);
     }
+    atualizarBotaoEstoque();
   }
 
   function tamanhoEsgotado(p, tamanho){
+    // No modo "Em estoque", só o tamanho com unidade conta como disponível.
+    if(SO_EM_ESTOQUE){ const ok = p && EM_ESTOQUE.get(p.id); return !(ok && ok.has(tamanho)); }
     const zerados = p && ESGOTADOS.get(p.id);
     return !!(zerados && zerados.has(tamanho));
   }
@@ -3294,12 +3362,12 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     try {
       const { data, error } = await supabaseClient
         .from('products')
-        .select('teams!inner(nome)')
+        .select('id, teams!inner(nome)')
         .eq('disponivel', true)
         .in('loja_id', LOJAS_VISIVEIS)
       .not('id', 'in', OCULTOS_FILTRO);
       if(error || !data) return null;
-      return new Set(data.map(row => row.teams.nome));
+      return new Set(data.filter(row => passaEstoque(row.id)).map(row => row.teams.nome));
     } catch(e){
       console.error('Erro ao verificar times com produtos', e);
       return null;
@@ -3322,6 +3390,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const comTimes = TEAMS.map(t => t.liga);
     return [...new Set([...comTimes, ...LIGAS_CADASTRADAS])]
       .filter(Boolean)
+      .filter(l => !SO_EM_ESTOQUE || TEAMS.some(t => t.liga === l && timeTemEstoque(t)))
       .sort((a,b) => (LIGA_ORDER[a] ?? 99) - (LIGA_ORDER[b] ?? 99));
   }
 
@@ -3456,7 +3525,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const chevronExp = '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>';
 
     container.innerHTML = ligas.map((liga, idx) => {
-      const ligaTeams = TEAMS.filter(t => t.liga === liga);
+      const ligaTeams = TEAMS.filter(t => t.liga === liga && timeTemEstoque(t));
       const groupField = ligaTeams.some(t => t.subliga) ? "subliga" : (ligaTeams.some(t => t.continente) ? "continente" : null);
 
       if(!groupField){
@@ -3523,7 +3592,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const ligaTeams = TEAMS.filter(t => t.liga === currentLiga);
     const groupField = ligaTeams.some(t => t.subliga) ? "subliga" : (ligaTeams.some(t => t.continente) ? "continente" : null);
 
-    const filtered = TEAMS.filter(t => t.liga === currentLiga && (!currentSubliga || !groupField || t[groupField] === currentSubliga) && t.nome.toLowerCase().includes(query) && (!teamsWithProducts || teamsWithProducts.has(t.nome)))
+    const filtered = TEAMS.filter(t => t.liga === currentLiga && (!currentSubliga || !groupField || t[groupField] === currentSubliga) && t.nome.toLowerCase().includes(query) && (!teamsWithProducts || teamsWithProducts.has(t.nome)) && timeTemEstoque(t))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
     if(filtered.length === 0){
@@ -3801,7 +3870,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     }
     // A ordenação veio do banco pela ordem do mestre; se esta loja definiu uma
     // ordem própria pra algum produto, ela vale — por isso reordenamos aqui.
-    return (data || []).map(mapDbProduct)
+    return (data || []).filter(row => passaEstoque(row.id)).map(mapDbProduct)
       .sort((a, b) => a.ordem_exibicao - b.ordem_exibicao);
   }
 
@@ -4031,7 +4100,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // histórico, pra o "voltar" continuar voltando uma tela de verdade.
   async function trocarTimeLista(dir){
     if(!currentTeam) return;
-    const equipes = TEAMS.filter(t => t.liga === currentTeam.liga)
+    const equipes = TEAMS.filter(t => t.liga === currentTeam.liga && timeTemEstoque(t))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     if(equipes.length < 2) return;
     const i = equipes.findIndex(t => t.nome === currentTeam.nome);
@@ -4356,6 +4425,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     }
 
     categoryResultsCache = (data || [])
+      .filter(row => passaEstoque(row.id))
       .map(row => {
         const team = TEAMS.find(t => t.nome === row.teams.nome)
           || { nome: row.teams.nome, cor: 'var(--gold)', sigla: (row.teams.nome || '?').slice(0,3).toUpperCase(), imagem: null };
@@ -5405,13 +5475,13 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // Só ligas que já têm pelo menos 1 time cadastrado entram na navegação —
   // evita abrir numa liga vazia (carrossel de escudos sem nada pra mostrar).
   function getLigasComTimes(){
-    return getAllLigas().filter(liga => TEAMS.some(t => t.liga === liga));
+    return getAllLigas().filter(liga => TEAMS.some(t => t.liga === liga && timeTemEstoque(t)));
   }
 
   function timesEquipesDaLigaAtual(){
     const ligas = getLigasComTimes();
     const nomeLiga = ligas[timesLigaIndex];
-    return TEAMS.filter(t => t.liga === nomeLiga).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    return TEAMS.filter(t => t.liga === nomeLiga && timeTemEstoque(t)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   }
 
   // Entrada vinda da home (card do carrossel "escolha a liga" ou botão "Ver

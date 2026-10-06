@@ -1333,6 +1333,7 @@
         <div class="filtro-opcao" data-filter="Conjunto de Treino" onclick="setFilter('Conjunto de Treino')">Conjunto de Treino</div>
         <div class="filtro-opcao" data-filter="destaque" onclick="setFilter('destaque')">★ Destaques</div>
         <div class="filtro-opcao" data-filter="lancamento" onclick="setFilter('lancamento')">🆕 Lançamentos</div>
+        <div class="filtro-opcao" data-filter="emestoque" id="chipEmEstoque" style="display:none;" onclick="setFilter('emestoque')">📦 Em estoque</div>
         <div class="chip" data-filter="inativo" onclick="setFilter('inativo')">Inativos</div>
       </div>
     </div>
@@ -2259,6 +2260,19 @@
   </div>
 </div>
 
+<div id="estoqueRapidoOverlay" class="confirm-overlay hidden" onclick="if(event.target===this) fecharEstoqueRapido()">
+  <div class="confirm-box">
+    <h3 id="erTitulo">Estoque</h3>
+    <p id="erSub" style="margin-bottom:14px;"></p>
+    <div id="estoqueRapidoBox"><div class="estoque-grid" id="estoqueRapidoGrid"></div></div>
+    <div class="field-hint" style="margin:12px 0 16px;">Em branco = sob encomenda. 0 = esgotado. Número = em estoque (aparece no botão "Em estoque" do catálogo).</div>
+    <div class="btns">
+      <button class="btn btn-secondary" onclick="fecharEstoqueRapido()">Cancelar</button>
+      <button class="btn" id="erSalvar" onclick="salvarEstoqueRapido()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="confirmOverlay" class="confirm-overlay hidden">
   <div class="confirm-box">
     <h3 id="confirmTitle">Excluir produto?</h3>
@@ -2799,10 +2813,11 @@
   // Em branco = sem linha no banco = sob encomenda (sempre disponível).
   // ============================================================
   const ESTOQUE_TAM_FEMININA = ["P","M","G","GG"];
-  const ESTOQUE_EDITORES = { form: {}, pers: {} }; // tamanho -> texto digitado
+  const ESTOQUE_EDITORES = { form: {}, pers: {}, rapido: {} }; // tamanho -> texto digitado
   const ESTOQUE_IDS = {
     form: { box: 'estoqueFormBox', grid: 'estoqueFormGrid' },
-    pers: { box: 'estoquePersBox', grid: 'estoquePersGrid' }
+    pers: { box: 'estoquePersBox', grid: 'estoquePersGrid' },
+    rapido: { box: 'estoqueRapidoBox', grid: 'estoqueRapidoGrid' }
   };
 
   async function carregarConfigEstoque(){
@@ -2814,6 +2829,71 @@
       console.error('Nao consegui ler a configuracao de estoque', e);
       ADMIN_USA_ESTOQUE = false;
     }
+    await carregarMapaEstoque();
+  }
+
+  // ---- EM ESTOQUE (lojista): mapa product_id -> { total, tamanhos } ----
+  let ESTOQUE_MAPA = new Map();
+  async function carregarMapaEstoque(){
+    ESTOQUE_MAPA = new Map();
+    const chip = document.getElementById('chipEmEstoque');
+    if(chip) chip.style.display = ADMIN_USA_ESTOQUE ? '' : 'none';
+    if(!ADMIN_USA_ESTOQUE) return;
+    try {
+      // PostgREST devolve no máximo ~1000 linhas por consulta: pagina até acabar.
+      for(let ini = 0; ini < 50000; ini += 1000){
+        const { data, error } = await supabaseClient.from('loja_produtos_estoque')
+          .select('product_id, tamanho, quantidade').eq('loja_id', ADMIN_LOJA_ID)
+          .order('product_id').order('tamanho').range(ini, ini + 999);
+        if(error) throw error;
+        (data || []).forEach(r => {
+          const k = String(r.product_id);
+          if(!ESTOQUE_MAPA.has(k)) ESTOQUE_MAPA.set(k, { total: 0, tamanhos: {} });
+          const e = ESTOQUE_MAPA.get(k);
+          e.tamanhos[r.tamanho] = r.quantidade;
+          e.total += r.quantidade;
+        });
+        if(!data || data.length < 1000) break;
+      }
+    } catch(e){
+      console.error('Nao consegui ler o mapa de estoque', e);
+    }
+  }
+  function estoqueTotalDoProduto(id){ const e = ESTOQUE_MAPA.get(String(id)); return e ? e.total : 0; }
+
+  // ---- ESTOQUE RÁPIDO: botão 📦 no cartão do produto abre só as quantidades ----
+  let erProduto = null;
+  function tamanhosEstoqueRapido(p){
+    return (p.tamanhos && p.tamanhos.length) ? p.tamanhos : estoqueTamanhosPadrao(p.tipo);
+  }
+  async function abrirEstoqueRapido(idCodificado){
+    const id = decodeURIComponent(idCodificado);
+    const p = PRODUCTS_CACHE.find(x => String(x.id) === String(id));
+    if(!p || !ADMIN_USA_ESTOQUE) return;
+    erProduto = p;
+    document.getElementById('estoqueRapidoGrid').innerHTML = ''; // não deixa sobrar valor do produto anterior
+    ESTOQUE_EDITORES.rapido = await carregarEstoqueProduto(p.id);
+    document.getElementById('erTitulo').textContent = p.titulo;
+    document.getElementById('erSub').textContent = (p.teams ? p.teams.nome + ' · ' : '') + p.tipo;
+    renderEstoqueEditor('rapido', tamanhosEstoqueRapido(p), p.tipo);
+    document.getElementById('estoqueRapidoOverlay').classList.remove('hidden');
+  }
+  function fecharEstoqueRapido(){
+    document.getElementById('estoqueRapidoOverlay').classList.add('hidden');
+    erProduto = null;
+  }
+  async function salvarEstoqueRapido(){
+    const p = erProduto; if(!p) return;
+    const r = lerEstoque('rapido', tamanhosEstoqueRapido(p));
+    if(r.erro){ showToast(r.erro, 'error'); return; }
+    const btn = document.getElementById('erSalvar'); btn.disabled = true;
+    const erro = await salvarEstoqueProduto(p.id, r.valores);
+    btn.disabled = false;
+    if(erro){ console.error(erro); showToast('Não consegui salvar o estoque: ' + (erro.message || ''), 'error'); return; }
+    await carregarMapaEstoque();
+    fecharEstoqueRapido();
+    renderProductList();
+    showToast('Estoque salvo!', 'success');
   }
 
   // Mesma regra do catálogo (getSizeListForTipo) para quando o produto não
@@ -3976,6 +4056,7 @@
     if(currentFilter === 'destaque') list = list.filter(p => p.destaque);
     else if(currentFilter === 'lancamento') list = list.filter(p => p.lancamento);
     else if(currentFilter === 'inativo') list = list.filter(p => !p.disponivel);
+    else if(currentFilter === 'emestoque') list = list.filter(p => estoqueTotalDoProduto(p.id) > 0);
     else if(currentFilter !== 'todos') list = list.filter(p => p.tipo === currentFilter);
 
     if(currentTeamId) list = list.filter(p => p.teams && String(p.teams.id) === String(currentTeamId));
@@ -4024,6 +4105,12 @@
       if(!p.disponivel) tags.push('<span class="tag-mini off">Inativo</span>');
       if(doMestre && oculto) tags.push('<span class="tag-mini off">Oculto</span>');
       if(personalizado) tags.push('<span class="tag-mini custom">Personalizado</span>');
+      const qtdEstoque = ADMIN_USA_ESTOQUE ? estoqueTotalDoProduto(p.id) : 0;
+      if(qtdEstoque > 0) tags.push(`<span class="tag-mini custom">Em estoque · ${qtdEstoque}</span>`);
+      const idCod = encodeURIComponent(p.id).replace(/'/g, '%27');
+      const btnEstoque = ADMIN_USA_ESTOQUE
+        ? `<div class="icon-btn-mini" onclick="event.stopPropagation(); abrirEstoqueRapido('${idCod}')" aria-label="Estoque" title="Estoque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></div>`
+        : '';
 
       // Produto do mestre: nada de duplicar/excluir (o banco recusaria).
       // Só o olho pra tirar ou devolver o produto à vitrine desta loja.
@@ -4046,7 +4133,7 @@
             ${thumb}
             <div class="product-card-tags">${tags.join('')}</div>
             <div class="product-card-actions">
-              ${acoes}
+              ${btnEstoque}${acoes}
             </div>
           </div>
           <div class="product-card-body" onclick="openForm('${p.id}')">
@@ -7344,6 +7431,7 @@
     }
 
     ADMIN_USA_ESTOQUE = document.getElementById('lojaUsaEstoque').checked;
+    carregarMapaEstoque().then(() => { try { renderProductList(); } catch(e){} });
 
     // 5. Exibir mensagem com URL personalizada
     const slugFinal = novoSlug || lojaAtual.slug;
