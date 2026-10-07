@@ -3430,7 +3430,7 @@
     const naPasta = (url, bucket) => String(url || '').includes(`/${bucket}/${ADMIN_LOJA_ID}/`);
 
     const [times, ligas, subligas, banners, settings] = await Promise.all([
-      supabaseClient.from('teams').select('id, nome, escudo_url, imagem_url'),
+      buscarTodas(() => supabaseClient.from('teams').select('id, nome, escudo_url, imagem_url')),
       supabaseClient.from('ligas').select('id, nome, icone_url, foto_atleta_url'),
       supabaseClient.from('subligas').select('id, nome, icone_url'),
       supabaseClient.from('hero_banners').select('id, url').eq('loja_id', ADMIN_LOJA_ID),
@@ -4009,11 +4009,26 @@
   // ============================================================
   // CARREGAMENTO DE DADOS
   // ============================================================
+
+  // Busca TODAS as linhas de uma consulta, em páginas de 1000 (limite do PostgREST).
+  // `fabrica` deve devolver uma consulta NOVA a cada chamada. Desempate por id.
+  async function buscarTodas(fabrica){
+    const T = 1000;
+    let tudo = [];
+    for(let i = 0; ; i += T){
+      const { data, error } = await fabrica().order('id', { ascending: true }).range(i, i + T - 1);
+      if(error) return { data: null, error };
+      tudo = tudo.concat(data || []);
+      if(!data || data.length < T) break;
+    }
+    return { data: tudo, error: null };
+  }
+
   async function loadTeams(){
-    const { data, error } = await supabaseClient
+    const { data, error } = await buscarTodas(() => supabaseClient
       .from('teams')
       .select('id, nome, liga, subliga, continente, escudo_url')
-      .order('nome', { ascending: true });
+      .order('nome', { ascending: true }));
     if(error){ showToast('Erro ao carregar times: ' + error.message, 'error'); return; }
     TEAMS_CACHE = data || [];
     const select = document.getElementById('fieldTeam');
@@ -4032,10 +4047,10 @@
   }
 
   async function loadProducts(){
-    const { data, error } = await supabaseClient
+    const { data, error } = await buscarTodas(() => supabaseClient
       .from('products')
       .select('*, teams(id, nome), product_images(id, url, ordem)')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }));
     if(error){ showToast('Erro ao carregar produtos: ' + error.message, 'error'); return; }
     PRODUCTS_CACHE = data || [];
   }
@@ -4667,10 +4682,10 @@
   }
 
   async function loadTeamsList(){
-    const { data, error } = await supabaseClient
+    const { data, error } = await buscarTodas(() => supabaseClient
       .from('teams')
       .select('*')
-      .order('nome', { ascending: true });
+      .order('nome', { ascending: true }));
     if(error){ showToast('Erro ao carregar times: ' + error.message, 'error'); return; }
     TEAMS_LIST_CACHE = data || [];
     renderTeamsList();
@@ -6541,11 +6556,11 @@
     }
 
     const [{ data: produtos, error: produtosError }, { data: precos }] = await Promise.all([
-      supabaseClient.from('products')
+      buscarTodas(() => supabaseClient.from('products')
         .select('id, titulo, preco, tipo, teams!inner(nome)')
         .eq('loja_id', mestre.id)
         .eq('disponivel', true)
-        .order('titulo', { ascending: true }),
+        .order('titulo', { ascending: true })),
       supabaseClient.from('loja_precos_customizados')
         .select('product_id, preco')
         .eq('loja_id', ADMIN_LOJA_ID)

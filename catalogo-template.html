@@ -3386,12 +3386,12 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   async function loadTeamsWithProducts(){
     if(!supabaseReady) return null;
     try {
-      const { data, error } = await supabaseClient
+      const { data, error } = await buscarTodas(() => supabaseClient
         .from('products')
         .select('id, teams!inner(nome)')
         .eq('disponivel', true)
         .in('loja_id', LOJAS_VISIVEIS)
-      .not('id', 'in', OCULTOS_FILTRO);
+        .not('id', 'in', OCULTOS_FILTRO));
       if(error || !data) return null;
       return new Set(data.filter(row => passaEstoque(row.id)).map(row => row.teams.nome));
     } catch(e){
@@ -3767,6 +3767,21 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // Busca genérica: campo booleano ("destaque" ou "lancamento") + onde renderizar.
   // Se não houver nenhum produto marcado, a seção inteira fica escondida — nunca
   // mostramos uma vitrine vazia ou produtos aleatórios só para preencher espaço.
+
+  // Busca TODAS as linhas de uma consulta, em páginas de 1000 (limite do PostgREST).
+  // `fabrica` deve devolver uma consulta NOVA a cada chamada. Desempate por id.
+  async function buscarTodas(fabrica){
+    const T = 1000;
+    let tudo = [];
+    for(let i = 0; ; i += T){
+      const { data, error } = await fabrica().order('id', { ascending: true }).range(i, i + T - 1);
+      if(error) return { data: null, error };
+      tudo = tudo.concat(data || []);
+      if(!data || data.length < T) break;
+    }
+    return { data: tudo, error: null };
+  }
+
   async function loadHomeProductSection(campo, sectionId, gridId){
     const section = document.getElementById(sectionId);
     const grid = document.getElementById(gridId);
@@ -3845,14 +3860,14 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const grid = document.getElementById(gridId);
     if(!supabaseReady){ section.style.display = "none"; return; }
 
-    const { data, error } = await supabaseClient
+    const { data, error } = await buscarTodas(() => supabaseClient
       .from('products')
       .select('*, product_images(url, ordem), teams!inner(nome, cor, sigla)')
       .eq('tipo', tipo)
       .eq('disponivel', true)
       .in('loja_id', LOJAS_VISIVEIS)
       .not('id', 'in', OCULTOS_FILTRO)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }));
 
     if(error || !data || data.length === 0){
       section.style.display = "none";
@@ -3882,13 +3897,13 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     if(!supabaseReady){
       throw new Error('Sem conexão configurada com o banco de dados. (window.supabase existe? ' + (!!window.supabase) + ' | supabaseClient existe? ' + (!!supabaseClient) + ')');
     }
-    const { data, error } = await supabaseClient
+    const { data, error } = await buscarTodas(() => supabaseClient
       .from('products')
       .select('*, product_images(url, ordem), teams!inner(nome)')
       .eq('teams.nome', team.nome)
       .in('loja_id', LOJAS_VISIVEIS)
       .not('id', 'in', OCULTOS_FILTRO)
-      .order('ordem_exibicao', { ascending: true });
+      .order('ordem_exibicao', { ascending: true }));
 
     if(error){
       console.error('Erro ao buscar produtos de', team.nome, error);
@@ -4434,15 +4449,16 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
     if(!supabaseReady){ grid.innerHTML = tentarDeNovo; return; }
 
-    let consulta = supabaseClient
-      .from('products')
-      .select('*, product_images(url, ordem), teams!inner(nome)')
-      .eq('disponivel', true)
-      .in('loja_id', LOJAS_VISIVEIS)
-      .not('id', 'in', OCULTOS_FILTRO);
-    if(tipo) consulta = consulta.eq('tipo', tipo);
-
-    const { data, error } = await consulta.order('ordem_exibicao', { ascending: true });
+    const { data, error } = await buscarTodas(() => {
+      let consulta = supabaseClient
+        .from('products')
+        .select('*, product_images(url, ordem), teams!inner(nome)')
+        .eq('disponivel', true)
+        .in('loja_id', LOJAS_VISIVEIS)
+        .not('id', 'in', OCULTOS_FILTRO);
+      if(tipo) consulta = consulta.eq('tipo', tipo);
+      return consulta.order('ordem_exibicao', { ascending: true });
+    });
 
     if(error){
       console.error('Erro ao carregar listagem', error);
@@ -4553,12 +4569,12 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   async function resolverProdutoPorSlug(slug){
     if(!supabaseReady) return null;
     try {
-      const { data, error } = await supabaseClient
+      const { data, error } = await buscarTodas(() => supabaseClient
         .from('products')
         .select('id')
         .eq('disponivel', true)
         .in('loja_id', LOJAS_VISIVEIS)
-      .not('id', 'in', OCULTOS_FILTRO);
+        .not('id', 'in', OCULTOS_FILTRO));
       if(error || !data) return null;
       const encontrado = data.find(row => slugify(row.id) === slug);
       return encontrado ? encontrado.id : null;
@@ -5308,11 +5324,11 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   async function loadDynamicTeams(){
     if(!supabaseReady) return;
     try {
-      const { data, error } = await supabaseClient
+      const { data, error } = await buscarTodas(() => supabaseClient
         .from('teams')
         .select('nome, sigla, liga, subliga, continente, cor, escudo_url, imagem_url')
         .in('loja_id', LOJAS_VISIVEIS)
-        .not('liga', 'is', null);
+        .not('liga', 'is', null));
       if(error || !data) return;
       data.forEach(row => {
         if(!row.nome) return;
