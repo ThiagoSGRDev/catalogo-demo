@@ -6,344 +6,194 @@
 <title>Katalogo Hub — Criar Conta</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
   :root {
     --bg:#07090C;
-    --panel:#161B26;
-    --line:rgba(255, 255, 255, 0.14);
     --text:#FFFFFF;
     --text-dim:#94A3B8;
+    --text-faint:#64748B;
+    --line:rgba(255,255,255,0.18);
     --neon-green:#35FFC0;
-    --neon-blue:#00D4FF;
+    --neon-blue:#2BD9FF;
     --green:#22C55E;
     --red:#EF4444;
     --amber:#F59E0B;
+    --card-bg:linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+    --card-border:rgba(255,255,255,0.10);
+    --card-border-top:rgba(255,255,255,0.22);
+    --card-shadow:0 30px 70px rgba(0,0,0,0.55), 0 0 60px rgba(53,255,192,0.07);
+    --glow-a:rgba(53,255,192,0.14);
+    --glow-b:rgba(99,102,241,0.16);
+    --btn-text:#04120d;
   }
-
   @media (prefers-color-scheme: light) {
     :root:not([data-tema="escuro"]) {
       --bg:#EEF1F6;
-      --panel:#FFFFFF;
-      --line:rgba(15,23,42,0.12);
       --text:#0F172A;
       --text-dim:#475569;
+      --text-faint:#64748B;
+      --line:rgba(15,23,42,0.25);
+      --card-bg:#FFFFFF;
+      --card-border:rgba(15,23,42,0.08);
+      --card-border-top:rgba(15,23,42,0.08);
+      --card-shadow:0 20px 50px rgba(15,23,42,0.12);
+      --glow-a:rgba(53,255,192,0.18);
+      --glow-b:rgba(99,102,241,0.14);
     }
   }
 
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  * { margin:0; padding:0; box-sizing:border-box; }
 
   body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    font-family:'Plus Jakarta Sans', -apple-system, sans-serif;
+    background:
+      radial-gradient(600px 400px at 15% 10%, var(--glow-a), transparent 60%),
+      radial-gradient(500px 400px at 90% 90%, var(--glow-b), transparent 60%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--text);
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    -webkit-tap-highlight-color:transparent;
   }
 
-  .container {
-    width: 100%;
-    max-width: 420px;
-  }
+  .container { width:100%; max-width:400px; }
 
   .card {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 40px 32px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-top-color:var(--card-border-top);
+    border-radius:24px;
+    padding:36px 30px 32px;
+    backdrop-filter:blur(28px) saturate(140%);
+    -webkit-backdrop-filter:blur(28px) saturate(140%);
+    box-shadow:var(--card-shadow);
+    animation:entrada .5s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  @keyframes entrada {
+    from { opacity:0; transform:translateY(20px) scale(0.98); }
+    to { opacity:1; transform:translateY(0) scale(1); }
   }
 
-  .header {
-    text-align: center;
-    margin-bottom: 36px;
+  .header { margin-bottom:28px; }
+  .logo-img { height:48px; width:auto; display:block; margin:0 auto 28px; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-tema="escuro"]) .logo-img { background:#12161C; padding:10px 18px; border-radius:12px; height:58px; }
   }
 
-  .logo-img {
-    height: 48px;
-    width: auto;
-    margin: 0 auto 16px;
-    display: block;
+  .badge {
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--neon-green); background:rgba(53,255,192,0.10);
+    border:1px solid rgba(53,255,192,0.28); border-radius:999px;
+    padding:5px 12px; margin-bottom:14px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-tema="escuro"]) .badge { color:#0F7A5A; background:rgba(15,122,90,0.08); border-color:rgba(15,122,90,0.28); }
   }
 
   .header h1 {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 8px;
+    font-family:'Anton', sans-serif; font-weight:400; font-style:italic;
+    font-size:34px; letter-spacing:.01em; text-transform:uppercase;
+    margin:0 0 6px; line-height:1.1;
   }
+  .header p { font-size:15px; color:var(--text-dim); }
 
-  .header p {
-    font-size: 14px;
-    color: var(--text-dim);
-  }
-
-  .form-group {
-    margin-bottom: 20px;
-  }
+  .form-group { margin-bottom:22px; }
 
   label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--text);
+    display:block; font-size:11px; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--text-dim); margin-bottom:6px;
   }
 
-  input[type="email"],
-  input[type="text"],
-  input[type="password"] {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.2);
-    color: var(--text);
-    font-size: 14px;
-    font-family: inherit;
-    transition: all 0.2s ease;
+  .in-wrap { position:relative; }
+  .in-wrap .in-ico {
+    position:absolute; right:2px; top:50%; transform:translateY(-50%);
+    width:22px; height:22px; color:var(--text-faint); pointer-events:none; transition:color .2s;
   }
+  .in-wrap:focus-within .in-ico { color:var(--neon-green); }
 
-  input[type="email"]:focus,
-  input[type="text"]:focus,
-  input[type="password"]:focus {
-    outline: none;
-    border-color: var(--neon-green);
-    background: rgba(53, 255, 192, 0.05);
-    box-shadow: 0 0 0 3px rgba(53, 255, 192, 0.1);
+  input[type="email"], input[type="text"], input[type="password"] {
+    width:100%; background:transparent; border:none;
+    border-bottom:1px solid var(--line); border-radius:0;
+    padding:10px 40px 12px 0; color:var(--text);
+    font-size:16px; font-weight:500; font-family:inherit;
+    outline:none; box-shadow:none; transition:border-color .2s;
   }
+  input::placeholder { color:var(--text-faint); }
+  input:focus { border-bottom-color:var(--neon-green); }
 
-  .slug-container {
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
-  }
-
-  .slug-container input {
-    flex: 1;
-  }
-
-  .slug-suffix {
-    font-size: 13px;
-    color: var(--text-dim);
-    padding: 12px 14px;
-    white-space: nowrap;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-  }
-
-  .help-text {
-    font-size: 12px;
-    color: var(--text-dim);
-    margin-top: 6px;
-  }
-
-  .password-container {
-    position: relative;
-  }
-
-  .password-container input {
-    padding-right: 44px;
-  }
-
+  .password-container { position:relative; }
+  .password-container input { padding-right:44px; }
   .password-toggle {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    cursor: pointer;
-    padding: 4px 8px;
-    transition: color 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position:absolute; right:0; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:var(--text-faint); cursor:pointer;
+    padding:6px; display:flex; align-items:center; justify-content:center; transition:color .2s;
   }
+  .password-toggle svg { width:20px; height:20px; stroke:currentColor; }
+  .password-toggle:hover, .password-toggle:active { color:var(--neon-green); }
 
-  .password-toggle svg {
-    width: 20px;
-    height: 20px;
-    stroke: currentColor;
-  }
+  .help-text { font-size:12px; color:var(--text-dim); margin-top:8px; line-height:1.4; }
 
-  .password-toggle:hover {
-    color: var(--text);
-  }
+  .error-text { font-size:12px; color:var(--red); margin-top:6px; display:none; }
+  .error-text.show { display:block; }
 
-  .error-text {
-    font-size: 12px;
-    color: var(--red);
-    margin-top: 6px;
-    display: none;
-  }
-
-  .error-text.show {
-    display: block;
-  }
-
-  .strength-indicator {
-    height: 4px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 2px;
-    margin-top: 8px;
-    overflow: hidden;
-  }
-
-  .strength-bar {
-    height: 100%;
-    width: 0%;
-    transition: width 0.3s ease;
-  }
-
-  .strength-bar.weak {
-    width: 33%;
-    background: var(--red);
-  }
-
-  .strength-bar.fair {
-    width: 66%;
-    background: var(--amber);
-  }
-
-  .strength-bar.strong {
-    width: 100%;
-    background: var(--green);
-  }
+  .strength-indicator { height:3px; background:rgba(128,128,128,0.2); border-radius:2px; margin-top:10px; overflow:hidden; }
+  .strength-bar { height:100%; width:0%; transition:width .3s ease; }
+  .strength-bar.weak { width:33%; background:var(--red); }
+  .strength-bar.fair { width:66%; background:var(--amber); }
+  .strength-bar.strong { width:100%; background:var(--green); }
 
   .btn {
-    width: 100%;
-    padding: 12px 16px;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    width:100%; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:17px 20px; border-radius:999px;
+    font-family:'Anton', sans-serif; font-weight:400; font-size:16px;
+    letter-spacing:.12em; text-transform:uppercase; transition:all .25s ease;
   }
-
   .btn-primary {
-    background: var(--neon-green);
-    color: #0A0A0A;
-    margin-top: 24px;
+    background:linear-gradient(135deg,#35FFC0 0%,#2BD9FF 100%); color:var(--btn-text);
+    box-shadow:0 10px 28px rgba(53,255,192,0.28); margin-top:6px;
   }
-
   .btn-primary:hover:not(:disabled) {
-    background: #22D3A8;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(53, 255, 192, 0.4);
+    background:linear-gradient(135deg,#5dffd0 0%,#52e2ff 100%);
+    box-shadow:0 14px 34px rgba(53,255,192,0.4); transform:translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled) { transform:translateY(1px); }
+  .btn-primary:disabled { opacity:.55; cursor:not-allowed; }
+
+  .login-link { text-align:center; margin-top:22px; font-size:13px; color:var(--text-dim); }
+  .login-link a { color:var(--neon-green); text-decoration:none; font-weight:700; }
+  .login-link a:hover { text-decoration:underline; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-tema="escuro"]) .login-link a { color:#0F7A5A; }
   }
 
-  .btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .alert { padding:12px 14px; border-radius:12px; font-size:13px; margin-bottom:20px; display:none; }
+  .alert.show { display:block; }
+  .alert-error { background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#FCA5A5; }
+  .alert-success { background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3); color:#86EFAC; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-tema="escuro"]) .alert-error { color:#B91C1C; }
+    :root:not([data-tema="escuro"]) .alert-success { color:#15803D; }
   }
 
-  .login-link {
-    text-align: center;
-    margin-top: 24px;
-    font-size: 13px;
-    color: var(--text-dim);
+  .loading, .loading::before, .loading::after {
+    display:inline-block; width:5px; height:5px; background:currentColor;
+    border-radius:50%; animation:pulse 1.5s ease-in-out infinite;
   }
+  .loading { position:relative; }
+  .loading::before, .loading::after { content:''; margin:0 4px; }
+  .loading::before { animation-delay:-0.3s; }
+  .loading::after { animation-delay:0.3s; }
+  @keyframes pulse { 0%,100% { opacity:.3; } 50% { opacity:1; } }
 
-  .login-link a {
-    color: var(--neon-green);
-    text-decoration: none;
-    font-weight: 600;
-    transition: color 0.2s ease;
-  }
-
-  .login-link a:hover {
-    color: #22D3A8;
-  }
-
-  .alert {
-    padding: 12px 14px;
-    border-radius: 8px;
-    font-size: 13px;
-    margin-bottom: 20px;
-    display: none;
-  }
-
-  .alert.show {
-    display: block;
-  }
-
-  .alert-error {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #FCA5A5;
-  }
-
-  .alert-success {
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    color: #86EFAC;
-  }
-
-  .loading {
-    display: inline-block;
-    width: 4px;
-    height: 4px;
-    background: currentColor;
-    border-radius: 50%;
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-
-  .loading::before,
-  .loading::after {
-    content: '';
-    display: inline-block;
-    width: 4px;
-    height: 4px;
-    background: currentColor;
-    border-radius: 50%;
-    animation: pulse 1.5s ease-in-out infinite;
-    margin: 0 4px;
-  }
-
-  .loading::before {
-    animation-delay: -0.3s;
-  }
-
-  .loading::after {
-    animation-delay: 0.3s;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 1; }
-  }
-
-  @media (max-width: 480px) {
-    .card {
-      padding: 32px 20px;
-    }
-
-    .header h1 {
-      font-size: 20px;
-    }
-
-    .slug-container {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .slug-suffix {
-      display: none;
-    }
+  @media (max-width:480px) {
+    body { padding:16px; }
+    .card { padding:32px 22px 28px; }
+    .header h1 { font-size:30px; }
   }
 </style>
 </head>
@@ -352,8 +202,9 @@
   <div class="card">
     <div class="header">
       <img src="logo.svg" alt="Katalogo Hub" class="logo-img">
+      <span class="badge">Teste grátis · 3 dias</span>
       <h1>Sua Loja Digital</h1>
-      <p>Teste grátis por 3 dias</p>
+      <p>Crie seu catálogo em minutos.</p>
     </div>
 
     <div id="alertBox" class="alert"></div>
@@ -361,13 +212,17 @@
     <form id="registerForm">
       <div class="form-group">
         <label for="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          placeholder="seu@email.com"
-          required
-        >
+        <div class="in-wrap">
+          <input
+            type="email"
+            id="email"
+            name="email"
+            autocomplete="email"
+            placeholder="seu@email.com"
+            required
+          >
+          <svg class="in-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        </div>
         <div class="error-text" id="emailError"></div>
       </div>
 
@@ -401,36 +256,42 @@
 
       <div class="form-group">
         <label for="storeName">Nome da Loja</label>
-        <input
-          type="text"
-          id="storeName"
-          name="storeName"
-          placeholder="Sua Loja"
-          required
-        >
+        <div class="in-wrap">
+          <input
+            type="text"
+            id="storeName"
+            name="storeName"
+            autocomplete="off"
+            autocapitalize="none"
+            placeholder="sua-loja"
+            required
+          >
+          <svg class="in-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg>
+        </div>
         <div class="help-text">Apenas letras, números e hífen</div>
         <div class="error-text" id="storeNameError"></div>
       </div>
 
       <div class="form-group">
         <label for="cpf">CPF</label>
-        <input
-          type="text"
-          id="cpf"
-          name="cpf"
-          inputmode="numeric"
-          autocomplete="off"
-          placeholder="000.000.000-00"
-          maxlength="14"
-          required
-        >
+        <div class="in-wrap">
+          <input
+            type="text"
+            id="cpf"
+            name="cpf"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="000.000.000-00"
+            maxlength="14"
+            required
+          >
+          <svg class="in-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.5-1.5 1.7-2 3-2s2.5.5 3 2M15 10h3M15 14h3"/></svg>
+        </div>
         <div class="help-text">Usado só para limitar 1 teste grátis por pessoa. Não aparece para ninguém.</div>
         <div class="error-text" id="cpfError"></div>
       </div>
 
-      <button type="submit" class="btn btn-primary" id="submitBtn">
-        Criar Conta Grátis
-      </button>
+      <button type="submit" class="btn btn-primary" id="submitBtn">Criar Conta Grátis</button>
     </form>
 
     <div class="login-link">
