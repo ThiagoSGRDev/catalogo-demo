@@ -949,6 +949,38 @@
     color:var(--text); font-size:11px; padding:4px 2px; cursor:pointer;
   }
 
+  /* FILTROS DA LISTA DE TIMES */
+  .teams-filtros{ margin-bottom:6px; }
+  .teams-busca{ position:relative; margin-bottom:10px; }
+  .teams-busca input{
+    width:100%; background:var(--input-bg); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; color:var(--text); outline:none; font-size:15px; font-weight:500;
+  }
+  .teams-busca input:focus{ border-color:var(--neon-green); }
+  .teams-sugestoes{
+    position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:30;
+    background:var(--panel-solid); border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 14px 34px var(--sombra); max-height:300px; overflow-y:auto;
+  }
+  .teams-sug{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer;
+    border-bottom:1px solid var(--line);
+  }
+  .teams-sug:last-child{ border-bottom:none; }
+  .teams-sug:active{ background:var(--panel-2); }
+  .teams-sug img, .teams-sug .sig{
+    width:30px; height:30px; border-radius:50%; object-fit:cover; flex:none;
+    background:var(--panel-2); display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:800; color:var(--text-dim);
+  }
+  .teams-sug b{ display:block; font-size:14px; }
+  .teams-sug small{ color:var(--text-faint); font-size:12px; }
+  #teamsFiltroSub{
+    width:100%; margin-top:10px; background:var(--input-bg); border:1px solid var(--line);
+    border-radius:12px; padding:11px 12px; color:var(--text); font-size:15px;
+  }
+  .chip.active{ background:var(--neon-green); color:#04120d; border-color:var(--neon-green); }
+
   /* LISTA DE TIMES */
   .team-row{
     display:flex; align-items:center; gap:12px; padding:10px 4px;
@@ -2011,6 +2043,19 @@
     <div id="teamsListView">
       <button class="btn btn-primary" style="width:100%;margin-bottom:14px;" onclick="openTeamForm(null)">+ Novo time</button>
       <div class="field-hint" style="margin-bottom:12px;">Times cadastrados aqui aparecem automaticamente na navegação por escudos do catálogo e na lista de times ao cadastrar um produto — sem precisar mexer em código.</div>
+      <div class="teams-filtros">
+        <div class="teams-busca">
+          <input type="search" id="teamsBusca" placeholder="Buscar time ou seleção (digite 3 letras)…" autocomplete="off" oninput="teamsFiltroBusca(this.value)" onfocus="teamsMostrarSugestoes()">
+          <div id="teamsSugestoes" class="teams-sugestoes hidden"></div>
+        </div>
+        <div class="filter-chips" id="teamsChips">
+          <button type="button" class="chip active" data-tipo="todos" onclick="teamsFiltroTipo('todos')">Todos</button>
+          <button type="button" class="chip" data-tipo="selecoes" onclick="teamsFiltroTipo('selecoes')">Seleções</button>
+          <button type="button" class="chip" data-tipo="ligas" onclick="teamsFiltroTipo('ligas')">Ligas</button>
+        </div>
+        <select id="teamsFiltroSub" class="hidden" onchange="teamsFiltroSub(this.value)"></select>
+        <div class="field-hint" id="teamsContagem" style="margin:8px 0 4px;"></div>
+      </div>
       <div id="teamsList"></div>
     </div>
 
@@ -2048,6 +2093,7 @@
             <option value="América do Norte">América do Norte</option>
             <option value="África">África</option>
             <option value="Ásia">Ásia</option>
+            <option value="Oceania">Oceania</option>
           </select>
         </div>
         <div class="field">
@@ -4706,13 +4752,102 @@
     }
   }
 
+  // ---- Filtros da lista de times: tipo (Seleções / Ligas), liga ou continente e busca por nome ----
+  const TEAMS_FILTRO = { tipo:'todos', sub:'', q:'' };
+  const semAcento = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const ehSelecao = (t) => semAcento(t.liga) === 'selecoes';
+
+  function teamsPassaFiltro(t, ignorarBusca){
+    if(TEAMS_FILTRO.tipo === 'selecoes'){
+      if(!ehSelecao(t)) return false;
+      if(TEAMS_FILTRO.sub && (t.continente || '') !== TEAMS_FILTRO.sub) return false;
+    } else if(TEAMS_FILTRO.tipo === 'ligas'){
+      if(ehSelecao(t)) return false;
+      if(TEAMS_FILTRO.sub && (t.liga || '') !== TEAMS_FILTRO.sub) return false;
+    }
+    if(!ignorarBusca && TEAMS_FILTRO.q){
+      const alvo = semAcento([t.nome, t.sigla, t.liga, t.subliga, t.continente].join(' '));
+      if(!alvo.includes(semAcento(TEAMS_FILTRO.q))) return false;
+    }
+    return true;
+  }
+
+  function teamsFiltroTipo(tipo){
+    TEAMS_FILTRO.tipo = tipo; TEAMS_FILTRO.sub = '';
+    document.querySelectorAll('#teamsChips .chip').forEach(c => c.classList.toggle('active', c.dataset.tipo === tipo));
+    const sel = document.getElementById('teamsFiltroSub');
+    if(tipo === 'todos'){ sel.classList.add('hidden'); sel.innerHTML = ''; }
+    else {
+      const base = TEAMS_LIST_CACHE.filter(t => tipo === 'selecoes' ? ehSelecao(t) : !ehSelecao(t));
+      const campo = tipo === 'selecoes' ? 'continente' : 'liga';
+      const valores = [...new Set(base.map(t => t[campo]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      sel.innerHTML = `<option value="">${tipo === 'selecoes' ? 'Todos os continentes' : 'Todas as ligas'}</option>` +
+        valores.map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
+      sel.classList.remove('hidden');
+    }
+    renderTeamsList();
+    teamsMostrarSugestoes();
+  }
+
+  function teamsFiltroSub(valor){ TEAMS_FILTRO.sub = valor; renderTeamsList(); teamsMostrarSugestoes(); }
+
+  function teamsFiltroBusca(valor){
+    TEAMS_FILTRO.q = valor || '';
+    renderTeamsList();
+    teamsMostrarSugestoes();
+  }
+
+  // Sugestões aparecem a partir de 3 letras; tocar abre o time para editar.
+  function teamsMostrarSugestoes(){
+    const box = document.getElementById('teamsSugestoes');
+    const q = semAcento(TEAMS_FILTRO.q);
+    if(q.length < 3){ box.classList.add('hidden'); box.innerHTML = ''; return; }
+    const achados = TEAMS_LIST_CACHE
+      .filter(t => teamsPassaFiltro(t, true) && semAcento(t.nome).includes(q))
+      .sort((a, b) => {
+        const ai = semAcento(a.nome).startsWith(q) ? 0 : 1, bi = semAcento(b.nome).startsWith(q) ? 0 : 1;
+        return ai - bi || a.nome.localeCompare(b.nome, 'pt-BR');
+      })
+      .slice(0, 8);
+    if(!achados.length){
+      box.innerHTML = '<div class="teams-sug"><small>Nenhum time encontrado.</small></div>';
+    } else {
+      box.innerHTML = achados.map(t => {
+        const tag = [t.liga, t.continente].filter(Boolean).join(' · ');
+        const ico = t.escudo_url ? `<img src="${escHtml(t.escudo_url)}" alt="">` : `<span class="sig">${escHtml(t.sigla || (t.nome || '?').slice(0,3).toUpperCase())}</span>`;
+        return `<div class="teams-sug" onmousedown="event.preventDefault()" onclick="teamsEscolherSugestao('${escHtml(t.id)}')">${ico}<div><b>${escHtml(t.nome)}</b><small>${escHtml(tag)}</small></div></div>`;
+      }).join('');
+    }
+    box.classList.remove('hidden');
+  }
+
+  function teamsEscolherSugestao(id){
+    document.getElementById('teamsSugestoes').classList.add('hidden');
+    openTeamForm(id);
+  }
+
+  document.addEventListener('click', (e) => {
+    const box = document.getElementById('teamsSugestoes');
+    if(box && !e.target.closest('.teams-busca')) box.classList.add('hidden');
+  });
+
   function renderTeamsList(){
     const el = document.getElementById('teamsList');
+    const cont = document.getElementById('teamsContagem');
     if(TEAMS_LIST_CACHE.length === 0){
       el.innerHTML = '<div class="field-hint">Nenhum time cadastrado ainda.</div>';
+      if(cont) cont.textContent = '';
       return;
     }
-    el.innerHTML = TEAMS_LIST_CACHE.map(t => {
+    const lista = TEAMS_LIST_CACHE.filter(t => teamsPassaFiltro(t, false));
+    if(cont) cont.textContent = lista.length === TEAMS_LIST_CACHE.length
+      ? `${lista.length} times`
+      : `${lista.length} de ${TEAMS_LIST_CACHE.length} times`;
+    if(lista.length === 0){
+      el.innerHTML = '<div class="field-hint">Nenhum time com esse filtro.</div>';
+      return;
+    }
+    el.innerHTML = lista.map(t => {
       const tags = [t.liga || 'Sem categoria', t.subliga, t.continente].filter(Boolean).join(' · ');
       const badge = t.escudo_url
         ? `<img src="${t.escudo_url}" alt="">`
