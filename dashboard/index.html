@@ -840,13 +840,33 @@
   .empty-state{ text-align: center; padding: 70px 20px; color: var(--text-faint); font-weight: 600; font-size: 15px; line-height: 1.6; }
 
   /* ---- FORM OVERLAYS & MODAIS ---- */
-  #formOverlay, #heroOverlay, #teamsOverlay, #ligasOverlay, #importOverlay, #apparenceOverlay, #precosOverlay, #lojaOverlay, #fotoStudioOverlay, #catalogoMestreOverlay, #assinaturaOverlay, #teamPickerOverlay, #otimizarOverlay, #atividadeOverlay, #personalizarOverlay{
+  #formOverlay, #heroOverlay, #teamsOverlay, #ligasOverlay, #importOverlay, #apparenceOverlay, #precosOverlay, #lojaOverlay, #fotoStudioOverlay, #catalogoMestreOverlay, #assinaturaOverlay, #teamPickerOverlay, #loteOverlay, #otimizarOverlay, #atividadeOverlay, #personalizarOverlay{
     position: fixed; inset: 0; background: var(--bg); z-index: 150; overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     animation: fadeInModal .3s ease;
   }
   /* O estúdio de foto abre POR CIMA dos cadastros de time e de liga. */
   #fotoStudioOverlay{ z-index: 160; }
+
+  /* ---- Envio em lote (fotos/escudos) ---- */
+  .lote-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0 90px; }
+  .lote-card{ background:var(--surface,rgba(255,255,255,.04)); border:1px solid var(--border,rgba(255,255,255,.1)); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+  .lote-card.salvo{ opacity:.55; }
+  .lote-thumb{ width:100%; background:repeating-conic-gradient(#2a2f36 0% 25%, #1c2026 0% 50%) 0 0/16px 16px; display:flex; align-items:center; justify-content:center; }
+  .lote-thumb img{ width:100%; height:100%; object-fit:contain; display:block; }
+  .lote-thumb-ph{ display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
+  .lote-info{ padding:8px; display:flex; flex-direction:column; gap:6px; }
+  .lote-info input[type=text], .lote-info select{ width:100%; font-size:13px; padding:8px; }
+  .lote-arq{ font-size:11px; color:var(--text-faint); word-break:break-all; }
+  .lote-tag{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:8px; align-self:flex-start; }
+  .lote-tag.ok{ background:rgba(34,197,94,.15); color:#4ADE80; }
+  .lote-tag.warn{ background:rgba(245,158,11,.14); color:#FBBF24; }
+  .lote-aviso{ font-size:11px; color:#FBBF24; }
+  .lote-chk{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; }
+  .lote-chk input{ width:18px; height:18px; }
+  .lote-btns{ display:flex; gap:6px; } .lote-btns .btn{ flex:1; padding:8px 4px; font-size:12px; }
+  .lote-barra{ position:fixed; left:0; right:0; bottom:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:var(--bg); border-top:1px solid var(--border,rgba(255,255,255,.1)); z-index:2; }
+  @media (min-width:700px){ .lote-grid{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
   @keyframes fadeInModal {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -2049,7 +2069,8 @@
 
     <!-- LISTA DE TIMES -->
     <div id="teamsListView">
-      <button class="btn btn-primary" style="width:100%;margin-bottom:14px;" onclick="openTeamForm(null)">+ Novo time</button>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:10px;" onclick="openTeamForm(null)">+ Novo time</button>
+      <button class="btn btn-ghost" style="width:100%;margin-bottom:14px;" onclick="openLote()">Envio em lote (fotos e escudos)</button>
       <div class="field-hint" style="margin-bottom:12px;">Times cadastrados aqui aparecem automaticamente na navegação por escudos do catálogo e na lista de times ao cadastrar um produto — sem precisar mexer em código.</div>
       <div class="teams-filtros">
         <div class="teams-busca">
@@ -2131,6 +2152,35 @@
      abdômen) + nitidez por IA (UpscalerJS/TensorFlow.js), tudo no
      navegador. Aberto ao escolher um arquivo em "Foto do jogador".  -->
 <!-- ============================================================ -->
+<!-- ENVIO EM LOTE -->
+<div id="loteOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="closeLote()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Envio em lote</h2>
+  </div>
+  <div class="form-body">
+    <div class="field-hint" style="margin-bottom:10px;">
+      Nomeie os arquivos pelo time: <b>Brasil.png</b> = foto do jogador, <b>Brasil-escudo.png</b> = escudo.
+      Se o nome não bater, escolha o time no cartão. Máximo de 15 por rodada. Nada é salvo sem você marcar.
+    </div>
+    <div style="display:flex; gap:16px; margin-bottom:10px; font-size:13px; font-weight:600;">
+      <span>Arquivo sem "-escudo" é:</span>
+      <label><input type="radio" name="loteTipoPadrao" value="foto" checked> Foto</label>
+      <label><input type="radio" name="loteTipoPadrao" value="escudo"> Escudo</label>
+    </div>
+    <input type="file" id="loteInput" accept="image/*" multiple style="display:none;" onchange="loteEscolheu(event)">
+    <button class="btn btn-primary" style="width:100%;" onclick="document.getElementById('loteInput').click()">Escolher arquivos</button>
+    <div class="foto-studio-status" id="loteStatus" style="margin-top:8px;"></div>
+    <div id="loteGrid" class="lote-grid"></div>
+    <datalist id="loteTimes"></datalist>
+  </div>
+  <div class="lote-barra">
+    <button class="btn btn-primary" style="width:100%;" id="loteSalvarBtn" onclick="loteSalvar()" disabled>Salvar aprovados (0)</button>
+  </div>
+</div>
+
 <div id="fotoStudioOverlay" class="hidden">
   <div class="form-header">
     <button class="icon-btn" onclick="fotoStudioCancelar()" aria-label="Cancelar">
@@ -5311,7 +5361,7 @@
   let fotoStudioDestino = 'time';
 
   async function fotoStudioAbrir(file, destino){
-    fotoStudioDestino = destino === 'liga' ? 'liga' : 'time';
+    fotoStudioDestino = destino === 'liga' ? 'liga' : (destino === 'lote' ? 'lote' : 'time');
     const url = URL.createObjectURL(file);
     fotoStudioBlobUrlOriginal = url;
     const imgOriginal = new Image();
@@ -5998,6 +6048,7 @@
   }
 
   async function fotoStudioEnviar(blob){
+    if(fotoStudioDestino === 'lote'){ await loteAjusteConcluido(blob); return; }
     const ehLiga = fotoStudioDestino === 'liga';
     const prefixo = ehLiga ? 'liga-atleta' : 'busto';
     const path = `${ADMIN_LOJA_ID}/${prefixo}-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
@@ -6015,6 +6066,414 @@
     if(ehLiga) ligaFormFotoUrl = publicUrlData.publicUrl;
     else teamFotoBustUrl = publicUrlData.publicUrl;
     reRender();
+  }
+
+  // ============================================================
+  // ENVIO EM LOTE — fotos de jogador e escudos
+  // Escolhe vários arquivos de uma vez; o nome do arquivo diz o time
+  // ("Brasil.png" = foto, "Brasil-escudo.png" = escudo). Fotos: tira o fundo
+  // e enquadra em 1500x2500. Escudos: tira fundo branco liso (se não for
+  // transparente), centraliza em 500x500. Nada é gravado sem você aprovar.
+  // ============================================================
+  const LOTE_MAX = 15;               // por rodada, pra não travar o celular
+  const LOTE_FOTO_W = 1500, LOTE_FOTO_H = 2500;
+  const LOTE_FOTO_TOPO = 0.035;      // topo da cabeça a 3,5% da altura
+  const LOTE_FOTO_LARG = 0.89;       // largura dos ombros / largura do quadro
+  const LOTE_ESCUDO_LADO = 500;
+  let LOTE = [];
+  let loteSeq = 0;
+  let loteAjustandoId = null;
+  let loteRodando = false;
+
+  function openLote(){
+    document.getElementById('loteOverlay').classList.remove('hidden');
+    const dl = document.getElementById('loteTimes');
+    dl.innerHTML = TEAMS_LIST_CACHE.map(t => `<option value="${escHtml(t.nome)}"></option>`).join('');
+    loteRender();
+  }
+  function closeLote(){
+    if(loteRodando && !confirm('Ainda está processando. Fechar mesmo assim?')) return;
+    document.getElementById('loteOverlay').classList.add('hidden');
+  }
+
+  // ---- Nome do arquivo -> time + tipo ----
+  function loteNormal(s){ return semAcento(s).replace(/[_\-.]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+
+  function loteAnalisarNome(nomeArquivo, tipoPadrao){
+    let base = nomeArquivo.replace(/\.[a-z0-9]+$/i, '');
+    base = base.replace(/\(\d+\)\s*$/, '');            // "Brasil (1)" de downloads repetidos
+    let n = loteNormal(base);
+    let tipo = tipoPadrao;
+    const m = n.match(/\s*\b(escudo|logo|crest|badge)$/);
+    if(m){ tipo = 'escudo'; n = n.slice(0, m.index).trim(); }
+    return { nome: n, tipo };
+  }
+
+  function loteAcharTime(nomeNormal){
+    if(!nomeNormal) return null;
+    const lista = TEAMS_LIST_CACHE.map(t => ({ t, n: loteNormal(t.nome) }));
+    let r = lista.filter(x => x.n === nomeNormal);
+    if(r.length === 1) return r[0].t;
+    if(r.length > 1) return null;
+    r = lista.filter(x => x.n.startsWith(nomeNormal));
+    if(r.length === 1) return r[0].t;
+    r = lista.filter(x => x.n.includes(nomeNormal));
+    if(r.length === 1) return r[0].t;
+    return null;
+  }
+
+  // ---- Imagem: carregar, reduzir ----
+  function loteBlobParaImg(blob){
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => { img._url = url; resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Não consegui abrir essa imagem')); };
+      img.src = url;
+    });
+  }
+  function loteCanvasParaBlob(canvas, tipo, q){
+    return new Promise(res => canvas.toBlob(res, tipo, q));
+  }
+  // Reduz fotos enormes do celular (12 MP) pra no máximo 3000 px de altura.
+  async function loteCarregarReduzido(file, maxLado, forcarPng){
+    const img = await loteBlobParaImg(file);
+    const maior = Math.max(img.naturalWidth, img.naturalHeight);
+    if(maior <= maxLado && !forcarPng) return img;
+    const esc = Math.min(1, maxLado / maior);
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * esc); c.height = Math.round(img.naturalHeight * esc);
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(img._url);
+    const blob = await loteCanvasParaBlob(c, forcarPng ? 'image/png' : 'image/jpeg', 0.95);
+    return await loteBlobParaImg(blob);
+  }
+
+  // ---- Foto de jogador: enquadramento automático ----
+  // Mede a largura da silhueta linha a linha, acha a linha dos ombros (1ª linha
+  // abaixo da cabeça com mais de 1,8x a largura da cabeça) e escala pra que os
+  // ombros ocupem LOTE_FOTO_LARG do quadro, com o topo da cabeça a 3,5%.
+  function loteEnquadrarFoto(img){
+    const W = LOTE_FOTO_W, H = LOTE_FOTO_H;
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const src = document.createElement('canvas');
+    src.width = iw; src.height = ih;
+    const sctx = src.getContext('2d', { willReadFrequently: true });
+    sctx.drawImage(img, 0, 0);
+    const d = sctx.getImageData(0, 0, iw, ih).data;
+
+    const larg = new Float32Array(ih);
+    let y0 = -1, y1 = -1;
+    for(let y = 0; y < ih; y++){
+      let n = 0;
+      const o = y * iw * 4;
+      for(let x = 0; x < iw; x++) if(d[o + x*4 + 3] > 40) n++;
+      larg[y] = n;
+      if(n > 0){ if(y0 < 0) y0 = y; y1 = y; }
+    }
+    if(y0 < 0) throw new Error('Não achei o jogador na foto (ficou tudo transparente)');
+    const h = y1 - y0 + 1;
+    const k = Math.max(3, Math.floor(h * 0.01));
+    const ws = new Float32Array(ih);
+    const meia = Math.floor(k / 2);
+    for(let y = 0; y < ih; y++){
+      let s = 0, c = 0;
+      for(let j = y - meia; j < y - meia + k; j++){ if(j >= 0 && j < ih){ s += larg[j]; c++; } }
+      ws[y] = s / k;
+    }
+    let hw = 0;
+    for(let y = y0; y < Math.min(ih, y0 + Math.floor(h * 0.14)); y++) if(ws[y] > hw) hw = ws[y];
+    let linhaOmbro = -1;
+    for(let y = y0 + Math.floor(h * 0.10); y < ih; y++){ if(ws[y] > 1.8 * hw){ linhaOmbro = y; break; } }
+    if(linhaOmbro < 0) linhaOmbro = y0 + Math.floor(h * 0.3);
+    const fim = Math.min(ih - 1, linhaOmbro + Math.floor(h * 0.08));
+    let sw = 0;
+    for(let y = linhaOmbro; y <= fim; y++) if(ws[y] > sw) sw = ws[y];
+    let minX = iw, maxX = 0;
+    for(let y = linhaOmbro; y <= fim; y++){
+      const o = y * iw * 4;
+      for(let x = 0; x < iw; x++) if(d[o + x*4 + 3] > 40){ if(x < minX) minX = x; if(x > maxX) maxX = x; }
+    }
+    const cx = (minX + maxX) / 2;
+
+    let esc = (W * LOTE_FOTO_LARG) / Math.max(1, sw);
+    esc = Math.min(Math.max(esc, (W / iw) * 0.9), 6);
+    const out = document.createElement('canvas');
+    out.width = W; out.height = H;
+    const octx = out.getContext('2d', { willReadFrequently: true });
+    octx.imageSmoothingQuality = 'high';
+    octx.drawImage(src, 0, 0, iw, ih, W / 2 - cx * esc, H * LOTE_FOTO_TOPO - y0 * esc, iw * esc, ih * esc);
+    aplicarNitidez(octx, W, H, 0.6);
+    return { canvas: out, aviso: esc > 2.6 ? 'Foto de baixa resolução: pode ficar borrada' : '' };
+  }
+
+  // ---- Escudo: fundo liso -> transparente, aparar, centralizar ----
+  function loteLimparFundoEscudo(canvas){
+    const w = canvas.width, h = canvas.height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const im = ctx.getImageData(0, 0, w, h);
+    const d = im.data;
+    let transp = 0;
+    for(let i = 3; i < d.length; i += 4) if(d[i] < 250) transp++;
+    if(transp / (w * h) > 0.02) return false;           // já é transparente
+    const cantos = [[0,0],[w-1,0],[0,h-1],[w-1,h-1]].map(([x,y]) => { const k = (y*w+x)*4; return [d[k], d[k+1], d[k+2]]; });
+    const fundo = [0,1,2].map(c => Math.round(cantos.reduce((s,p) => s + p[c], 0) / 4));
+    if(!cantos.every(p => Math.abs(p[0]-fundo[0]) + Math.abs(p[1]-fundo[1]) + Math.abs(p[2]-fundo[2]) < 60)) return false;
+    const TOL = 48;
+    const visto = new Uint8Array(w * h);
+    const pilha = [];
+    const entra = (x, y) => {
+      const p = y * w + x;
+      if(visto[p]) return;
+      const k = p * 4;
+      if(Math.abs(d[k]-fundo[0]) + Math.abs(d[k+1]-fundo[1]) + Math.abs(d[k+2]-fundo[2]) > TOL) return;
+      visto[p] = 1; pilha.push(p);
+    };
+    for(let x = 0; x < w; x++){ entra(x, 0); entra(x, h-1); }
+    for(let y = 0; y < h; y++){ entra(0, y); entra(w-1, y); }
+    while(pilha.length){
+      const p = pilha.pop(); const x = p % w, y = (p - x) / w;
+      d[p*4+3] = 0;
+      if(x > 0) entra(x-1, y); if(x < w-1) entra(x+1, y);
+      if(y > 0) entra(x, y-1); if(y < h-1) entra(x, y+1);
+    }
+    ctx.putImageData(im, 0, 0);
+    return true;
+  }
+
+  function loteProcessarEscudo(img){
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const src = document.createElement('canvas');
+    src.width = iw; src.height = ih;
+    src.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0);
+    const limpou = loteLimparFundoEscudo(src);
+    const d = src.getContext('2d').getImageData(0, 0, iw, ih).data;
+    let minX = iw, maxX = -1, minY = ih, maxY = -1;
+    for(let y = 0; y < ih; y++){
+      const o = y * iw * 4;
+      for(let x = 0; x < iw; x++) if(d[o + x*4 + 3] > 20){
+        if(x < minX) minX = x; if(x > maxX) maxX = x; if(y < minY) minY = y; if(y > maxY) maxY = y;
+      }
+    }
+    if(maxX < 0) throw new Error('Escudo vazio (tudo transparente)');
+    const bw = maxX - minX + 1, bh = maxY - minY + 1;
+    const L = LOTE_ESCUDO_LADO, util = L * 0.88;
+    const esc = Math.min(util / bw, util / bh);
+    const out = document.createElement('canvas');
+    out.width = L; out.height = L;
+    const octx = out.getContext('2d');
+    octx.imageSmoothingQuality = 'high';
+    octx.drawImage(src, minX, minY, bw, bh, (L - bw*esc)/2, (L - bh*esc)/2, bw*esc, bh*esc);
+    return { canvas: out, aviso: limpou ? 'Fundo liso removido automaticamente' : '' };
+  }
+
+  // ---- Processar um item ----
+  async function loteThumb(canvas){
+    const t = document.createElement('canvas');
+    const esc = 320 / Math.max(canvas.width, canvas.height);
+    t.width = Math.round(canvas.width * esc); t.height = Math.round(canvas.height * esc);
+    t.getContext('2d').drawImage(canvas, 0, 0, t.width, t.height);
+    return URL.createObjectURL(await loteCanvasParaBlob(t, 'image/webp', 0.8));
+  }
+
+  async function loteProcessarItem(it){
+    it.status = 'proc'; it.erro = ''; it.aviso = '';
+    if(it.thumb){ URL.revokeObjectURL(it.thumb); it.thumb = null; }
+    loteRender();
+    try {
+      if(it.tipo === 'escudo'){
+        const img = await loteCarregarReduzido(it.file, 1600, false);
+        const r = loteProcessarEscudo(img);
+        URL.revokeObjectURL(img._url);
+        it.blob = await loteCanvasParaBlob(r.canvas, 'image/webp', 0.92);
+        it.thumb = await loteThumb(r.canvas);
+        it.aviso = r.aviso;
+        it.cutout = null;
+      } else {
+        let img = await loteCarregarReduzido(it.file, 3000, false);
+        if(!fotoStudioJaTemTransparencia(img)){
+          const sem = await fotoStudioRemoverFundo(img);
+          URL.revokeObjectURL(img._url);
+          if(!sem) throw new Error('Não consegui remover o fundo');
+          img = sem;
+        }
+        // guarda o recorte (PNG) pra "Ajustar" abrir no estúdio sem refazer o fundo
+        const cc = document.createElement('canvas');
+        cc.width = img.naturalWidth; cc.height = img.naturalHeight;
+        cc.getContext('2d').drawImage(img, 0, 0);
+        it.cutout = await loteCanvasParaBlob(cc, 'image/png');
+        const r = loteEnquadrarFoto(img);
+        it.blob = await loteCanvasParaBlob(r.canvas, 'image/webp', 0.92);
+        it.thumb = await loteThumb(r.canvas);
+        it.aviso = r.aviso;
+      }
+      it.status = 'ok';
+      loteAplicarPadraoSalvar(it);
+    } catch(e){
+      console.error('Lote: erro em', it.file.name, e);
+      it.status = 'erro'; it.erro = (e && e.message) ? e.message : 'erro desconhecido';
+      it.salvar = false;
+    }
+    loteRender();
+  }
+
+  // Só marca "salvar" sozinho se o time ainda NÃO tem essa imagem.
+  function loteAplicarPadraoSalvar(it){
+    if(!it.team){ it.salvar = false; return; }
+    const campo = it.tipo === 'escudo' ? 'escudo_url' : 'imagem_url';
+    it.jaTem = !!it.team[campo];
+    it.salvar = !it.jaTem;
+  }
+
+  async function loteEscolheu(ev){
+    let arquivos = Array.from(ev.target.files || []);
+    ev.target.value = '';
+    if(!arquivos.length) return;
+    if(arquivos.length > LOTE_MAX){
+      showToast(`Máximo de ${LOTE_MAX} por rodada. Peguei os ${LOTE_MAX} primeiros.`, 'error');
+      arquivos = arquivos.slice(0, LOTE_MAX);
+    }
+    const padrao = (document.querySelector('input[name="loteTipoPadrao"]:checked') || {}).value || 'foto';
+    const novos = arquivos.map(f => {
+      const a = loteAnalisarNome(f.name, padrao);
+      const team = loteAcharTime(a.nome);
+      return { id: ++loteSeq, file: f, tipo: a.tipo, nomeBuscado: a.nome, team, status: 'fila', salvar: false, salvo: false };
+    });
+    LOTE = LOTE.filter(i => !i.salvo).concat(novos);
+    loteRender();
+    loteRodando = true;
+    const st = document.getElementById('loteStatus');
+    try {
+      let n = 0;
+      for(const it of novos){
+        n++;
+        st.textContent = `Processando ${n}/${novos.length}… (na 1ª vez baixa o modelo de recorte)`;
+        await loteProcessarItem(it);
+      }
+      st.textContent = 'Pronto. Confira, ajuste o que precisar e toque em Salvar.';
+    } finally { loteRodando = false; }
+  }
+
+  // ---- Interação ----
+  function loteAchar(id){ return LOTE.find(i => i.id === id); }
+
+  function loteTrocarTime(id, valor){
+    const it = loteAchar(id); if(!it) return;
+    const alvo = loteNormal(valor);
+    const r = TEAMS_LIST_CACHE.filter(t => loteNormal(t.nome) === alvo);
+    it.team = r.length === 1 ? r[0] : null;
+    loteAplicarPadraoSalvar(it);
+    loteRender();
+  }
+  async function loteTrocarTipo(id, tipo){
+    const it = loteAchar(id); if(!it || it.tipo === tipo) return;
+    it.tipo = tipo;
+    await loteProcessarItem(it);
+  }
+  function loteMarcar(id, v){ const it = loteAchar(id); if(it){ it.salvar = !!v; loteRender(); } }
+  function loteRemover(id){
+    const it = loteAchar(id); if(!it) return;
+    if(it.thumb) URL.revokeObjectURL(it.thumb);
+    LOTE = LOTE.filter(i => i.id !== id);
+    loteRender();
+  }
+  function loteAjustar(id){
+    const it = loteAchar(id); if(!it || !it.cutout) return;
+    loteAjustandoId = id;
+    fotoStudioAbrir(new File([it.cutout], 'recorte.png', { type: 'image/png' }), 'lote');
+  }
+  // Chamado por fotoStudioEnviar quando o destino é o lote.
+  async function loteAjusteConcluido(blob){
+    const it = loteAchar(loteAjustandoId); loteAjustandoId = null;
+    if(!it) return;
+    it.blob = blob;
+    if(it.thumb) URL.revokeObjectURL(it.thumb);
+    const img = await loteBlobParaImg(blob);
+    it.thumb = await loteThumb(img);
+    URL.revokeObjectURL(img._url);
+    it.aviso = 'Ajustado à mão';
+    loteRender();
+  }
+
+  function loteRender(){
+    const grid = document.getElementById('loteGrid');
+    const pend = LOTE.filter(i => !i.salvo);
+    if(!pend.length && !LOTE.length){
+      grid.innerHTML = '<div class="empty-state" style="padding:30px 10px;">Nenhum arquivo ainda.<br>Toque em "Escolher arquivos".</div>';
+    } else {
+      grid.innerHTML = LOTE.map(it => {
+        const aspecto = it.tipo === 'escudo' ? '1/1' : '3/5';
+        let thumb;
+        if(it.status === 'proc' || it.status === 'fila') thumb = '<div class="lote-thumb-ph"><span class="spinner"></span></div>';
+        else if(it.status === 'erro') thumb = `<div class="lote-thumb-ph" style="color:#F87171;font-size:12px;padding:8px;text-align:center;">${escHtml(it.erro)}</div>`;
+        else thumb = `<img src="${it.thumb}" alt="">`;
+        const tag = it.salvo ? '<span class="lote-tag ok">✓ Salvo</span>'
+          : it.status === 'ok' && !it.team ? '<span class="lote-tag warn">Escolha o time</span>'
+          : it.status === 'ok' && it.jaTem ? '<span class="lote-tag warn">Já tem imagem — marque pra substituir</span>' : '';
+        const nomeTime = it.team ? it.team.nome : '';
+        return `
+        <div class="lote-card ${it.salvo ? 'salvo' : ''}">
+          <div class="lote-thumb" style="aspect-ratio:${aspecto};">${thumb}</div>
+          <div class="lote-info">
+            <div class="lote-arq">${escHtml(it.file.name)}</div>
+            <input type="text" list="loteTimes" value="${escHtml(nomeTime)}" placeholder="${escHtml(it.nomeBuscado || 'Digite o time')}"
+              onchange="loteTrocarTime(${it.id}, this.value)" ${it.salvo ? 'disabled' : ''}>
+            <select onchange="loteTrocarTipo(${it.id}, this.value)" ${it.salvo || it.status === 'proc' ? 'disabled' : ''}>
+              <option value="foto" ${it.tipo === 'foto' ? 'selected' : ''}>Foto do jogador</option>
+              <option value="escudo" ${it.tipo === 'escudo' ? 'selected' : ''}>Escudo</option>
+            </select>
+            ${tag}
+            ${it.aviso && !it.salvo ? `<div class="lote-aviso">${escHtml(it.aviso)}</div>` : ''}
+            ${it.salvo ? '' : `
+            <label class="lote-chk"><input type="checkbox" ${it.salvar ? 'checked' : ''} ${it.status !== 'ok' || !it.team ? 'disabled' : ''}
+              onchange="loteMarcar(${it.id}, this.checked)"> Salvar</label>
+            <div class="lote-btns">
+              ${it.tipo === 'foto' && it.cutout ? `<button class="btn btn-ghost" onclick="loteAjustar(${it.id})">Ajustar</button>` : ''}
+              <button class="btn btn-ghost" onclick="loteRemover(${it.id})">Remover</button>
+            </div>`}
+          </div>
+        </div>`;
+      }).join('');
+    }
+    const n = LOTE.filter(i => i.status === 'ok' && i.salvar && i.team && !i.salvo).length;
+    const btn = document.getElementById('loteSalvarBtn');
+    btn.textContent = `Salvar aprovados (${n})`;
+    btn.disabled = n === 0 || loteRodando;
+  }
+
+  async function loteSalvar(){
+    const lista = LOTE.filter(i => i.status === 'ok' && i.salvar && i.team && !i.salvo);
+    if(!lista.length) return;
+    const btn = document.getElementById('loteSalvarBtn');
+    const st = document.getElementById('loteStatus');
+    btn.disabled = true; loteRodando = true;
+    const vistos = new Set();
+    let ok = 0, falhas = 0, dup = 0, n = 0;
+    for(const it of lista){
+      n++;
+      st.textContent = `Salvando ${n}/${lista.length}…`;
+      const chave = it.team.id + '|' + it.tipo;
+      if(vistos.has(chave)){ it.aviso = 'Duplicado no lote: outro arquivo já vai pro mesmo time'; dup++; continue; }
+      vistos.add(chave);
+      const prefixo = it.tipo === 'escudo' ? 'escudo' : 'busto';
+      const campo = it.tipo === 'escudo' ? 'escudo_url' : 'imagem_url';
+      const path = `${ADMIN_LOJA_ID}/${prefixo}-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
+      const { error: upErr } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, it.blob, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+      if(upErr){ it.aviso = 'Erro ao enviar: ' + upErr.message; falhas++; continue; }
+      const url = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path).data.publicUrl;
+      const { error: dbErr } = await supabaseClient.from('teams').update({ [campo]: url }).eq('id', it.team.id);
+      if(dbErr){ it.aviso = 'Erro ao gravar no time: ' + dbErr.message; falhas++; continue; }
+      it.team[campo] = url;
+      it.salvo = true; ok++;
+      if(it.thumb){ /* mantém a miniatura no cartão salvo */ }
+    }
+    loteRodando = false;
+    st.textContent = `${ok} salvo(s)` + (falhas ? `, ${falhas} com erro` : '') + (dup ? `, ${dup} duplicado(s) ignorado(s)` : '') + '.';
+    showToast(`${ok} imagem(ns) salva(s).`, ok ? 'success' : 'error');
+    loteRender();
+    renderTeamsList();
   }
 
   async function saveTeam(){
