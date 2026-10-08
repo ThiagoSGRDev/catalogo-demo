@@ -4,6 +4,48 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Katalogo Hub — Catálogo</title>
+<meta name="theme-color" content="#0A0D10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<script>
+  // App instalável: o manifesto é montado na hora, com o nome e a cor da loja
+  // que está aberta (cada lojista instala o app da própria loja).
+  (function(){
+    function slugDaUrl(){
+      var m = location.pathname.match(/\/(?:catalogo\/)?loja\/([^\/]+)/);
+      if(m) return decodeURIComponent(m[1]);
+      return new URLSearchParams(location.search).get('loja') || '';
+    }
+    window.khSlugApp = slugDaUrl();
+    window.khMontarManifesto = function(nome, cor){
+      try {
+        var slug = window.khSlugApp;
+        var raiz = slug ? ('/catalogo/loja/' + encodeURIComponent(slug)) : '/';
+        var man = {
+          name: nome || 'Katalogo Hub', short_name: (nome || 'Katalogo Hub').slice(0, 12),
+          id: raiz, start_url: location.origin + raiz, scope: location.origin + '/',
+          display: 'standalone', orientation: 'portrait',
+          background_color: '#0A0D10', theme_color: cor || '#0A0D10', lang: 'pt-BR',
+          icons: [
+            { src: location.origin + '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: location.origin + '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: location.origin + '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          ]
+        };
+        var url = URL.createObjectURL(new Blob([JSON.stringify(man)], { type: 'application/manifest+json' }));
+        var l = document.getElementById('khManifest');
+        if(!l){ l = document.createElement('link'); l.rel = 'manifest'; l.id = 'khManifest'; document.head.appendChild(l); }
+        l.href = url;
+        var tc = document.querySelector('meta[name="theme-color"]'); if(tc && cor) tc.setAttribute('content', cor);
+        var t = document.createElement('meta'); t.name = 'apple-mobile-web-app-title'; t.content = (nome || 'Katalogo Hub').slice(0, 12); document.head.appendChild(t);
+      } catch(e){}
+    };
+    window.khMontarManifesto('', '');
+    if('serviceWorker' in navigator){ window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); }); }
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bungee&family=Outfit:wght@200;300;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -2778,6 +2820,10 @@
         .single();
       if(error || !data) return;
       await herdarMarqueeDoMestre(data);
+      try {
+        const { data: ljApp } = await supabaseClient.from('lojas').select('nome').eq('id', LOJA_ID).maybeSingle();
+        if(window.khMontarManifesto) window.khMontarManifesto((ljApp && ljApp.nome) || STORE_CONFIG.nome, data.cor_primaria);
+      } catch(e){}
       const root = document.documentElement;
       const modoClaro = data.modo === 'light';
       // Sem isso, todo o bloco CSS html[data-theme="clean-light"] nunca era
