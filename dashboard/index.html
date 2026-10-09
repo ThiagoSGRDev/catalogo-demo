@@ -1076,6 +1076,9 @@
     border:2px solid rgba(198,241,53,0.85);
     border-radius:14px;
   }
+  #fotoStudioBorrachaCanvas{ position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+  .foto-studio-borracha{ display:flex; gap:8px; margin-top:12px; }
+  .foto-studio-borracha .btn{ flex:1; font-size:12px; padding:9px 6px; }
   .foto-studio-hint{
     font-size:11.5px; color:var(--text-dim); text-align:center; margin-top:10px; line-height:1.5;
   }
@@ -2191,16 +2194,25 @@
   <div class="form-body">
     <div class="foto-studio-viewport" id="fotoStudioViewport">
       <img id="fotoStudioImg" src="" alt="">
+      <canvas id="fotoStudioBorrachaCanvas" style="display:none;"></canvas>
       <div class="foto-studio-guides"></div>
     </div>
     <div class="foto-studio-hint">
       Arraste a foto pra alinhar: deixe um respiro acima da cabeça e mostre
-      até a metade do abdômen dentro da moldura verde.
+      até a metade do abdômen dentro da moldura verde.<br>Sobrou fundo? Toque em "Modo" e passe o dedo sobre a sobra para apagar (use o zoom pra chegar perto).
     </div>
     <div class="foto-studio-zoom-row">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="6"/><path d="M21 21l-4.35-4.35"/><path d="M8 10h4"/></svg>
       <input type="range" id="fotoStudioZoom" min="20" max="400" value="100">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="6"/><path d="M21 21l-4.35-4.35"/><path d="M10 7v6M7 10h6"/></svg>
+    </div>
+    <div class="foto-studio-borracha">
+      <button type="button" class="btn btn-ghost" id="fsModoBtn" onclick="fotoStudioBorrachaToggle()">Modo: mover (toque p/ apagar)</button>
+      <button type="button" class="btn btn-ghost" id="fsDesfazerBtn" onclick="fotoStudioBorrachaDesfazer()" disabled>Desfazer</button>
+    </div>
+    <div class="foto-studio-zoom-row" id="fsTamanhoRow" style="display:none;">
+      <span style="font-size:12px;color:var(--text-dim);">Pincel</span>
+      <input type="range" id="fsBorrachaTam" min="6" max="90" value="26">
     </div>
     <div id="fotoStudioAvisoTamanho" style="display:none; margin-top:12px; padding:10px 12px; border-radius:12px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); color:#FBBF24; font-size:12px; font-weight:600;"></div>
     <label style="display:flex; align-items:center; gap:10px; margin-top:12px; font-size:13px; color:var(--text-dim); font-weight:600;">
@@ -5387,6 +5399,7 @@
 
       fotoStudioNatural = { w: imgParaUsar.naturalWidth, h: imgParaUsar.naturalHeight };
       fotoStudioImgEl = document.getElementById('fotoStudioImg');
+      fotoStudioBorrachaReset();
       fotoStudioImgEl.src = imgParaUsar.src;
       fotoStudioImgEl.style.width = imgParaUsar.naturalWidth + 'px';
       fotoStudioImgEl.style.height = imgParaUsar.naturalHeight + 'px';
@@ -5754,6 +5767,7 @@
     document.getElementById('fotoStudioOverlay').classList.add('hidden');
     if(fotoStudioBlobUrlOriginal) URL.revokeObjectURL(fotoStudioBlobUrlOriginal);
     fotoStudioBlobUrlOriginal = null;
+    fotoStudioBorrachaReset();
     fotoStudioImgEl = null;
   }
 
@@ -5832,8 +5846,133 @@
     fotoStudioPos.y = -cropTop * scale;
   }
 
+  // ---- Borracha: apaga sobras de fundo (ex.: parede vermelha igual à faixa da camisa) ----
+  // Guarda o recorte original (base) e a lista de traços; desfazer = refazer tudo sem o último traço.
+  let fsBorracha = { ativo:false, base:null, src:null, tracos:[], atual:null, sujo:false, url:null };
+
+  function fotoStudioBorrachaReset(){
+    fsBorracha = { ativo:false, base:null, src:null, tracos:[], atual:null, sujo:false, url:fsBorracha.url };
+    const cv = document.getElementById('fotoStudioBorrachaCanvas');
+    if(cv) cv.style.display = 'none';
+    if(fotoStudioImgEl) fotoStudioImgEl.style.visibility = 'visible';
+    const b = document.getElementById('fsModoBtn'); if(b) b.textContent = 'Modo: mover (toque p/ apagar)';
+    const d = document.getElementById('fsDesfazerBtn'); if(d) d.disabled = true;
+    const r = document.getElementById('fsTamanhoRow'); if(r) r.style.display = 'none';
+  }
+
+  function fotoStudioBorrachaPreparar(){
+    if(fsBorracha.base) return;
+    const base = document.createElement('canvas');
+    base.width = fotoStudioNatural.w; base.height = fotoStudioNatural.h;
+    base.getContext('2d').drawImage(fotoStudioImgEl, 0, 0);
+    const src = document.createElement('canvas');
+    src.width = base.width; src.height = base.height;
+    src.getContext('2d').drawImage(base, 0, 0);
+    fsBorracha.base = base; fsBorracha.src = src; fsBorracha.tracos = [];
+  }
+
+  function fotoStudioBorrachaRender(){
+    const cv = document.getElementById('fotoStudioBorrachaCanvas');
+    const vp = document.getElementById('fotoStudioViewport');
+    if(!cv || !fsBorracha.src) return;
+    const vw = vp.clientWidth, vh = vp.clientHeight, k = 2;
+    if(cv.width !== vw * k || cv.height !== vh * k){ cv.width = vw * k; cv.height = vh * k; }
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    ctx.translate(fotoStudioPos.x, fotoStudioPos.y);
+    ctx.scale(fotoStudioPos.scale, fotoStudioPos.scale);
+    ctx.drawImage(fsBorracha.src, 0, 0);
+  }
+
+  function fotoStudioBorrachaRisca(c, tr){
+    const ctx = fsBorracha.src.getContext('2d');
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = tr.r * 2; ctx.strokeStyle = '#000'; ctx.fillStyle = '#000';
+    const pts = tr.pts;
+    ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], tr.r, 0, Math.PI * 2); ctx.fill();
+    if(pts.length > 1){ ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for(let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  function fotoStudioBorrachaPonto(e, inicio){
+    const vp = document.getElementById('fotoStudioViewport');
+    const rect = vp.getBoundingClientRect();
+    const ix = (e.clientX - rect.left - fotoStudioPos.x) / fotoStudioPos.scale;
+    const iy = (e.clientY - rect.top - fotoStudioPos.y) / fotoStudioPos.scale;
+    if(inicio){
+      const tam = Number(document.getElementById('fsBorrachaTam').value) || 26;
+      fsBorracha.atual = { r: (tam / 2) / fotoStudioPos.scale, pts: [[ix, iy]] };
+      fsBorracha.tracos.push(fsBorracha.atual);
+    } else if(fsBorracha.atual){
+      fsBorracha.atual.pts.push([ix, iy]);
+    }
+    const tr = fsBorracha.atual; if(!tr) return;
+    // desenha só o trecho novo
+    const ctx = fsBorracha.src.getContext('2d');
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = tr.r * 2; ctx.strokeStyle = '#000'; ctx.fillStyle = '#000';
+    const n = tr.pts.length, b = tr.pts[n - 1], a = tr.pts[Math.max(0, n - 2)];
+    ctx.beginPath(); ctx.arc(b[0], b[1], tr.r, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+    ctx.restore();
+    fsBorracha.sujo = true;
+    document.getElementById('fsDesfazerBtn').disabled = false;
+    fotoStudioBorrachaRender();
+  }
+
+  function fotoStudioBorrachaDesfazer(){
+    if(!fsBorracha.tracos.length) return;
+    fsBorracha.tracos.pop();
+    const ctx = fsBorracha.src.getContext('2d');
+    ctx.clearRect(0, 0, fsBorracha.src.width, fsBorracha.src.height);
+    ctx.drawImage(fsBorracha.base, 0, 0);
+    fsBorracha.tracos.forEach(t => fotoStudioBorrachaRisca(null, t));
+    fsBorracha.sujo = true;
+    document.getElementById('fsDesfazerBtn').disabled = !fsBorracha.tracos.length;
+    fotoStudioBorrachaRender();
+  }
+
+  // Passa o resultado da borracha pro <img> (que é o que o "enviar" lê).
+  async function fotoStudioBorrachaSync(){
+    if(!fsBorracha.sujo || !fsBorracha.src) return;
+    const blob = await new Promise(r => fsBorracha.src.toBlob(r, 'image/png'));
+    if(fsBorracha.url) URL.revokeObjectURL(fsBorracha.url);
+    fsBorracha.url = URL.createObjectURL(blob);
+    await new Promise(res => { fotoStudioImgEl.onload = res; fotoStudioImgEl.src = fsBorracha.url; });
+    fsBorracha.sujo = false;
+  }
+
+  async function fotoStudioBorrachaToggle(){
+    const btn = document.getElementById('fsModoBtn');
+    if(!fotoStudioImgEl) return;
+    if(!fsBorracha.ativo){
+      fotoStudioBorrachaPreparar();
+      fsBorracha.ativo = true;
+      fotoStudioImgEl.style.visibility = 'hidden';
+      document.getElementById('fotoStudioBorrachaCanvas').style.display = 'block';
+      document.getElementById('fsTamanhoRow').style.display = 'flex';
+      btn.textContent = 'Modo: apagar (toque p/ mover)';
+      fotoStudioBorrachaRender();
+    } else {
+      fsBorracha.ativo = false;
+      await fotoStudioBorrachaSync();
+      fotoStudioImgEl.style.visibility = 'visible';
+      document.getElementById('fotoStudioBorrachaCanvas').style.display = 'none';
+      document.getElementById('fsTamanhoRow').style.display = 'none';
+      btn.textContent = 'Modo: mover (toque p/ apagar)';
+    }
+  }
+
   function fotoStudioAplicarTransform(){
     if(!fotoStudioImgEl) return;
+    if(fsBorracha.ativo) fotoStudioBorrachaRender();
     fotoStudioImgEl.style.transform =
       `translate(${fotoStudioPos.x}px, ${fotoStudioPos.y}px) scale(${fotoStudioPos.scale})`;
   }
@@ -5845,16 +5984,18 @@
 
     viewport.addEventListener('pointerdown', (e) => {
       if(!fotoStudioImgEl) return;
+      if(fsBorracha.ativo){ viewport.setPointerCapture(e.pointerId); fotoStudioBorrachaPonto(e, true); fotoStudioDrag = { borracha: true }; return; }
       fotoStudioDrag = { startX: e.clientX, startY: e.clientY, origX: fotoStudioPos.x, origY: fotoStudioPos.y };
       viewport.setPointerCapture(e.pointerId);
     });
     viewport.addEventListener('pointermove', (e) => {
       if(!fotoStudioDrag) return;
+      if(fotoStudioDrag.borracha){ fotoStudioBorrachaPonto(e, false); return; }
       fotoStudioPos.x = fotoStudioDrag.origX + (e.clientX - fotoStudioDrag.startX);
       fotoStudioPos.y = fotoStudioDrag.origY + (e.clientY - fotoStudioDrag.startY);
       fotoStudioAplicarTransform();
     });
-    const soltarArrasto = () => { fotoStudioDrag = null; };
+    const soltarArrasto = () => { fotoStudioDrag = null; fsBorracha.atual = null; };
     viewport.addEventListener('pointerup', soltarArrasto);
     viewport.addEventListener('pointercancel', soltarArrasto);
   })();
@@ -5949,6 +6090,7 @@
     btn.disabled = true;
 
     try {
+      await fotoStudioBorrachaSync();
       const viewport = document.getElementById('fotoStudioViewport');
       const vw = viewport.clientWidth, vh = viewport.clientHeight;
 
