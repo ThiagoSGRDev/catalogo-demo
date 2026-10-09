@@ -6198,6 +6198,8 @@
     }
     const cx = (minX + maxX) / 2;
 
+    // Braços abertos ou camisa esticada alargam a silhueta: limita a largura dos ombros a 2,7x a da cabeça.
+    if(hw > 0) sw = Math.min(sw, hw * 2.7);
     let esc = (W * LOTE_FOTO_LARG) / Math.max(1, sw);
     esc = Math.min(Math.max(esc, (W / iw) * 0.9), 6);
     const out = document.createElement('canvas');
@@ -6359,6 +6361,13 @@
   // ---- Interação ----
   function loteAchar(id){ return LOTE.find(i => i.id === id); }
 
+  // Ao escolher uma opção da lista, o navegador dispara "input" com o nome exato: já vincula.
+  function loteInputTime(id, valor){
+    const alvo = loteNormal(valor);
+    if(alvo.length < 3) return;
+    const r = TEAMS_LIST_CACHE.filter(t => loteNormal(t.nome) === alvo);
+    if(r.length === 1){ document.activeElement && document.activeElement.blur(); loteTrocarTime(id, valor); }
+  }
   function loteTrocarTime(id, valor){
     const it = loteAchar(id); if(!it) return;
     const alvo = loteNormal(valor);
@@ -6410,7 +6419,7 @@
         else if(it.status === 'erro') thumb = `<div class="lote-thumb-ph" style="color:#F87171;font-size:12px;padding:8px;text-align:center;">${escHtml(it.erro)}</div>`;
         else thumb = `<img src="${it.thumb}" alt="">`;
         const tag = it.salvo ? '<span class="lote-tag ok">✓ Salvo</span>'
-          : it.status === 'ok' && !it.team ? '<span class="lote-tag warn">Escolha o time</span>'
+          : it.status === 'ok' && !it.team ? '<span class="lote-tag warn">Digite o time no campo acima</span>'
           : it.status === 'ok' && it.jaTem ? '<span class="lote-tag warn">Já tem imagem — marque pra substituir</span>' : '';
         const nomeTime = it.team ? it.team.nome : '';
         return `
@@ -6418,8 +6427,8 @@
           <div class="lote-thumb" style="aspect-ratio:${aspecto};">${thumb}</div>
           <div class="lote-info">
             <div class="lote-arq">${escHtml(it.file.name)}</div>
-            <input type="text" list="loteTimes" value="${escHtml(nomeTime)}" placeholder="${escHtml(it.nomeBuscado || 'Digite o time')}"
-              onchange="loteTrocarTime(${it.id}, this.value)" ${it.salvo ? 'disabled' : ''}>
+            <input type="text" list="loteTimes" value="${escHtml(nomeTime)}" placeholder="Digite o time…"
+              oninput="loteInputTime(${it.id}, this.value)" onchange="loteTrocarTime(${it.id}, this.value)" ${it.salvo ? 'disabled' : ''}>
             <select onchange="loteTrocarTipo(${it.id}, this.value)" ${it.salvo || it.status === 'proc' ? 'disabled' : ''}>
               <option value="foto" ${it.tipo === 'foto' ? 'selected' : ''}>Foto do jogador</option>
               <option value="escudo" ${it.tipo === 'escudo' ? 'selected' : ''}>Escudo</option>
@@ -6441,6 +6450,9 @@
     const btn = document.getElementById('loteSalvarBtn');
     btn.textContent = `Salvar aprovados (${n})`;
     btn.disabled = n === 0 || loteRodando;
+    const semTime = LOTE.filter(i => i.status === 'ok' && !i.team && !i.salvo).length;
+    const st = document.getElementById('loteStatus');
+    if(!loteRodando && semTime) st.textContent = `${semTime} sem time: digite o nome do time em cada cartão e marque Salvar.`;
   }
 
   async function loteSalvar(){
