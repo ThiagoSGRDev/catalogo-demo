@@ -6078,7 +6078,7 @@
   const LOTE_MAX = 15;               // por rodada, pra não travar o celular
   const LOTE_FOTO_W = 1500, LOTE_FOTO_H = 2500;
   const LOTE_FOTO_TOPO = 0.035;      // topo da cabeça a 3,5% da altura
-  const LOTE_FOTO_LARG = 0.89;       // largura dos ombros / largura do quadro
+  const LOTE_FOTO_LARG = 0.92;       // largura dos ombros / largura do quadro
   const LOTE_ESCUDO_LADO = 500;
   let LOTE = [];
   let loteSeq = 0;
@@ -6183,23 +6183,50 @@
       for(let j = y - meia; j < y - meia + k; j++){ if(j >= 0 && j < ih){ s += larg[j]; c++; } }
       ws[y] = s / k;
     }
-    let hw = 0;
-    for(let y = y0; y < Math.min(ih, y0 + Math.floor(h * 0.14)); y++) if(ws[y] > hw) hw = ws[y];
-    let linhaOmbro = -1;
-    for(let y = y0 + Math.floor(h * 0.10); y < ih; y++){ if(ws[y] > 1.8 * hw){ linhaOmbro = y; break; } }
-    if(linhaOmbro < 0) linhaOmbro = y0 + Math.floor(h * 0.3);
-    const fim = Math.min(ih - 1, linhaOmbro + Math.floor(h * 0.08));
-    let sw = 0;
-    for(let y = linhaOmbro; y <= fim; y++) if(ws[y] > sw) sw = ws[y];
-    let minX = iw, maxX = 0;
+    // Acha o pescoço: a largura sobe até a cabeça (pico), cai (pescoço) e volta a subir (ombros).
+    // Assim a escala não depende de quanto do corpo aparece (busto ou até o joelho).
+    let hw = 0, pescoco = -1;
+    const limite = Math.min(ih - 1, y0 + Math.floor(h * 0.6));
+    for(let y = y0; y < limite; y++){
+      if(ws[y] > hw) hw = ws[y];
+      if(y > y0 + Math.floor(h * 0.04) && ws[y] < 0.82 * hw){ pescoco = y; break; }
+    }
+    let linhaOmbro, fim, sw, cabecaY;
+    if(pescoco > 0){
+      let mn = ws[pescoco], yy = pescoco;
+      while(yy < limite && ws[yy] <= 1.3 * mn){ if(ws[yy] < mn) mn = ws[yy]; yy++; }
+      linhaOmbro = yy;
+      cabecaY = pescoco;
+      const hh = Math.max(pescoco - y0, 10);
+      fim = Math.min(ih - 1, linhaOmbro + Math.floor(hh * 0.9));
+      sw = 0;
+      for(let y = linhaOmbro; y <= fim; y++) if(ws[y] > sw) sw = ws[y];
+      sw = Math.min(sw, hw * 3.0);
+    } else {
+      // Sem pescoço claro (foto muito fechada): método antigo.
+      hw = 0;
+      for(let y = y0; y < Math.min(ih, y0 + Math.floor(h * 0.14)); y++) if(ws[y] > hw) hw = ws[y];
+      linhaOmbro = -1;
+      for(let y = y0 + Math.floor(h * 0.10); y < ih; y++){ if(ws[y] > 1.8 * hw){ linhaOmbro = y; break; } }
+      if(linhaOmbro < 0) linhaOmbro = y0 + Math.floor(h * 0.3);
+      fim = Math.min(ih - 1, linhaOmbro + Math.floor(h * 0.08));
+      sw = 0;
+      for(let y = linhaOmbro; y <= fim; y++) if(ws[y] > sw) sw = ws[y];
+      if(hw > 0) sw = Math.min(sw, hw * 2.7);
+      cabecaY = linhaOmbro;
+    }
+    // Centro horizontal: média entre o centro da cabeça e o centro da faixa dos ombros.
+    let minX = iw, maxX = 0, somaX = 0, nX = 0;
     for(let y = linhaOmbro; y <= fim; y++){
       const o = y * iw * 4;
       for(let x = 0; x < iw; x++) if(d[o + x*4 + 3] > 40){ if(x < minX) minX = x; if(x > maxX) maxX = x; }
     }
-    const cx = (minX + maxX) / 2;
+    for(let y = y0; y <= Math.min(ih - 1, cabecaY); y++){
+      const o = y * iw * 4;
+      for(let x = 0; x < iw; x++) if(d[o + x*4 + 3] > 40){ somaX += x; nX++; }
+    }
+    const cx = nX ? ((minX + maxX) / 2 + somaX / nX) / 2 : (minX + maxX) / 2;
 
-    // Braços abertos ou camisa esticada alargam a silhueta: limita a largura dos ombros a 2,7x a da cabeça.
-    if(hw > 0) sw = Math.min(sw, hw * 2.7);
     let esc = (W * LOTE_FOTO_LARG) / Math.max(1, sw);
     esc = Math.min(Math.max(esc, (W / iw) * 0.9), 6);
     const out = document.createElement('canvas');
@@ -6455,6 +6482,21 @@
     if(!loteRodando && semTime) st.textContent = `${semTime} sem time: digite o nome do time em cada cartão e marque Salvar.`;
   }
 
+  // Tenta de novo (até 3x) quando a rede do celular falha ("Failed to fetch").
+  async function loteComRetry(fn){
+    let ultimo;
+    for(let t = 1; t <= 3; t++){
+      try {
+        const r = await fn();
+        if(!r.error) return r;
+        ultimo = r;
+        if(!/fetch|network|timeout|load failed/i.test(r.error.message || '')) return r;
+      } catch(e){ ultimo = { error: e }; }
+      await new Promise(res => setTimeout(res, 800 * t));
+    }
+    return ultimo;
+  }
+
   async function loteSalvar(){
     const lista = LOTE.filter(i => i.status === 'ok' && i.salvar && i.team && !i.salvo);
     if(!lista.length) return;
@@ -6472,10 +6514,10 @@
       const prefixo = it.tipo === 'escudo' ? 'escudo' : 'busto';
       const campo = it.tipo === 'escudo' ? 'escudo_url' : 'imagem_url';
       const path = `${ADMIN_LOJA_ID}/${prefixo}-${Date.now()}-${Math.random().toString(36).slice(2,8)}.webp`;
-      const { error: upErr } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, it.blob, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+      const { error: upErr } = await loteComRetry(() => supabaseClient.storage.from(TEAMS_BUCKET).upload(path, it.blob, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO, upsert: true }));
       if(upErr){ it.aviso = 'Erro ao enviar: ' + upErr.message; falhas++; continue; }
       const url = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path).data.publicUrl;
-      const { error: dbErr } = await supabaseClient.from('teams').update({ [campo]: url }).eq('id', it.team.id);
+      const { error: dbErr } = await loteComRetry(() => supabaseClient.from('teams').update({ [campo]: url }).eq('id', it.team.id));
       if(dbErr){ it.aviso = 'Erro ao gravar no time: ' + dbErr.message; falhas++; continue; }
       it.team[campo] = url;
       it.salvo = true; ok++;
