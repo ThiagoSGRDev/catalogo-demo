@@ -2166,7 +2166,7 @@
   <div class="form-body">
     <div class="field-hint" style="margin-bottom:10px;">
       Nomeie os arquivos pelo time: <b>Brasil.png</b> = foto do jogador, <b>Brasil-escudo.png</b> = escudo.
-      Se o nome não bater, escolha o time no cartão. Máximo de 15 por rodada. Nada é salvo sem você marcar.
+      Se o nome não bater, escolha o time no cartão. Máximo de 25 por rodada. Nada é salvo sem você marcar.
     </div>
     <div style="display:flex; gap:16px; margin-bottom:10px; font-size:13px; font-weight:600;">
       <span>Arquivo sem "-escudo" é:</span>
@@ -6217,7 +6217,7 @@
   // e enquadra em 1500x2500. Escudos: tira fundo branco liso (se não for
   // transparente), centraliza em 500x500. Nada é gravado sem você aprovar.
   // ============================================================
-  const LOTE_MAX = 15;               // por rodada, pra não travar o celular
+  const LOTE_MAX = 25;               // por rodada, pra não travar o celular
   const LOTE_FOTO_W = 1500, LOTE_FOTO_H = 2500;
   const LOTE_FOTO_TOPO = 0.03;       // topo da cabeça a 3,5% da altura
   const LOTE_FOTO_LARG = 1.05;       // largura dos ombros / largura do quadro
@@ -6461,7 +6461,6 @@
         it.blob = await loteCanvasParaBlob(r.canvas, 'image/webp', 0.92);
         it.thumb = await loteThumb(r.canvas);
         it.aviso = r.aviso;
-        it.cutout = null;
       } else {
         let img = await loteCarregarReduzido(it.file, 3000, false);
         if(!fotoStudioJaTemTransparencia(img)){
@@ -6470,11 +6469,6 @@
           if(!sem) throw new Error('Não consegui remover o fundo');
           img = sem;
         }
-        // guarda o recorte (PNG) pra "Ajustar" abrir no estúdio sem refazer o fundo
-        const cc = document.createElement('canvas');
-        cc.width = img.naturalWidth; cc.height = img.naturalHeight;
-        cc.getContext('2d').drawImage(img, 0, 0);
-        it.cutout = await loteCanvasParaBlob(cc, 'image/png');
         const r = loteEnquadrarFoto(img);
         it.blob = await loteCanvasParaBlob(r.canvas, 'image/webp', 0.92);
         it.thumb = await loteThumb(r.canvas);
@@ -6558,9 +6552,10 @@
     loteRender();
   }
   function loteAjustar(id){
-    const it = loteAchar(id); if(!it || !it.cutout) return;
+    const it = loteAchar(id); if(!it || it.tipo !== 'foto') return;
     loteAjustandoId = id;
-    fotoStudioAbrir(new File([it.cutout], 'recorte.png', { type: 'image/png' }), 'lote');
+    // Abre o original: o estúdio refaz o recorte sozinho (poupa memória no lote).
+    fotoStudioAbrir(it.file, 'lote');
   }
   // Chamado por fotoStudioEnviar quando o destino é o lote.
   async function loteAjusteConcluido(blob){
@@ -6608,7 +6603,7 @@
             <label class="lote-chk"><input type="checkbox" ${it.salvar ? 'checked' : ''} ${it.status !== 'ok' || !it.team ? 'disabled' : ''}
               onchange="loteMarcar(${it.id}, this.checked)"> Salvar</label>
             <div class="lote-btns">
-              ${it.tipo === 'foto' && it.cutout ? `<button class="btn btn-ghost" onclick="loteAjustar(${it.id})">Ajustar</button>` : ''}
+              ${it.tipo === 'foto' && it.status === 'ok' ? `<button class="btn btn-ghost" onclick="loteAjustar(${it.id})">Ajustar</button>` : ''}
               <button class="btn btn-ghost" onclick="loteRemover(${it.id})">Remover</button>
             </div>`}
           </div>
