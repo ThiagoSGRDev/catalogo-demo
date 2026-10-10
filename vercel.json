@@ -15,6 +15,14 @@
     {
       "source": "/loja/:slug/:path*",
       "destination": "/catalogo-template.html"
+    },
+    {
+      "source": "/catalogo/loja/:slug/",
+      "destination": "/catalogo-template.html"
+    },
+    {
+      "source": "/loja/:slug/",
+      "destination": "/catalogo-template.html"
     }
   ],
   "redirects": [
