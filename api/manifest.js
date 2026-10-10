@@ -22,8 +22,9 @@ async function consultar(caminho) {
 }
 
 module.exports = async (req, res) => {
-  const slug = String((req.query && req.query.slug) || '').toLowerCase();
-  const slugOk = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+  let slug = String((req.query && req.query.slug) || '').toLowerCase();
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) slug = 'katalogohub';
+  const slugOk = true;
 
   let nome = 'Katalogo Hub';
   let cor = COR_PADRAO;
