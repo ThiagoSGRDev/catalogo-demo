@@ -839,8 +839,39 @@
 
   .empty-state{ text-align: center; padding: 70px 20px; color: var(--text-faint); font-weight: 600; font-size: 15px; line-height: 1.6; }
 
+
+  /* ---- Checkout próprio + Pedidos ---- */
+  .ck-status-box{ display:flex; align-items:center; gap:12px; padding:14px; border-radius:14px; border:1px solid var(--line); background:var(--panel-2); margin-bottom:14px; }
+  .ck-status-box .ck-dot{ width:12px; height:12px; border-radius:50%; background:var(--text-faint); flex-shrink:0; }
+  .ck-status-box.on .ck-dot{ background:var(--green); box-shadow:0 0 10px var(--green); }
+  .ck-status-box strong{ display:block; font-size:14px; }
+  .ck-status-box small{ display:block; font-size:12px; color:var(--text-faint); margin-top:2px; word-break:break-all; }
+  .ck-lista{ font-size:13px; color:var(--text-dim); line-height:1.7; padding-left:18px; margin:6px 0 0; }
+  .pd-resumo{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+  .pd-resumo div{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px; }
+  .pd-resumo small{ display:block; font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em; }
+  .pd-resumo strong{ display:block; font-size:17px; margin-top:4px; }
+  .pd-filtros{ display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+  .pd-filtros button{ border:1px solid var(--line); background:var(--panel); color:var(--text); border-radius:999px; padding:7px 14px; font-size:13px; cursor:pointer; }
+  .pd-filtros button.ativo{ border-color:var(--btn-bg); color:var(--btn-bg); }
+  .pd-card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:12px; }
+  .pd-topo{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .pd-num{ font-weight:800; font-size:15px; }
+  .pd-data{ font-size:12px; color:var(--text-faint); }
+  .pd-selo{ font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; border-radius:999px; padding:4px 10px; white-space:nowrap; }
+  .pd-selo.pago{ background:rgba(34,197,94,.15); color:var(--green); border:1px solid rgba(34,197,94,.45); }
+  .pd-selo.aguardando{ background:rgba(245,158,11,.12); color:var(--amber); border:1px solid rgba(245,158,11,.4); }
+  .pd-selo.outro{ background:var(--panel-2); color:var(--text-faint); border:1px solid var(--line); }
+  .pd-cliente{ font-size:14px; margin-top:8px; }
+  .pd-itens{ font-size:13px; color:var(--text-dim); margin-top:6px; line-height:1.55; }
+  .pd-end{ font-size:12px; color:var(--text-faint); margin-top:6px; line-height:1.5; }
+  .pd-rodape{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  .pd-total{ font-size:17px; font-weight:800; }
+  .pd-acoes{ display:flex; gap:8px; align-items:center; }
+  .pd-acoes select{ background:var(--input-bg); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:8px; font-size:13px; }
+  .pd-acoes a{ font-size:13px; padding:8px 12px; }
   /* ---- FORM OVERLAYS & MODAIS ---- */
-  #formOverlay, #heroOverlay, #teamsOverlay, #ligasOverlay, #importOverlay, #apparenceOverlay, #precosOverlay, #lojaOverlay, #fotoStudioOverlay, #catalogoMestreOverlay, #assinaturaOverlay, #teamPickerOverlay, #loteOverlay, #otimizarOverlay, #atividadeOverlay, #personalizarOverlay{
+  #formOverlay, #heroOverlay, #teamsOverlay, #ligasOverlay, #importOverlay, #apparenceOverlay, #precosOverlay, #lojaOverlay, #fotoStudioOverlay, #catalogoMestreOverlay, #assinaturaOverlay, #teamPickerOverlay, #loteOverlay, #otimizarOverlay, #atividadeOverlay, #personalizarOverlay, #checkoutOverlay, #pedidosOverlay{
     position: fixed; inset: 0; background: var(--bg); z-index: 150; overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     animation: fadeInModal .3s ease;
@@ -1283,6 +1314,8 @@
       <button type="button" class="rail-item primario" data-sem-ativo onclick="if(railTap(event)) openForm(null)"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="rail-label">Novo produto</span></button>
       <button class="rail-item" id="railProdutos" type="button" onclick="if(railTap(event)) mostrarSecao('produtos')"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 5 2 9l3 2 1-1v11h12V10l1 1 3-2-2-4-4-2c0 2-1.8 3-4 3S8 5 8 3Z"/></svg></span><span class="rail-label">Produtos</span></button>
       <button type="button" class="rail-item" onclick="if(railTap(event)) abrirAtividade()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 5-6"/></svg></span><span class="rail-label">Atividade</span></button>
+      <button type="button" class="rail-item" onclick="if(railTap(event)) abrirPedidos()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span><span class="rail-label">Pedidos</span></button>
+      <button type="button" class="rail-item" onclick="if(railTap(event)) abrirCheckoutConfig()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span><span class="rail-label">Checkout próprio</span></button>
       <a class="rail-item" id="btnVerCatalogo" data-sem-ativo href="#" target="_blank" rel="noopener" onclick="return railTap(event)"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2zM22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/></svg></span><span class="rail-label">Ver catálogo</span></a>
       <button class="rail-item" type="button"  onclick="if(railTap(event)) openHeroOverlay()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg></span><span class="rail-label">Banner hero</span></button>
       <button class="rail-item" type="button"  onclick="if(railTap(event)) openTeamsOverlay()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg></span><span class="rail-label">Times</span></button>
@@ -1358,6 +1391,8 @@
         <button type="button" onclick="openForm(null)"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>Novo produto</button>
         <button type="button" onclick="mostrarSecao('produtos')"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0Z"/></svg></span>Produtos</button>
         <button type="button" onclick="openApparenceOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.5-2-.3-1 .3-2 1.4-2H17a4 4 0 0 0 4-4c0-5-4-10-9-10Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg></span>Aparência</button>
+        <button type="button" onclick="abrirPedidos()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span>Pedidos</button>
+        <button type="button" onclick="abrirCheckoutConfig()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span>Checkout próprio</button>
         <button type="button" onclick="openLojaOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1-5h14l1 5"/><path d="M4 9a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 6 0 2.5 2.5 0 0 0 5 0"/><path d="M5 12v8h14v-8"/></svg></span>Minha loja</button>
         <button type="button" class="mais" onclick="openHeroOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 16-5-5-9 9"/></svg></span>Banner hero</button>
         <button type="button" class="mais" onclick="openTeamsOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/></svg></span>Times</button>
@@ -1728,6 +1763,80 @@
 <!-- ASSINATURA — plano atual + trocar de plano (mensal/trimestral/ -->
 <!-- anual), sem precisar falar com o suporte.                     -->
 <!-- ============================================================ -->
+<!-- ============================================================ -->
+<!-- CHECKOUT PRÓPRIO — conectar Mercado Pago e ligar o pagamento   -->
+<!-- dentro do catálogo (PIX na hora e cartão parcelado).           -->
+<!-- ============================================================ -->
+<div id="checkoutOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="fecharCheckoutConfig()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Checkout próprio</h2>
+  </div>
+  <div class="form-body">
+    <div class="form-section">
+      <h3>Seu cliente paga dentro da loja</h3>
+      <ul class="ck-lista">
+        <li>PIX na hora ou cartão em até 12x, na mesma tela do carrinho.</li>
+        <li>O dinheiro cai <b>direto na sua conta do Mercado Pago</b>. Não passa pela gente.</li>
+        <li>O pedido chega aqui já pago, com o selo <b>PAGO NA LOJA</b>, e o estoque baixa sozinho.</li>
+        <li>Comissão: <b>1% por pedido pago, no máximo R$ 10</b>. Pedido que não fecha não cobra nada.</li>
+        <li>O WhatsApp continua igual para quem prefere fechar conversando.</li>
+      </ul>
+    </div>
+    <div class="form-section">
+      <h3>Conta do Mercado Pago</h3>
+      <div class="ck-status-box" id="ckStatusBox"><span class="ck-dot"></span><div><strong id="ckStatusTitulo">Carregando...</strong><small id="ckStatusSub"></small></div></div>
+      <div id="ckConectarArea">
+        <button type="button" class="btn btn-primary" style="width:100%;" id="ckConectarBtn" onclick="conectarMercadoPago()">Conectar Mercado Pago</button>
+        <div class="field-hint">Você entra na sua conta do Mercado Pago e autoriza o Katalogo Hub a criar cobranças em seu nome. Leva 2 minutos. Não temos acesso ao seu saldo nem à sua senha.</div>
+      </div>
+      <div id="ckConfigArea" class="hidden">
+        <div class="toggle-row">
+          <div><div class="label">Checkout ligado</div><div class="desc">Mostra os botões de pagamento no carrinho do catálogo.</div></div>
+          <label class="switch"><input type="checkbox" id="ckAtivo" onchange="salvarCheckoutConfig()"><span class="track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div><div class="label">Aceitar PIX</div><div class="desc">QR Code e copia e cola na hora. Confirmação automática.</div></div>
+          <label class="switch"><input type="checkbox" id="ckPix" onchange="salvarCheckoutConfig()"><span class="track"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div><div class="label">Aceitar cartão</div><div class="desc">Até 12x, na página segura do Mercado Pago. Juros e taxas seguem a sua conta do Mercado Pago.</div></div>
+          <label class="switch"><input type="checkbox" id="ckCartao" onchange="salvarCheckoutConfig()"><span class="track"></span></label>
+        </div>
+        <button type="button" class="btn btn-danger" style="width:100%; margin-top:14px;" onclick="desconectarMercadoPago()">Desconectar Mercado Pago</button>
+      </div>
+    </div>
+    <button type="button" class="btn btn-secondary" style="width:100%;" onclick="fecharCheckoutConfig(); abrirPedidos();">Ver pedidos</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PEDIDOS — pedidos pagos dentro da loja (checkout próprio).     -->
+<!-- ============================================================ -->
+<div id="pedidosOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="fecharPedidos()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Pedidos</h2>
+  </div>
+  <div class="form-body">
+    <div class="pd-resumo">
+      <div><small>Hoje</small><strong id="pdHoje">—</strong></div>
+      <div><small>7 dias</small><strong id="pdSemana">—</strong></div>
+      <div><small>30 dias</small><strong id="pdMes">—</strong></div>
+    </div>
+    <div class="pd-filtros" id="pdFiltros">
+      <button type="button" class="ativo" data-f="pago" onclick="filtrarPedidos('pago')">Pagos</button>
+      <button type="button" data-f="aguardando_pagamento" onclick="filtrarPedidos('aguardando_pagamento')">Aguardando</button>
+      <button type="button" data-f="todos" onclick="filtrarPedidos('todos')">Todos</button>
+    </div>
+    <div id="pdLista"><div class="field-hint">Carregando...</div></div>
+  </div>
+</div>
+
 <div id="assinaturaOverlay" class="hidden">
   <div class="form-header">
     <button class="icon-btn" onclick="closeAssinaturaOverlay()" aria-label="Fechar">
@@ -2873,6 +2982,7 @@
     renderProductList();
     loadMiniHero();
     mostrarSecao('home');
+    tratarRetornoMercadoPago();
   }
 
   // ============================================================
@@ -7383,6 +7493,156 @@
     { id: 'trimestral', nome: 'Trimestral', valor: 134.90, descricao: 'Cobrado a cada 3 meses (R$ 44,97/mês)' },
     { id: 'anual',      nome: 'Anual',      valor: 499.00, descricao: 'Cobrado 1x por ano (R$ 41,58/mês — 2 meses grátis)' },
   ];
+
+  // ============================================================
+  // CHECKOUT PRÓPRIO (Mercado Pago) + PEDIDOS
+  // Tokens do Mercado Pago ficam só no servidor (tabela mp_contas, sem
+  // acesso pelo navegador). Aqui só lemos/alteramos loja_checkout e pedidos.
+  // ============================================================
+  let CK_CONFIG = null;
+  let PEDIDOS_CACHE = [];
+  let PEDIDOS_FILTRO = 'pago';
+
+  async function abrirCheckoutConfig(){
+    document.getElementById('checkoutOverlay').classList.remove('hidden');
+    window.scrollTo(0,0);
+    await carregarCheckoutConfig();
+  }
+  function fecharCheckoutConfig(){ document.getElementById('checkoutOverlay').classList.add('hidden'); }
+
+  async function carregarCheckoutConfig(){
+    const { data } = await supabaseClient.from('loja_checkout')
+      .select('ativo, conectado, mp_conta_nome, aceita_pix, aceita_cartao').eq('loja_id', ADMIN_LOJA_ID).maybeSingle();
+    CK_CONFIG = data || { ativo:false, conectado:false, aceita_pix:true, aceita_cartao:true };
+    const box = document.getElementById('ckStatusBox');
+    const ligado = CK_CONFIG.conectado && CK_CONFIG.ativo;
+    box.classList.toggle('on', !!ligado);
+    document.getElementById('ckStatusTitulo').textContent = !CK_CONFIG.conectado ? 'Mercado Pago não conectado'
+      : (CK_CONFIG.ativo ? 'Conectado e recebendo pagamentos' : 'Conectado, checkout desligado');
+    document.getElementById('ckStatusSub').textContent = CK_CONFIG.conectado ? (CK_CONFIG.mp_conta_nome || 'Conta conectada') : 'Conecte para liberar PIX e cartão no catálogo.';
+    document.getElementById('ckConectarArea').classList.toggle('hidden', !!CK_CONFIG.conectado);
+    document.getElementById('ckConfigArea').classList.toggle('hidden', !CK_CONFIG.conectado);
+    document.getElementById('ckAtivo').checked = !!CK_CONFIG.ativo;
+    document.getElementById('ckPix').checked = CK_CONFIG.aceita_pix !== false;
+    document.getElementById('ckCartao').checked = CK_CONFIG.aceita_cartao !== false;
+  }
+
+  async function conectarMercadoPago(){
+    const btn = document.getElementById('ckConectarBtn');
+    btn.disabled = true; btn.textContent = 'Abrindo o Mercado Pago...';
+    try {
+      const { data, error } = await supabaseClient.functions.invoke('mp-conectar', { body: { acao: 'iniciar' } });
+      let cod = null;
+      if(error){ try { cod = (await error.context.json()).erro; } catch(_){} }
+      if(cod === 'nao_configurado'){ showToast('O checkout próprio está em liberação. Avisamos assim que abrir para a sua loja.', 'error'); return; }
+      if(error || !data || !data.url){ showToast('Não consegui abrir o Mercado Pago agora. Tente de novo.', 'error'); return; }
+      window.location.href = data.url;
+    } finally {
+      btn.disabled = false; btn.textContent = 'Conectar Mercado Pago';
+    }
+  }
+
+  async function desconectarMercadoPago(){
+    if(!confirm('Desconectar o Mercado Pago? Os botões de pagamento somem do catálogo na hora. Pedidos antigos continuam aqui.')) return;
+    const { error } = await supabaseClient.functions.invoke('mp-conectar', { body: { acao: 'desconectar' } });
+    if(error){ showToast('Não consegui desconectar agora.', 'error'); return; }
+    showToast('Mercado Pago desconectado.');
+    await carregarCheckoutConfig();
+  }
+
+  async function salvarCheckoutConfig(){
+    const ativo = document.getElementById('ckAtivo').checked;
+    let pix = document.getElementById('ckPix').checked;
+    let cartao = document.getElementById('ckCartao').checked;
+    if(!pix && !cartao){ pix = true; document.getElementById('ckPix').checked = true; showToast('Deixe pelo menos uma forma de pagamento.', 'error'); }
+    const { error } = await supabaseClient.from('loja_checkout')
+      .update({ ativo, aceita_pix: pix, aceita_cartao: cartao }).eq('loja_id', ADMIN_LOJA_ID);
+    if(error){ showToast('Não consegui salvar. Tente de novo.', 'error'); return; }
+    showToast(ativo ? 'Checkout salvo.' : 'Checkout desligado no catálogo.');
+    await carregarCheckoutConfig();
+  }
+
+  // Volta do Mercado Pago depois de conectar (?mp=conectado|recusado|erro|expirado)
+  function tratarRetornoMercadoPago(){
+    const q = new URLSearchParams(location.search);
+    const r = q.get('mp');
+    if(!r) return;
+    q.delete('mp');
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
+    const msgs = {
+      conectado: 'Mercado Pago conectado! O checkout já aparece no seu catálogo.',
+      recusado: 'Você cancelou a autorização no Mercado Pago.',
+      expirado: 'A conexão demorou demais. Tente conectar de novo.',
+      erro: 'O Mercado Pago não confirmou a conexão. Tente de novo.',
+    };
+    showToast(msgs[r] || msgs.erro, r === 'conectado' ? '' : 'error');
+    abrirCheckoutConfig();
+  }
+
+  async function abrirPedidos(){
+    document.getElementById('pedidosOverlay').classList.remove('hidden');
+    window.scrollTo(0,0);
+    document.getElementById('pdLista').innerHTML = '<div class="field-hint">Carregando...</div>';
+    const { data, error } = await supabaseClient.from('pedidos')
+      .select('id, numero, status, status_entrega, metodo, cliente_nome, cliente_whats, cliente_email, endereco, itens, subtotal, frete_nome, frete_valor, total, taxa_plataforma, pago_em, criado_em')
+      .eq('loja_id', ADMIN_LOJA_ID).order('criado_em', { ascending: false }).limit(200);
+    if(error){ document.getElementById('pdLista').innerHTML = '<div class="field-hint">Não consegui carregar os pedidos.</div>'; return; }
+    PEDIDOS_CACHE = data || [];
+    const agora = Date.now(), dia = 86400000;
+    const ini = new Date(); ini.setHours(0,0,0,0);
+    const pagos = PEDIDOS_CACHE.filter(p => p.status === 'pago');
+    const soma = (desde) => pagos.filter(p => new Date(p.pago_em || p.criado_em).getTime() >= desde).reduce((t, p) => t + Number(p.total), 0);
+    const brl = v => 'R$ ' + v.toFixed(2).replace('.', ',');
+    document.getElementById('pdHoje').textContent = brl(soma(ini.getTime()));
+    document.getElementById('pdSemana').textContent = brl(soma(agora - 7 * dia));
+    document.getElementById('pdMes').textContent = brl(soma(agora - 30 * dia));
+    renderPedidos();
+  }
+  function fecharPedidos(){ document.getElementById('pedidosOverlay').classList.add('hidden'); }
+
+  function filtrarPedidos(f){
+    PEDIDOS_FILTRO = f;
+    document.querySelectorAll('#pdFiltros button').forEach(b => b.classList.toggle('ativo', b.dataset.f === f));
+    renderPedidos();
+  }
+
+  function renderPedidos(){
+    const el = document.getElementById('pdLista');
+    const lista = PEDIDOS_FILTRO === 'todos' ? PEDIDOS_CACHE : PEDIDOS_CACHE.filter(p => p.status === PEDIDOS_FILTRO);
+    if(!lista.length){
+      el.innerHTML = '<div class="empty-state">' + (PEDIDOS_CACHE.length ? 'Nenhum pedido neste filtro.' : 'Nenhum pedido ainda.<br>Quando um cliente pagar pelo checkout próprio, ele aparece aqui.') + '</div>';
+      return;
+    }
+    const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+    const selo = { pago: ['pago','Pago na loja'], aguardando_pagamento: ['aguardando','Aguardando pagamento'],
+      expirado: ['outro','Não pago'], cancelado: ['outro','Cancelado'], estornado: ['outro','Estornado'] };
+    const entregas = [['novo','Novo'],['separando','Separando'],['enviado','Enviado'],['entregue','Entregue'],['cancelado','Cancelado']];
+    el.innerHTML = lista.map(p => {
+      const [cls, rot] = selo[p.status] || ['outro', p.status];
+      const data = new Date(p.criado_em).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+      const itens = (p.itens || []).map(i => `${escHtml(i.qty)}x ${escHtml(i.titulo)} · ${escHtml(i.tamanho)}${(i.nome || i.numero) ? ` · ${escHtml(i.nome || '')} ${escHtml(i.numero || '')}` : ''}`).join('<br>');
+      const e = p.endereco || {};
+      const end = e.rua ? `${escHtml(e.rua)}, ${escHtml(e.numero)}${e.complemento ? ' - ' + escHtml(e.complemento) : ''} · ${escHtml(e.bairro || '')} · ${escHtml(e.cidade || '')}/${escHtml(e.uf || '')} · CEP ${escHtml(e.cep || '')}` : 'Retirar no local';
+      const zap = String(p.cliente_whats || '').replace(/\D/g, '');
+      const zapNum = zap ? (zap.length <= 11 ? '55' + zap : zap) : '';
+      const zapMsg = encodeURIComponent(`Olá, ${p.cliente_nome}! Recebemos seu pedido #${p.numero}.`);
+      const sel = p.status === 'pago' ? `<select onchange="mudarEntregaPedido('${p.id}', this.value)">${entregas.map(([v, r]) => `<option value="${v}" ${p.status_entrega === v ? 'selected' : ''}>${r}</option>`).join('')}</select>` : '';
+      return `<div class="pd-card">
+        <div class="pd-topo"><div><span class="pd-num">#${escHtml(p.numero)}</span> <span class="pd-data">${escHtml(data)} · ${p.metodo === 'pix' ? 'PIX' : 'Cartão'}</span></div><span class="pd-selo ${cls}">${escHtml(rot)}</span></div>
+        <div class="pd-cliente">${escHtml(p.cliente_nome)}${p.cliente_email ? ' · <span class="pd-data">' + escHtml(p.cliente_email) + '</span>' : ''}</div>
+        <div class="pd-itens">${itens}</div>
+        <div class="pd-end">${escHtml(p.frete_nome || '')}${Number(p.frete_valor) ? ' (' + brl(p.frete_valor) + ')' : ''} · ${end}${e.obs ? '<br>Obs.: ' + escHtml(e.obs) : ''}</div>
+        <div class="pd-rodape"><div class="pd-total">${brl(p.total)}</div><div class="pd-acoes">${sel}${zapNum ? `<a class="btn btn-secondary" target="_blank" rel="noopener" href="https://wa.me/${zapNum}?text=${zapMsg}">WhatsApp</a>` : ''}</div></div>
+      </div>`;
+    }).join('');
+  }
+
+  async function mudarEntregaPedido(id, valor){
+    const { error } = await supabaseClient.from('pedidos').update({ status_entrega: valor }).eq('id', id);
+    if(error){ showToast('Não consegui atualizar o pedido.', 'error'); return; }
+    const p = PEDIDOS_CACHE.find(x => x.id === id); if(p) p.status_entrega = valor;
+    showToast('Pedido atualizado.');
+  }
 
   async function openAssinaturaOverlay(){
     document.getElementById('assinaturaOverlay').classList.remove('hidden');

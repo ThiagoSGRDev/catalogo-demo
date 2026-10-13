@@ -1430,6 +1430,43 @@
   }
   .checkout-input::placeholder{color:rgba(var(--muted-rgb),0.4);}
   .checkout-input:focus{outline:none; border-color:var(--gold);}
+
+  /* ===== CHECKOUT PRÓPRIO (Mercado Pago) ===== */
+  .ck-box{ margin-bottom:14px; }
+  .ck-box[hidden]{ display:none; }
+  .ck-btn{
+    display:flex; align-items:center; justify-content:center; gap:10px; width:100%;
+    background:var(--gold); color:var(--ink); border:none; border-radius:999px; padding:15px;
+    font-family:'Anton', sans-serif; font-size:16px; letter-spacing:.03em; text-transform:uppercase; cursor:pointer;
+    box-shadow:0 0 22px rgba(var(--gold-rgb),calc(var(--glow-mult) * 0.35));
+  }
+  .ck-btn + .ck-btn{ margin-top:10px; }
+  .ck-btn.sec{ background:transparent; color:var(--chalk); border:1.5px solid var(--line); box-shadow:none; }
+  .ck-btn[disabled]{ opacity:.5; pointer-events:none; }
+  .ck-btn svg{ width:20px; height:20px; }
+  .ck-seguro{ text-align:center; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:rgba(var(--muted-rgb),0.5); margin-top:8px; }
+  .ck-erro{ color:var(--esgotado); font-size:13px; text-align:center; margin-top:8px; min-height:1px; }
+  .ck-divisor{ display:flex; align-items:center; gap:10px; margin:14px 0; font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:rgba(var(--muted-rgb),0.5); }
+  .ck-divisor::before, .ck-divisor::after{ content:''; flex:1; height:1px; background:var(--line); }
+  .ck-overlay{ position:fixed; inset:0; z-index:400; background:rgba(0,0,0,.72); display:flex; align-items:flex-end; justify-content:center; }
+  .ck-overlay[hidden]{ display:none; }
+  .ck-modal{
+    position:relative; width:100%; max-width:480px; max-height:92vh; overflow:auto; background:var(--pitch-dark); color:var(--chalk);
+    border:1.5px solid var(--line); border-radius:22px 22px 0 0; padding:24px 20px 28px; box-sizing:border-box; text-align:center;
+  }
+  @media (min-width:600px){ .ck-overlay{ align-items:center; } .ck-modal{ border-radius:22px; } }
+  .ck-fechar{ position:absolute; top:12px; right:12px; width:36px; height:36px; border-radius:50%; border:1.5px solid var(--line); background:transparent; color:var(--chalk); font-size:18px; cursor:pointer; }
+  .ck-titulo{ font-family:'Anton', sans-serif; font-size:24px; text-transform:uppercase; margin:6px 0 4px; }
+  .ck-sub{ font-size:14px; color:rgba(var(--muted-rgb),0.7); margin-bottom:16px; }
+  .ck-valor{ font-family:'Anton', sans-serif; font-size:30px; color:var(--gold); margin-bottom:14px; }
+  .ck-qr{ width:220px; height:220px; background:#fff; border-radius:14px; padding:10px; box-sizing:border-box; margin:0 auto 14px; }
+  .ck-qr img{ width:100%; height:100%; image-rendering:pixelated; }
+  .ck-copia{ width:100%; box-sizing:border-box; font-family:var(--font-mono); font-size:11px; padding:10px; border-radius:10px; border:1.5px solid var(--line); background:rgba(var(--muted-rgb),0.05); color:var(--chalk); resize:none; height:62px; }
+  .ck-status{ display:flex; align-items:center; justify-content:center; gap:8px; font-size:13px; margin-top:14px; color:rgba(var(--muted-rgb),0.75); }
+  .ck-ponto{ width:9px; height:9px; border-radius:50%; background:var(--gold); animation:ckPulso 1.2s infinite; }
+  @keyframes ckPulso{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+  .ck-ok{ width:72px; height:72px; border-radius:50%; background:#16A34A; color:#fff; display:flex; align-items:center; justify-content:center; margin:6px auto 10px; font-size:38px; }
+  .ck-passos{ text-align:left; font-size:13px; color:rgba(var(--muted-rgb),0.7); margin:14px 0 0; padding-left:18px; line-height:1.6; }
   .whats-btn{
     display:flex; align-items:center; justify-content:center; gap:10px; width:100%;
     background:var(--gold); color:var(--ink); border:none; border-radius:999px;
@@ -1964,6 +2001,20 @@
           <input type="text" id="clienteUf" class="checkout-input" placeholder="UF" maxlength="2" style="flex:1; text-transform:uppercase;" oninput="updateWhatsBtn()">
         </div>
         <textarea id="clienteObs" class="checkout-input" placeholder="Observações do pedido (opcional)" rows="2" style="resize:vertical; font-family:'Inter';" oninput="updateWhatsBtn()"></textarea>
+      </div>
+      <div class="ck-box" id="ckBox" hidden>
+        <input type="email" id="clienteEmail" class="checkout-input" placeholder="Seu e-mail (para o comprovante)" autocomplete="email" inputmode="email" style="margin-bottom:12px;">
+        <button type="button" class="ck-btn" id="ckPixBtn" onclick="ckPagar('pix')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.3 8.6 8.6 5.3a3.6 3.6 0 0 1 5.1 0l1.9 1.9-2.3 2.3a1.9 1.9 0 0 1-2.7 0L8.4 7.3 6.7 9l2.2 2.2a3.5 3.5 0 0 0 5 0L16.2 9l1.9 1.9-2.3 2.3a3.5 3.5 0 0 0 0 5l-1.5 1.5a3.6 3.6 0 0 1-5.1 0l-1.9-1.9 2.3-2.3a1.9 1.9 0 0 1 2.7 0l2.2 2.2L16.2 16 14 13.8a3.5 3.5 0 0 0-5 0L6.7 16l-1.4-1.3a3.6 3.6 0 0 1 0-5.1z"/></svg>
+          Pagar com PIX
+        </button>
+        <button type="button" class="ck-btn sec" id="ckCartaoBtn" onclick="ckPagar('cartao')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg>
+          Cartão em até 12x
+        </button>
+        <div class="ck-seguro">Pagamento seguro pelo Mercado Pago · cai direto na loja</div>
+        <div class="ck-erro" id="ckErro"></div>
+        <div class="ck-divisor">ou combine pelo WhatsApp</div>
       </div>
       <a href="#" id="whatsBtn" class="whats-btn disabled" target="_blank" rel="noopener" onclick="trackEvent('click_whatsapp', { context: 'fechar_pedido', items_count: order.length, shipping_method: freteEscolhido, total_price: getSubtotal() + getFreteValor() })">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.07L2 22l5.07-1.32A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.1-.43-4.4-1.18l-.32-.18-3.1.8.83-3.02-.2-.32A7.94 7.94 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8zm4.4-5.9c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.55.12-.16.24-.63.78-.77.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.04.14-1.15-.06-.1-.22-.16-.46-.28z"/></svg>
@@ -5468,6 +5519,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const { ok, extras } = await resolverLoja();
     if(!ok) return; // resolverLoja() já mostrou a tela de "loja não encontrada"
     iniciarDemoLoja();
+    carregarCheckout();
     // aplicarAparencia() só precisa do LOJA_ID (já resolvido acima) -- não
     // precisa mais esperar o resto (ocultos, personalizações, estoque,
     // catálogo mestre) pra pintar a cor/logo certa e tirar a tela preta.
@@ -5483,6 +5535,227 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     await restaurarTelaInicial();
     trackEvent('view_catalog', { loja: LOJA_SLUG });
   })();
+
+  // ============================================================
+  // CHECKOUT PRÓPRIO (Mercado Pago): o cliente paga dentro da loja.
+  // O valor é sempre recalculado no servidor (função "checkout"); o dinheiro
+  // cai direto na conta Mercado Pago do lojista. Se a loja não ligou o
+  // checkout no painel, nada disso aparece e o WhatsApp segue igual.
+  // ============================================================
+  let CHECKOUT = null;
+  let ckPedido = null;      // { pedido_id, token, numero, total, metodo, pix }
+  let ckTimer = null, ckRelogio = null;
+
+  const CK_ERROS = {
+    nome_invalido: 'Digite seu nome completo.',
+    email_invalido: 'Digite um e-mail válido (o comprovante vai pra ele).',
+    endereco_incompleto: 'Preencha CEP, rua e número para a entrega.',
+    sem_estoque: 'Um dos itens acabou de esgotar nesse tamanho. Ajuste o carrinho.',
+    produto_indisponivel: 'Um dos itens não está mais disponível. Ajuste o carrinho.',
+    tamanho_invalido: 'Um dos tamanhos não está disponível. Ajuste o carrinho.',
+    frete_invalido: 'Não consegui confirmar o frete. Escolha a entrega de novo.',
+    checkout_desligado: 'O pagamento na loja está indisponível agora. Feche pelo WhatsApp.',
+    meio_indisponivel: 'Essa forma de pagamento está indisponível agora.',
+    falha_pagamento: 'O Mercado Pago não gerou o pagamento agora. Tente de novo ou feche pelo WhatsApp.',
+    carrinho_vazio: 'Seu carrinho está vazio.',
+  };
+
+  async function carregarCheckout(){
+    if(!supabaseReady || !LOJA_ID) return;
+    try {
+      const { data } = await supabaseClient.from('loja_checkout')
+        .select('ativo, conectado, aceita_pix, aceita_cartao').eq('loja_id', LOJA_ID).maybeSingle();
+      CHECKOUT = (data && data.ativo && data.conectado && (data.aceita_pix || data.aceita_cartao)) ? data : null;
+    } catch(e){ CHECKOUT = null; }
+    const box = document.getElementById('ckBox');
+    if(!box) return;
+    box.hidden = !CHECKOUT;
+    if(CHECKOUT){
+      document.getElementById('ckPixBtn').style.display = CHECKOUT.aceita_pix ? '' : 'none';
+      document.getElementById('ckCartaoBtn').style.display = CHECKOUT.aceita_cartao ? '' : 'none';
+    }
+    ckRetornoDoCartao();
+  }
+
+  function ckMostrarErro(msg){
+    const el = document.getElementById('ckErro');
+    if(el) el.textContent = msg || '';
+  }
+
+  async function ckLerErroFuncao(error){
+    try { const j = await error.context.json(); return j && j.erro ? j.erro : null; } catch(_) { return null; }
+  }
+
+  async function ckPagar(metodo){
+    ckMostrarErro('');
+    if(!CHECKOUT || !order.length) return;
+    const v = id => (document.getElementById(id)?.value || '').trim();
+    const nome = v('clienteNome'), whats = v('clienteWhats'), email = v('clienteEmail').toLowerCase();
+    if(nome.length < 3) return ckMostrarErro(CK_ERROS.nome_invalido);
+    if(whats.replace(/\D/g, '').length < 10) return ckMostrarErro('Digite seu WhatsApp com DDD.');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return ckMostrarErro(CK_ERROS.email_invalido);
+    const endereco = {
+      cep: v('clienteCep'), rua: v('clienteRua'), numero: v('clienteNumero'), complemento: v('clienteComplemento'),
+      bairro: v('clienteBairro'), cidade: v('clienteCidade'), uf: v('clienteUf'), obs: v('clienteObs'),
+    };
+    if(freteEscolhido !== 'retirar' && (endereco.cep.replace(/\D/g, '').length !== 8 || !endereco.rua || !endereco.numero)){
+      return ckMostrarErro(CK_ERROS.endereco_incompleto);
+    }
+    const btn = document.getElementById(metodo === 'pix' ? 'ckPixBtn' : 'ckCartaoBtn');
+    const txtOriginal = btn.innerHTML;
+    btn.disabled = true; btn.textContent = 'Gerando pagamento...';
+    try {
+      const { data, error } = await supabaseClient.functions.invoke('checkout', { body: {
+        acao: 'criar', loja_slug: LOJA_SLUG, metodo,
+        cliente: { nome, whats, email }, endereco, frete: { id: freteEscolhido },
+        itens: order.map(i => ({ produtoId: i.produtoId, tamanho: i.tamanho, qty: i.qty, nome: i.nome || '', numero: i.numero || '' })),
+      }});
+      if(error){
+        const cod = await ckLerErroFuncao(error);
+        ckMostrarErro(CK_ERROS[cod] || 'Não consegui gerar o pagamento. Tente de novo.');
+        return;
+      }
+      trackEvent('checkout_iniciado', { metodo, total: data.total });
+      if(metodo === 'cartao' && data.link){
+        try { sessionStorage.setItem('ckPendente', JSON.stringify({ pedido_id: data.pedido_id, token: data.token })); } catch(_){}
+        window.location.href = data.link;
+        return;
+      }
+      ckPedido = data;
+      ckAbrirPix();
+    } catch(e){
+      console.error('Checkout falhou', e);
+      ckMostrarErro('Sem conexão agora. Tente de novo.');
+    } finally {
+      btn.disabled = false; btn.innerHTML = txtOriginal;
+    }
+  }
+
+  function ckAbrir(html){
+    document.getElementById('ckConteudo').innerHTML = html;
+    document.getElementById('ckOverlay').hidden = false;
+  }
+  function ckFechar(){
+    document.getElementById('ckOverlay').hidden = true;
+    clearInterval(ckTimer); clearInterval(ckRelogio); ckTimer = ckRelogio = null;
+  }
+
+  function ckAbrirPix(){
+    const p = ckPedido;
+    const qr = p.pix && p.pix.qr_base64 ? `<div class="ck-qr"><img alt="QR Code PIX" src="data:image/png;base64,${esc(p.pix.qr_base64)}"></div>` : '';
+    ckAbrir(`
+      <div class="ck-titulo">Pague com PIX</div>
+      <div class="ck-sub">Pedido #${esc(p.numero)} · ${esc(STORE_CONFIG.nome)}</div>
+      <div class="ck-valor">${fmt(Number(p.total))}</div>
+      ${qr}
+      <textarea class="ck-copia" id="ckCopiaCola" readonly>${esc(p.pix ? p.pix.copia_cola : '')}</textarea>
+      <button type="button" class="ck-btn" style="margin-top:12px;" onclick="ckCopiar()">Copiar código PIX</button>
+      <div class="ck-status"><span class="ck-ponto"></span><span id="ckStatusTxt">Aguardando pagamento · <span id="ckRelogio"></span></span></div>
+      <ol class="ck-passos">
+        <li>Abra o app do seu banco e escolha <b>PIX copia e cola</b> (ou leia o QR Code).</li>
+        <li>Cole o código e confirme o pagamento.</li>
+        <li>Esta tela confirma sozinha em poucos segundos.</li>
+      </ol>`);
+    ckIniciarRelogio(p.pix && p.pix.expira_em);
+    ckIniciarConsulta();
+  }
+
+  function ckIniciarRelogio(expiraEm){
+    clearInterval(ckRelogio);
+    const fim = expiraEm ? new Date(expiraEm).getTime() : Date.now() + 30 * 60000;
+    const tick = () => {
+      const el = document.getElementById('ckRelogio');
+      if(!el) return;
+      const r = Math.max(0, Math.round((fim - Date.now()) / 1000));
+      el.textContent = `expira em ${String(Math.floor(r / 60)).padStart(2, '0')}:${String(r % 60).padStart(2, '0')}`;
+    };
+    tick(); ckRelogio = setInterval(tick, 1000);
+  }
+
+  async function ckCopiar(){
+    const el = document.getElementById('ckCopiaCola');
+    if(!el) return;
+    try { await navigator.clipboard.writeText(el.value); }
+    catch(_) { el.select(); document.execCommand('copy'); }
+    const st = document.getElementById('ckStatusTxt');
+    if(st){ const antes = st.innerHTML; st.textContent = 'Código copiado! Cole no app do banco.'; setTimeout(() => { if(document.getElementById('ckStatusTxt')) { st.innerHTML = antes; ckIniciarRelogio(ckPedido && ckPedido.pix && ckPedido.pix.expira_em); } }, 2500); }
+  }
+
+  function ckIniciarConsulta(maxTentativas){
+    clearInterval(ckTimer);
+    let n = 0;
+    const consultar = async () => {
+      if(!ckPedido) return;
+      n++;
+      if(maxTentativas && n > maxTentativas){ clearInterval(ckTimer); ckResultado('aguardando_longo'); return; }
+      try {
+        const { data } = await supabaseClient.functions.invoke('checkout', { body: { acao: 'status', pedido_id: ckPedido.pedido_id, token: ckPedido.token } });
+        if(!data) return;
+        if(data.numero) ckPedido.numero = data.numero;
+        if(data.total) ckPedido.total = data.total;
+        if(data.status === 'pago'){ clearInterval(ckTimer); ckResultado('pago'); }
+        else if(data.status === 'expirado' || data.status === 'cancelado'){ clearInterval(ckTimer); ckResultado('expirado'); }
+      } catch(_) { /* tenta de novo no próximo ciclo */ }
+    };
+    consultar();
+    ckTimer = setInterval(consultar, 4000);
+  }
+
+  function ckResultado(st){
+    clearInterval(ckRelogio);
+    const p = ckPedido || {};
+    if(st === 'pago'){
+      order = []; renderOrder();
+      try { sessionStorage.removeItem('ckPendente'); } catch(_){}
+      const nome = (document.getElementById('clienteNome')?.value || '').trim();
+      const msg = encodeURIComponent(`Olá! Acabei de pagar o pedido #${p.numero} (${fmt(Number(p.total || 0))}) direto na loja ${STORE_CONFIG.nome}.${nome ? '\nNome: ' + nome : ''}`);
+      trackEvent('checkout_pago', { metodo: p.metodo, total: p.total });
+      ckAbrir(`
+        <div class="ck-ok">✓</div>
+        <div class="ck-titulo">Pagamento confirmado!</div>
+        <div class="ck-sub">Pedido #${esc(p.numero)} · ${fmt(Number(p.total || 0))}<br>A loja já recebeu seu pedido.</div>
+        <a class="ck-btn" style="text-decoration:none;" target="_blank" rel="noopener" href="https://wa.me/${esc(STORE_CONFIG.whatsapp)}?text=${msg}">Falar com a loja no WhatsApp</a>
+        <button type="button" class="ck-btn sec" onclick="ckFechar(); closeCart && closeCart();">Continuar comprando</button>`);
+      return;
+    }
+    if(st === 'expirado'){
+      ckAbrir(`
+        <div class="ck-titulo">Pagamento não concluído</div>
+        <div class="ck-sub">O pagamento não foi concluído (o tempo acabou ou ele foi cancelado). Seu carrinho continua salvo.</div>
+        <button type="button" class="ck-btn" onclick="ckFechar(); ckPagar('pix');">Gerar novo PIX</button>
+        <button type="button" class="ck-btn sec" onclick="ckFechar()">Voltar ao carrinho</button>`);
+      return;
+    }
+    ckAbrir(`
+      <div class="ck-titulo">Confirmando pagamento</div>
+      <div class="ck-sub">O Mercado Pago ainda não confirmou. Se você já pagou, a confirmação chega em instantes e a loja é avisada automaticamente.</div>
+      <button type="button" class="ck-btn" onclick="ckVerificarDeNovo()">Verificar de novo</button>
+      <button type="button" class="ck-btn sec" onclick="ckFechar()">Fechar</button>`);
+  }
+
+  function ckVerificarDeNovo(){
+    ckAbrir(`<div class="ck-titulo">Confirmando pagamento</div><div class="ck-status"><span class="ck-ponto"></span>Consultando o Mercado Pago...</div>`);
+    ckIniciarConsulta(30);
+  }
+
+  // Volta do pagamento com cartão (Mercado Pago devolve pra loja com ?pedido=&t=)
+  function ckRetornoDoCartao(){
+    const q = new URLSearchParams(location.search);
+    let pedido = q.get('pedido'), token = q.get('t');
+    if(!pedido || !token){
+      try { const pend = JSON.parse(sessionStorage.getItem('ckPendente') || 'null'); if(pend){ pedido = pend.pedido_id; token = pend.token; } } catch(_){}
+    }
+    if(!pedido || !token) return;
+    if(q.get('pedido')){
+      q.delete('pedido'); q.delete('t'); q.delete('collection_id'); q.delete('collection_status'); q.delete('payment_id');
+      q.delete('status'); q.delete('external_reference'); q.delete('payment_type'); q.delete('merchant_order_id');
+      q.delete('preference_id'); q.delete('site_id'); q.delete('processing_mode'); q.delete('merchant_account_id');
+      const resto = q.toString();
+      history.replaceState(history.state, '', location.pathname + (resto ? '?' + resto : '') + location.hash);
+    }
+    ckPedido = { pedido_id: pedido, token, metodo: 'cartao' };
+    ckVerificarDeNovo();
+  }
 
   // ===== DRAWER (menu lateral) =====
   function openDrawer(){
@@ -5991,6 +6264,12 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
 </script>
 
+</div>
+<div class="ck-overlay" id="ckOverlay" hidden onclick="if(event.target===this) ckFechar()">
+  <div class="ck-modal" role="dialog" aria-modal="true" aria-label="Pagamento">
+    <button type="button" class="ck-fechar" onclick="ckFechar()" aria-label="Fechar">✕</button>
+    <div id="ckConteudo"></div>
+  </div>
 </div>
 </body>
 </html>
