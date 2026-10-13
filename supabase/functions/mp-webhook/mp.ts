@@ -10,9 +10,10 @@ export const MP_CLIENT_ID = Deno.env.get('MP_CLIENT_ID') || '';
 export const MP_CLIENT_SECRET = Deno.env.get('MP_CLIENT_SECRET') || '';
 export const REDIRECT_URI = `${SUPABASE_URL}/functions/v1/mp-conectar`;
 
-// Comissão da plataforma: 1% do pedido, no máximo R$ 10.
-export const TAXA_PERCENTUAL = 0.01;
-export const TAXA_TETO = 10;
+// Comissão da plataforma: DESLIGADA (o Katalogo Hub cobra só a mensalidade).
+// O lojista paga apenas a tarifa do próprio Mercado Pago.
+export const TAXA_PERCENTUAL = 0;
+export const TAXA_TETO = 0;
 export function calcularTaxa(total: number): number {
   return Math.min(TAXA_TETO, Math.round(total * TAXA_PERCENTUAL * 100) / 100);
 }

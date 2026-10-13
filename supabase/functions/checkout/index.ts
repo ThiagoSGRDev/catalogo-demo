@@ -2,7 +2,7 @@
 //  POST {acao:'criar', ...}  -> recalcula TUDO no servidor (preço, personalização, frete, estoque),
 //                               cria o pedido e o pagamento (PIX na tela ou cartão no Mercado Pago)
 //  POST {acao:'status', pedido_id, token} -> situação do pedido (o catálogo consulta até ficar pago)
-// Comissão da plataforma: 1% do pedido, teto R$ 10 (application_fee / marketplace_fee).
+// Sem comissão da plataforma: o valor inteiro vai para o lojista (menos a tarifa do Mercado Pago).
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {
   admin, aplicarPagamento, calcularTaxa, CORS, json, mpGet, mpPost, SERVICE_KEY,
@@ -165,7 +165,7 @@ async function criar(body: any) {
       payment_method_id: 'pix',
       external_reference: ped.id,
       notification_url: notificacao,
-      application_fee: taxa,
+      ...(taxa > 0 ? { application_fee: taxa } : {}),
       date_of_expiration: expira,
       payer: { email: cliente.email, first_name: primeiro, last_name: resto.join(' ') || primeiro },
     }, `pix-${ped.id}`);
@@ -192,7 +192,7 @@ async function criar(body: any) {
     payer: { email: cliente.email, name: primeiro, surname: resto.join(' ') || undefined },
     external_reference: ped.id,
     notification_url: notificacao,
-    marketplace_fee: taxa,
+    ...(taxa > 0 ? { marketplace_fee: taxa } : {}),
     back_urls: { success: volta, pending: volta, failure: volta },
     auto_return: 'approved',
     payment_methods: { excluded_payment_types: [{ id: 'ticket' }, { id: 'atm' }], installments: 12 },
