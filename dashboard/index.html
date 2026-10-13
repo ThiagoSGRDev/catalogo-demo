@@ -366,6 +366,18 @@
   .btn-danger:hover{ border-color:var(--btn-danger); }
 
   .btn-ghost{ background:transparent; color:var(--text-dim); border:1.5px solid var(--line); }
+  /* Domínio próprio (Minha loja) */
+  .dom-card{ border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:10px; }
+  .dom-nome{ font-weight:700; word-break:break-all; }
+  .dom-pill{ display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; margin-top:6px; }
+  .dom-pill.ativo{ background:rgba(34,197,94,.15); color:#4ADE80; }
+  .dom-pill.pendente{ background:rgba(245,158,11,.14); color:#FBBF24; }
+  .dom-dns{ width:100%; border-collapse:collapse; margin:12px 0 6px; font-size:13px; }
+  .dom-dns th, .dom-dns td{ text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); word-break:break-all; vertical-align:top; }
+  .dom-dns th{ color:var(--text-dim); font-weight:600; }
+  .dom-acoes{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .dom-acoes .btn{ flex:1 1 140px; }
+  .dom-erro{ color:#F87171; font-size:13px; margin-top:8px; }
   .btn-ghost:hover{ color:#fff; border-color:rgba(255,255,255,0.35); }
   .btn:disabled{ opacity:0.5; cursor:not-allowed; transform:none !important; }
   .login-error{ background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#FCA5A5; padding:12px 14px; border-radius:10px; font-size:13px; margin-bottom:14px; }
@@ -1873,6 +1885,10 @@
         <input type="text" id="lojaNomeInput" placeholder="Ex.: Camisa e Cabide">
         <div class="field-hint">Aparece no catálogo, no rodapé, e na mensagem automática de "Fale no WhatsApp".</div>
       </div>
+    </div>
+    <div class="form-section" id="dominioSection">
+      <h3>Endereço da loja</h3>
+      <div id="dominioConteudo"><div class="field-hint">Carregando...</div></div>
     </div>
     <div class="form-section">
       <h3>Estoque</h3>
@@ -7981,6 +7997,7 @@
     renderLojaImagemBarraRodapeGrid();
     initMarqueePreview();
     aplicarTravaMarquee();
+    carregarDominio();
     window.scrollTo(0,0);
   }
 
@@ -7999,6 +8016,130 @@
     const aviso = document.getElementById('avisoMarqueeTravado');
     if(aviso) aviso.classList.toggle('hidden', !travar);
   }
+  // ============================================================
+  // 🌐 DOMÍNIO PRÓPRIO — subdomínio grátis (loja.katalogohub.com) ou domínio do lojista.
+  // A função "dominio" (Supabase) registra na Vercel e ativa sozinha quando o DNS fica certo.
+  // ============================================================
+  let DOMINIO_ESTADO = null;
+  const DOMINIO_ERROS = {
+    plano_pago: 'Endereço próprio é dos planos pagos. Assine um plano para liberar.',
+    dominio_invalido: 'Esse endereço não parece um domínio válido. Ex.: minhaloja.com.br',
+    dominio_reservado: 'Esse endereço é reservado. Use o seu subdomínio grátis ou um domínio seu.',
+    dominio_em_uso: 'Esse domínio já está em uso por outra loja.',
+    dominio_em_outra_conta: 'Esse domínio está ligado a outra conta da Vercel. Tire de lá e tente de novo.',
+    nao_configurado: 'Essa função ainda está sendo liberada. Tente mais tarde.',
+    vercel_recusou: 'Não deu para registrar o domínio agora. Tente de novo em alguns minutos.',
+    nao_autorizado: 'Sua sessão expirou. Entre de novo.',
+    falha: 'Não deu para salvar agora. Tente de novo.',
+    erro_interno: 'Algo deu errado. Tente de novo.'
+  };
+
+  async function chamarDominio(body){
+    try {
+      const { data, error } = await supabaseClient.functions.invoke('dominio', { body });
+      if(error){
+        let corpo = null;
+        try { corpo = await error.context.json(); } catch(e){}
+        return corpo || { erro: 'erro_interno' };
+      }
+      return data || { erro: 'erro_interno' };
+    } catch(e){
+      return { erro: 'erro_interno' };
+    }
+  }
+
+  async function carregarDominio(){
+    document.getElementById('dominioConteudo').innerHTML = '<div class="field-hint">Carregando...</div>';
+    DOMINIO_ESTADO = await chamarDominio({ acao: 'status' });
+    renderDominio();
+  }
+
+  function renderDominio(){
+    const el = document.getElementById('dominioConteudo');
+    const st = DOMINIO_ESTADO || {};
+    const linkPadrao = 'https://katalogohub.com/catalogo/loja/' + (ADMIN_LOJA_SLUG || '');
+    const erroHtml = st.erro
+      ? `<div class="dom-erro">${escHtml(DOMINIO_ERROS[st.erro] || DOMINIO_ERROS.erro_interno)}${st.detalhe ? ' (' + escHtml(st.detalhe) + ')' : ''}</div>` : '';
+    const padrao = `<div class="field-hint">Endereço padrão: <a href="${escHtml(linkPadrao)}" target="_blank" rel="noopener">${escHtml(linkPadrao.replace('https://',''))}</a></div>`;
+
+    if(st.plano_pago === false){
+      el.innerHTML = padrao + `
+        <div class="dom-card">
+          <div class="dom-nome">Endereço próprio</div>
+          <div class="field-hint" style="margin-top:6px;">Nos planos pagos sua loja pode abrir em <b>${escHtml(st.subdominio_gratis || 'sualoja.katalogohub.com')}</b> (grátis) ou no seu próprio domínio, como <b>minhaloja.com.br</b>.</div>
+          <div class="dom-acoes"><a class="btn btn-primary" href="/upgrade.html" style="text-decoration:none;">Ver planos</a></div>
+        </div>` + erroHtml;
+      return;
+    }
+
+    if(!st.dominio){
+      el.innerHTML = padrao + `
+        <div class="dom-card">
+          <div class="dom-nome">Subdomínio grátis</div>
+          <div class="field-hint" style="margin-top:6px;">Sua loja passa a abrir em <b>${escHtml(st.subdominio_gratis || '')}</b>. Não precisa configurar nada.</div>
+          <div class="dom-acoes"><button class="btn btn-primary" type="button" onclick="pedirDominio('${escHtml(st.subdominio_gratis || '')}')">Usar esse endereço</button></div>
+        </div>
+        <div class="dom-card">
+          <div class="dom-nome">Domínio próprio</div>
+          <div class="field" style="margin:10px 0 0;">
+            <label for="dominioInput">Seu domínio</label>
+            <input type="text" id="dominioInput" placeholder="minhaloja.com.br" autocapitalize="off" autocomplete="off" spellcheck="false" inputmode="url">
+            <div class="field-hint">Você precisa já ter comprado o domínio (ex.: no Registro.br). Depois mostramos o que configurar.</div>
+          </div>
+          <div class="dom-acoes"><button class="btn btn-secondary" type="button" onclick="pedirDominio(document.getElementById('dominioInput').value)">Conectar domínio</button></div>
+        </div>` + erroHtml;
+      return;
+    }
+
+    const ativo = st.status === 'ativo';
+    const ehSub = /\.katalogohub\.com$/.test(st.dominio);
+    let dnsHtml = '';
+    if(!ativo && Array.isArray(st.dns) && st.dns.length){
+      dnsHtml = `
+        <div class="field-hint" style="margin-top:12px;">No site onde você comprou o domínio (ex.: Registro.br), crie estes registros de DNS:</div>
+        <table class="dom-dns">
+          <tr><th>Tipo</th><th>Nome</th><th>Valor</th></tr>
+          ${st.dns.map(r => `<tr><td>${escHtml(r.tipo)}</td><td>${escHtml(r.nome)}</td><td>${escHtml(r.valor)}</td></tr>`).join('')}
+        </table>
+        <div class="field-hint">Depois de salvar, pode levar de alguns minutos a algumas horas. Toque em "Verificar agora" para conferir.</div>`;
+    } else if(!ativo){
+      dnsHtml = `<div class="field-hint" style="margin-top:12px;">${ehSub ? 'Ativando seu endereço. Leva só alguns minutos.' : 'Conferindo o domínio. Toque em "Verificar agora" em alguns minutos.'}</div>`;
+    }
+    const link = 'https://' + st.dominio;
+    el.innerHTML = padrao + `
+      <div class="dom-card">
+        <div class="dom-nome">${ativo ? `<a href="${escHtml(link)}" target="_blank" rel="noopener">${escHtml(st.dominio)}</a>` : escHtml(st.dominio)}</div>
+        <span class="dom-pill ${ativo ? 'ativo' : 'pendente'}">${ativo ? 'Ativo' : 'Aguardando ativação'}</span>
+        ${dnsHtml}
+        <div class="dom-acoes">
+          ${ativo ? `<button class="btn btn-secondary" type="button" onclick="copiarTexto('${escHtml(link)}')">Copiar link</button>` : `<button class="btn btn-secondary" type="button" onclick="carregarDominio()">Verificar agora</button>`}
+          <button class="btn btn-ghost" type="button" onclick="removerDominio()">Remover</button>
+        </div>
+      </div>` + erroHtml;
+  }
+
+  async function pedirDominio(valor){
+    const dominio = String(valor || '').trim();
+    if(!dominio){ showToast('Digite o domínio.', 'error'); return; }
+    document.getElementById('dominioConteudo').innerHTML = '<div class="field-hint">Registrando o endereço...</div>';
+    const r = await chamarDominio({ acao: 'pedir', dominio });
+    DOMINIO_ESTADO = r.dominio ? r : Object.assign({}, DOMINIO_ESTADO, { erro: r.erro || 'erro_interno', detalhe: r.detalhe || null });
+    renderDominio();
+    if(!r.erro) showToast(r.status === 'ativo' ? 'Endereço ativo!' : 'Endereço registrado. Falta ativar.', 'success');
+  }
+
+  async function removerDominio(){
+    if(!confirm('Remover esse endereço? A loja continua abrindo no endereço padrão do Katalogo Hub.')) return;
+    document.getElementById('dominioConteudo').innerHTML = '<div class="field-hint">Removendo...</div>';
+    DOMINIO_ESTADO = await chamarDominio({ acao: 'remover' });
+    renderDominio();
+  }
+
+  function copiarTexto(t){
+    try { navigator.clipboard.writeText(t).then(() => showToast('Link copiado!', 'success')); }
+    catch(e){ showToast(t, 'success'); }
+  }
+
   function closeLojaOverlay(){
     document.getElementById('lojaOverlay').classList.add('hidden');
   }

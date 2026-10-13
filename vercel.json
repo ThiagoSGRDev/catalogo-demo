@@ -1,6 +1,50 @@
 {
   "rewrites": [
     {
+      "source": "/",
+      "missing": [
+        {
+          "type": "host",
+          "value": "katalogohub\\.com"
+        },
+        {
+          "type": "host",
+          "value": "www\\.katalogohub\\.com"
+        },
+        {
+          "type": "host",
+          "value": "(.*)\\.vercel\\.app"
+        },
+        {
+          "type": "host",
+          "value": "localhost"
+        }
+      ],
+      "destination": "/catalogo-template.html"
+    },
+    {
+      "source": "/((?!api/|.*\\.).*)",
+      "missing": [
+        {
+          "type": "host",
+          "value": "katalogohub\\.com"
+        },
+        {
+          "type": "host",
+          "value": "www\\.katalogohub\\.com"
+        },
+        {
+          "type": "host",
+          "value": "(.*)\\.vercel\\.app"
+        },
+        {
+          "type": "host",
+          "value": "localhost"
+        }
+      ],
+      "destination": "/catalogo-template.html"
+    },
+    {
       "source": "/catalogo/loja/:slug",
       "destination": "/catalogo-template.html"
     },

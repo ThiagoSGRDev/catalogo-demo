@@ -5,15 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KatalogoHub</title>
   <link rel="canonical" href="https://katalogohub.com/landing-vendas.html">
-  <meta http-equiv="refresh" content="0; url=landing-vendas.html">
+  <noscript><meta http-equiv="refresh" content="0; url=landing-vendas.html"></noscript>
+  <script>
+    // katalogohub.com -> página de vendas. Domínio próprio de loja (mantodez.com.br ou
+    // loja.katalogohub.com) -> abre o catálogo da loja aqui mesmo, sem mudar o endereço.
+    (function(){
+      var h = location.hostname.toLowerCase();
+      var nosso = h === 'katalogohub.com' || h === 'www.katalogohub.com' || h === 'localhost' || h === '127.0.0.1' || /\.vercel\.app$/.test(h);
+      if(nosso){ location.replace('landing-vendas.html'); return; }
+      fetch('/catalogo-template.html', { cache: 'no-cache' })
+        .then(function(r){ return r.text(); })
+        .then(function(html){ document.open(); document.write(html); document.close(); })
+        .catch(function(){ document.body.textContent = 'Não foi possível abrir a loja agora. Tente de novo.'; });
+    })();
+  </script>
 </head>
 <body>
-  <script>location.replace("landing-vendas.html");</script>
   <noscript><a href="landing-vendas.html">Continuar</a></noscript>
 </body>
 </html>
 <!--
   Lojas disponíveis:
-  /loja/katalogo-hub/ - Catálogo de demonstração
-  /loja/manto-dez-sports/ - Manto Dez Sports
+  /catalogo/loja/katalogohub/ - Catálogo de demonstração
+  /catalogo/loja/manto-dez-sports/ - Manto Dez Sports
 -->

@@ -39,7 +39,9 @@ module.exports = async (req, res) => {
     } catch (e) { /* cai no padrão */ }
   }
 
-  const raiz = slugOk ? '/catalogo/loja/' + slug + '/' : '/';
+  // Domínio próprio da loja (raiz=1): o app abre na raiz do domínio.
+  const naRaiz = String((req.query && req.query.raiz) || '') === '1';
+  const raiz = naRaiz ? '/' : (slugOk ? '/catalogo/loja/' + slug + '/' : '/');
   const manifesto = {
     name: nome,
     short_name: nome.slice(0, 12),
