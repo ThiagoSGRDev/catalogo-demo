@@ -12,8 +12,33 @@
 <script>
   // App instalável: o manifesto é montado na hora, com o nome e a cor da loja
   // que está aberta (cada lojista instala o app da própria loja).
+  // Domínio próprio (mantodez.com.br) ou subdomínio (loja.katalogohub.com): descobre a loja
+  // pelo endereço ANTES do resto da página rodar. Só responde domínio ativado e loja em dia.
+  (function(){
+    var h = location.hostname.toLowerCase();
+    var nosso = h === 'katalogohub.com' || h === 'www.katalogohub.com' || h === 'localhost' || h === '127.0.0.1' || /\.vercel\.app$/.test(h);
+    window.KH_DOMINIO_PROPRIO = !nosso;
+    window.KH_SLUG_DOMINIO = null;
+    if(nosso) return;
+    var chave = 'kh_dom_' + h, slug = null;
+    try { var c = JSON.parse(sessionStorage.getItem(chave) || 'null'); if(c && c.s && c.t > Date.now() - 600000) slug = c.s; } catch(e){}
+    if(!slug){
+      try {
+        var x = new XMLHttpRequest();
+        x.open('POST', 'https://qqoepslbisxpswabrkqe.supabase.co/rest/v1/rpc/loja_slug_por_dominio', false);
+        x.setRequestHeader('apikey', 'sb_publishable_t-LqIKyLqCT4Kx8Hgi7JcA_tvk3gjsy');
+        x.setRequestHeader('Authorization', 'Bearer sb_publishable_t-LqIKyLqCT4Kx8Hgi7JcA_tvk3gjsy');
+        x.setRequestHeader('Content-Type', 'application/json');
+        x.send(JSON.stringify({ p_host: h }));
+        if(x.status === 200){ var r = JSON.parse(x.responseText); if(typeof r === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(r)) slug = r; }
+      } catch(e){}
+      if(slug){ try { sessionStorage.setItem(chave, JSON.stringify({ s: slug, t: Date.now() })); } catch(e){} }
+    }
+    window.KH_SLUG_DOMINIO = slug;
+  })();
   (function(){
     function slugDaUrl(){
+      if(window.KH_DOMINIO_PROPRIO) return window.KH_SLUG_DOMINIO || '';
       var m = location.pathname.match(/\/(?:catalogo\/)?loja\/([^\/]+)/);
       if(m) return decodeURIComponent(m[1]);
       return new URLSearchParams(location.search).get('loja') || '';
@@ -24,7 +49,7 @@
     (function(){
       var slug = window.khSlugApp === 'katalogo-demo' ? 'katalogohub' : (window.khSlugApp || 'katalogohub');
       var l = document.createElement('link'); l.rel = 'manifest'; l.id = 'khManifest';
-      l.href = '/api/manifest?slug=' + encodeURIComponent(slug);
+      l.href = '/api/manifest?slug=' + encodeURIComponent(slug) + (window.KH_DOMINIO_PROPRIO ? '&raiz=1' : '');
       document.head.appendChild(l);
     })();
     // Compatibilidade: a página chama isto depois de ler a loja; agora só ajusta cor e título do app.
@@ -2498,10 +2523,16 @@
   // URL limpa: /catalogo/loja/<loja>/<tela...> (ex.: /catalogo/loja/katalogohub/produto/noruega-torcedor).
   // Precisa da regra de rewrite do host (vercel.json / _redirects). O formato antigo
   // (catalogo-template.html?loja=x#/produto/y) continua funcionando.
-  const CAMINHO_LIMPO = location.pathname.match(/^\/catalogo\/loja\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/.*)?$/i);
-  const USA_URL_LIMPA = !!CAMINHO_LIMPO;
+  // Domínio próprio: a loja vem do endereço (resolvido no topo da página) e as rotas
+  // ficam na raiz (mantodez.com.br/produto/...). Domínio não ativado = "loja indisponível",
+  // nunca cai na demonstração.
+  const MODO_DOMINIO = !!window.KH_DOMINIO_PROPRIO;
+  const CAMINHO_LIMPO = MODO_DOMINIO ? null : location.pathname.match(/^\/catalogo\/loja\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:\/.*)?$/i);
+  const USA_URL_LIMPA = MODO_DOMINIO || !!CAMINHO_LIMPO;
   const SLUG_NA_URL = CAMINHO_LIMPO ? CAMINHO_LIMPO[1] : null;
-  let LOJA_SLUG = CAMINHO_LIMPO
+  let LOJA_SLUG = MODO_DOMINIO
+    ? (window.KH_SLUG_DOMINIO || '__dominio_nao_ativado__')
+    : CAMINHO_LIMPO
     ? (SLUG_NA_URL === 'katalogo-demo' ? 'katalogohub' : SLUG_NA_URL)
     : new URLSearchParams(location.search).get('loja');
   if (!LOJA_SLUG) {
@@ -4104,6 +4135,9 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // se ela foi aberta assim; senão o formato antigo (?loja=x#/produto/y).
   function urlDaRota(route){
     const temRota = route && route.length;
+    if(MODO_DOMINIO){
+      return '/' + (temRota ? route.map(encodeURIComponent).join('/') : '');
+    }
     if(USA_URL_LIMPA){
       return '/catalogo/loja/' + SLUG_NA_URL + (temRota ? '/' + route.map(encodeURIComponent).join('/') : '');
     }
@@ -4113,13 +4147,15 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // Link curto pra compartilhar: SEMPRE no formato limpo, não importa como a página foi aberta
   function urlCompartilhavel(route){
     const temRota = route && route.length;
+    if(MODO_DOMINIO) return location.origin + '/' + (temRota ? route.map(encodeURIComponent).join('/') : '');
     return location.origin + '/catalogo/loja/' + LOJA_SLUG + (temRota ? '/' + route.map(encodeURIComponent).join('/') : '');
   }
 
   // Rota da tela atual, lida da URL (caminho limpo ou #hash antigo)
   function rotaDaUrl(){
     const m = location.pathname.match(/^\/catalogo\/loja\/[^/]+\/?(.*)$/i);
-    const raw = (USA_URL_LIMPA && m) ? m[1] : location.hash.replace(/^#\/?/, '');
+    const raw = MODO_DOMINIO ? location.pathname.replace(/^\/+/, '')
+      : (USA_URL_LIMPA && m) ? m[1] : location.hash.replace(/^#\/?/, '');
     return raw.split('/').filter(Boolean).map(s => { try { return decodeURIComponent(s); } catch(e){ return s; } });
   }
 
