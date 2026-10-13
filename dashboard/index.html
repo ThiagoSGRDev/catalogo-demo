@@ -2926,6 +2926,17 @@
   let PRODUTOS_COM_FOTOS_LOJA = new Set(); // produtos do mestre com fotos proprias desta loja
   let ADMIN_USA_ESTOQUE = false; // chave "Controlar estoque" da tela Loja
   let ADMIN_USA_MESTRE = false;
+  // Preço por tipo desta loja (tipo -> preço). Usado pra mostrar no formulário
+  // o preço que o catálogo realmente cobra em produto importado/em lote.
+  let PRECOS_TIPO_ADMIN = new Map();
+  // Formulário de produto: de onde veio e qual preço apareceu ao abrir.
+  let FORM_ORIGEM_IMPORT = false;
+  let FORM_PRECO_INICIAL = null;
+  let FORM_PRECO_MANUAL_ORIG = false;
+  async function carregarPrecosTipoAdmin(){
+    const { data } = await supabaseClient.from('loja_precos_por_tipo').select('tipo, preco').eq('loja_id', ADMIN_LOJA_ID);
+    PRECOS_TIPO_ADMIN = new Map((data || []).map(p => [p.tipo, Number(p.preco)]));
+  }
   let ADMIN_EH_MESTRE = false; // loja mestre (Katalogo Hub): recorte com modelo pesado
   let ADMIN_MARQUEE_LIBERADO = false; // false = faixas (marquee) travadas para esta loja
   let ADMIN_LOJA_SLUG = null;
@@ -2959,6 +2970,7 @@
     // Faixas (marquee): só o mestre (Katalogo Hub) edita, ou loja que ele liberou. Na dúvida, travado.
     ADMIN_MARQUEE_LIBERADO = ADMIN_EH_MESTRE || !!(lojaInfo && lojaInfo.marquee_liberado);
     ADMIN_LOJA_SLUG = lojaInfo ? lojaInfo.slug : null;
+    await carregarPrecosTipoAdmin();
     const btnMestre = document.getElementById('btnCatalogoMestre');
     if(btnMestre) btnMestre.style.display = ADMIN_USA_MESTRE ? '' : 'none';
 
@@ -4390,7 +4402,7 @@
               <span>${p.teams ? p.teams.nome : '—'}</span>
               <span class="tag-mini">${p.tipo}</span>
             </div>
-            <div class="product-card-preco">${fmt(p.preco)}</div>
+            <div class="product-card-preco">${fmt((!doMestre && !p.preco_manual && PRECOS_TIPO_ADMIN.has(p.tipo)) ? PRECOS_TIPO_ADMIN.get(p.tipo) : p.preco)}</div>
           </div>
         </div>
       `;
@@ -4465,7 +4477,14 @@
     document.getElementById('fieldTitulo').value = product ? (product.titulo || '') : '';
     document.getElementById('fieldSubtitulo').value = product ? (product.subtitulo || '') : '';
     document.getElementById('fieldDescricao').value = product ? (product.descricao || '') : '';
-    document.getElementById('fieldPreco').value = product ? product.preco : '';
+    // Produto importado/em lote (sem preço manual) mostra o preço por tipo, que é o que o catálogo cobra.
+    FORM_ORIGEM_IMPORT = false;
+    FORM_PRECO_MANUAL_ORIG = product ? !!product.preco_manual : false;
+    const precoInicial = !product ? ''
+      : (!product.preco_manual && PRECOS_TIPO_ADMIN.has(product.tipo)) ? PRECOS_TIPO_ADMIN.get(product.tipo)
+      : product.preco;
+    FORM_PRECO_INICIAL = precoInicial === '' ? null : Number(precoInicial);
+    document.getElementById('fieldPreco').value = precoInicial;
     document.getElementById('fieldTags').value = product && product.tags ? product.tags.join(', ') : '';
     document.getElementById('fieldDisponivel').checked = product ? product.disponivel : true;
     document.getElementById('fieldDestaque').checked = product ? !!product.destaque : false;
@@ -4557,10 +4576,17 @@
 
     const id = editingProductId || buildProductId(team.nome, tipo);
 
-    await commitSaveProduct(id, team, tipo, titulo, subtitulo, descricao, preco, tamanhos, tags, disponivel, destaque, lancamento, estoque);
+    // Cadastro manual novo: o preço digitado vale. Importado: segue o preço por tipo,
+    // a não ser que o lojista mude o valor no formulário. Edição: mudar o preço torna manual.
+    const precoMudou = FORM_PRECO_INICIAL === null || Math.abs(preco - FORM_PRECO_INICIAL) > 0.001;
+    const precoManual = editingProductId
+      ? (FORM_PRECO_MANUAL_ORIG || precoMudou)
+      : (FORM_ORIGEM_IMPORT ? precoMudou : true);
+
+    await commitSaveProduct(id, team, tipo, titulo, subtitulo, descricao, preco, tamanhos, tags, disponivel, destaque, lancamento, estoque, precoManual);
   }
 
-  async function commitSaveProduct(id, team, tipo, titulo, subtitulo, descricao, preco, tamanhos, tags, disponivel, destaque, lancamento, estoque){
+  async function commitSaveProduct(id, team, tipo, titulo, subtitulo, descricao, preco, tamanhos, tags, disponivel, destaque, lancamento, estoque, precoManual){
     const saveBtn = document.getElementById('saveBtn');
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<span class="spinner"></span>';
@@ -4568,7 +4594,7 @@
     const { error } = await supabaseClient
       .from('products')
       .upsert({
-        id, team_id: team.id, tipo, titulo, subtitulo, descricao, preco,
+        id, team_id: team.id, tipo, titulo, subtitulo, descricao, preco, preco_manual: !!precoManual,
         tamanhos, tags, disponivel, destaque, lancamento, loja_id: ADMIN_LOJA_ID
       });
 
@@ -7018,7 +7044,13 @@
     document.getElementById('fieldTitulo').value = tituloEditado || '';
     document.getElementById('fieldSubtitulo').value = `${tipoDetectado} ${generoDetectado}`;
     document.getElementById('fieldDescricao').value = '';
-    document.getElementById('fieldPreco').value = isNaN(precoEditado) ? '' : precoEditado;
+    // Importado: usa o preço por tipo da loja (se houver); senão, o preço lido do anúncio.
+    const precoImport = PRECOS_TIPO_ADMIN.has(tipoDetectado) ? PRECOS_TIPO_ADMIN.get(tipoDetectado)
+      : (isNaN(precoEditado) ? '' : precoEditado);
+    FORM_ORIGEM_IMPORT = true;
+    FORM_PRECO_MANUAL_ORIG = false;
+    FORM_PRECO_INICIAL = precoImport === '' ? null : Number(precoImport);
+    document.getElementById('fieldPreco').value = precoImport;
     document.getElementById('fieldTags').value = '';
     document.getElementById('fieldDisponivel').checked = true;
     document.getElementById('fieldDestaque').checked = false;
@@ -7840,6 +7872,7 @@
       }
     }
 
+    await carregarPrecosTipoAdmin();
     showToast('Preços salvos! O catálogo já reflete a mudança.', 'success');
     closePrecosOverlay();
   }

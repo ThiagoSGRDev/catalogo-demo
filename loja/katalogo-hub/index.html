@@ -3438,7 +3438,9 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       id: row.id,
       tipo: row.tipo,
       preco: PRECOS_CUSTOMIZADOS.has(row.id) ? PRECOS_CUSTOMIZADOS.get(row.id)
-        : PRECOS_POR_TIPO.has(row.tipo) ? PRECOS_POR_TIPO.get(row.tipo)
+        // Preço por tipo: vale pro catálogo mestre e pros produtos importados/em lote.
+        // Produto cadastrado à mão (preco_manual) usa o preço que o lojista digitou.
+        : ((row.loja_id !== LOJA_ID || !row.preco_manual) && PRECOS_POR_TIPO.has(row.tipo)) ? PRECOS_POR_TIPO.get(row.tipo)
         : parseFloat(row.preco),
       titulo: herda('titulo'),
       subtitulo: herda('subtitulo') || null,

@@ -60,7 +60,7 @@ async function criar(body: any) {
   }
   const ids = [...new Set(itensIn.map((i: any) => txt(i.produtoId, 120)).filter(Boolean))];
   const [{ data: prods }, { data: ocultos }, { data: precos }, { data: precosTipo }, { data: ovs }, { data: cfg }] = await Promise.all([
-    db.from('products').select('id, tipo, titulo, subtitulo, preco, tamanhos, disponivel, loja_id, team_id').in('id', ids).in('loja_id', lojasVisiveis),
+    db.from('products').select('id, tipo, titulo, subtitulo, preco, preco_manual, tamanhos, disponivel, loja_id, team_id').in('id', ids).in('loja_id', lojasVisiveis),
     db.from('loja_produtos_ocultos').select('product_id').eq('loja_id', loja.id).in('product_id', ids),
     db.from('loja_precos_customizados').select('product_id, preco').eq('loja_id', loja.id).in('product_id', ids),
     db.from('loja_precos_por_tipo').select('tipo, preco').eq('loja_id', loja.id),
@@ -92,7 +92,11 @@ async function criar(body: any) {
     const qty = Math.max(1, Math.min(20, parseInt(i.qty, 10) || 1));
     const nome = txt(i.nome, 20).toUpperCase();
     const numero = txt(i.numero, 3).replace(/\D/g, '');
-    const base = precoCustom.has(p.id) ? precoCustom.get(p.id)! : precoTipo.has(p.tipo) ? precoTipo.get(p.tipo)! : Number(p.preco);
+    // Preço por tipo: vale pro catálogo mestre e pros produtos importados/em lote.
+    // Produto cadastrado à mão (preco_manual) usa o preço que o lojista digitou.
+    const base = precoCustom.has(p.id) ? precoCustom.get(p.id)!
+      : ((p.loja_id !== loja.id || !p.preco_manual) && precoTipo.has(p.tipo)) ? precoTipo.get(p.tipo)!
+      : Number(p.preco);
     const unit = dinheiro(base + ((nome || numero) ? precoPers : 0));
     if (!(unit > 0)) return json({ erro: 'preco_invalido', produto: p.id }, 400);
     if (cfg?.usa_estoque) {
