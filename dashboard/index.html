@@ -4565,7 +4565,11 @@
     const disponivel = document.getElementById('fieldDisponivel').checked;
     const destaque = document.getElementById('fieldDestaque').checked;
     const lancamento = document.getElementById('fieldLancamento').checked;
-    const tamanhos = selectedSizes.length ? selectedSizes : null;
+    const ORDEM_TAM = { PP:0, P:1, M:2, G:3, GG:4, XG:5, XGG:6, '2XL':7, '3XL':8, '4XL':9, '5XL':10 };
+    const pesoTam = t => { const k = String(t).toUpperCase(); return k in ORDEM_TAM ? ORDEM_TAM[k] : 100; };
+    const tamanhos = selectedSizes.length
+      ? Array.from(new Set(selectedSizes)).sort((a, b) => (pesoTam(a) - pesoTam(b)) || ((parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)))
+      : null;
 
     let estoque = null;
     if(ADMIN_USA_ESTOQUE){

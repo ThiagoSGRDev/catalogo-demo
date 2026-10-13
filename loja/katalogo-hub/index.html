@@ -3422,6 +3422,15 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // para o mesmo formato de objeto que o catálogo sempre usou.
   // O que a loja personalizou vence; o que ela não tocou (coluna nula) herda
   // do produto original. Time e tipo nunca são personalizáveis.
+  // Ordem padrão dos tamanhos na vitrine: PP, P, M, G, GG, XG, 2XL, 3XL, 4XL...;
+  // infantil (16, 18, 20...) em ordem numérica. Não depende da ordem salva no banco.
+  const ORDEM_TAMANHOS = { PP:0, P:1, M:2, G:3, GG:4, XG:5, XGG:6, '2XL':7, '3XL':8, '4XL':9, '5XL':10 };
+  function ordenarTamanhos(lista){
+    if(!Array.isArray(lista)) return lista;
+    const peso = s => { const k = String(s).toUpperCase(); return k in ORDEM_TAMANHOS ? ORDEM_TAMANHOS[k] : 100; };
+    return Array.from(new Set(lista)).sort((a, b) => (peso(a) - peso(b)) || ((parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)) || String(a).localeCompare(String(b)));
+  }
+
   function mapDbProduct(row){
     const ov = OVERRIDES.get(row.id) || null;
     const herda = campo => (ov && ov[campo] !== null && ov[campo] !== undefined) ? ov[campo] : row[campo];
@@ -3446,7 +3455,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       subtitulo: herda('subtitulo') || null,
       descricao: herda('descricao') || null,
       fotos: fotos.length ? fotos : null,
-      tamanhos: herda('tamanhos') || null,
+      tamanhos: ordenarTamanhos(herda('tamanhos')) || null,
       tags: herda('tags') || [],
       disponivel: row.disponivel,
       destaque: !!herda('destaque'),
