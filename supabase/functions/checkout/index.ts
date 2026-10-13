@@ -2,7 +2,7 @@
 //  POST {acao:'criar', ...}  -> recalcula TUDO no servidor (preço, personalização, frete, estoque),
 //                               cria o pedido e o pagamento (PIX na tela ou cartão no Mercado Pago)
 //  POST {acao:'status', pedido_id, token} -> situação do pedido (o catálogo consulta até ficar pago)
-// Sem comissão da plataforma: o valor inteiro vai para o lojista (menos a tarifa do Mercado Pago).
+// Comissão do Katalogo Hub por loja (1%, teto R$ 10; isentos: 10 fundadores e lojas próprias).
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {
   admin, aplicarPagamento, calcularTaxa, CORS, json, mpGet, mpPost, SERVICE_KEY,
@@ -143,7 +143,7 @@ async function criar(body: any) {
   }
   freteValor = dinheiro(freteValor);
   const total = dinheiro(subtotal + freteValor);
-  const taxa = calcularTaxa(total);
+  const taxa = calcularTaxa(total, ck);
 
   // ---- Pedido ----
   const { data: ped, error: errPed } = await db.from('pedidos').insert({

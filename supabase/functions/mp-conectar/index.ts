@@ -97,6 +97,8 @@ Deno.serve(async (req: Request) => {
     await db.from('loja_checkout').upsert({
       loja_id: st.loja_id, conectado: true, ativo: true, mp_conta_nome: nomeConta,
     });
+    // Reserva uma das 10 vagas sem comissão (se ainda houver).
+    await db.rpc('checkout_reservar_isencao', { p_loja: st.loja_id });
     return voltarPainel('conectado');
   }
 

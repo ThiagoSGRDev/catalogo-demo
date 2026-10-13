@@ -1781,7 +1781,7 @@
         <li>PIX na hora ou cartão em até 12x, na mesma tela do carrinho.</li>
         <li>O dinheiro cai <b>direto na sua conta do Mercado Pago</b>. Não passa pela gente.</li>
         <li>O pedido chega aqui já pago, com o selo <b>PAGO NA LOJA</b>, e o estoque baixa sozinho.</li>
-        <li><b>Sem comissão do Katalogo Hub.</b> Você paga só a tarifa normal do seu Mercado Pago.</li>
+        <li id="ckTaxaLi">Comissão do Katalogo Hub: <b>1% por pedido pago, no máximo R$ 10</b>, além da tarifa do Mercado Pago. Pedido que não fecha não cobra nada. <b>Os 10 primeiros lojistas que conectarem ficam isentos.</b></li>
         <li>O WhatsApp continua igual para quem prefere fechar conversando.</li>
       </ul>
     </div>
@@ -7512,8 +7512,20 @@
 
   async function carregarCheckoutConfig(){
     const { data } = await supabaseClient.from('loja_checkout')
-      .select('ativo, conectado, mp_conta_nome, aceita_pix, aceita_cartao').eq('loja_id', ADMIN_LOJA_ID).maybeSingle();
+      .select('ativo, conectado, mp_conta_nome, aceita_pix, aceita_cartao, isento_taxa, isento_motivo, taxa_percentual, taxa_teto').eq('loja_id', ADMIN_LOJA_ID).maybeSingle();
     CK_CONFIG = data || { ativo:false, conectado:false, aceita_pix:true, aceita_cartao:true };
+    const taxaLi = document.getElementById('ckTaxaLi');
+    if(taxaLi){
+      if(CK_CONFIG.isento_taxa){
+        taxaLi.innerHTML = CK_CONFIG.isento_motivo === 'fundador'
+          ? '<b>Você é cliente fundador: sem comissão do Katalogo Hub.</b> Você paga só a tarifa normal do seu Mercado Pago.'
+          : '<b>Sem comissão do Katalogo Hub.</b> Você paga só a tarifa normal do seu Mercado Pago.';
+      } else if(CK_CONFIG.conectado){
+        const pct = (Number(CK_CONFIG.taxa_percentual || 0.01) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+        const teto = Number(CK_CONFIG.taxa_teto || 10).toFixed(2).replace('.', ',');
+        taxaLi.innerHTML = `Comissão do Katalogo Hub: <b>${pct}% por pedido pago, no máximo R$ ${teto}</b>, além da tarifa do Mercado Pago. Pedido que não fecha não cobra nada.`;
+      }
+    }
     const box = document.getElementById('ckStatusBox');
     const ligado = CK_CONFIG.conectado && CK_CONFIG.ativo;
     box.classList.toggle('on', !!ligado);
