@@ -1466,6 +1466,8 @@
   .ck-ponto{ width:9px; height:9px; border-radius:50%; background:var(--gold); animation:ckPulso 1.2s infinite; }
   @keyframes ckPulso{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
   .ck-ok{ width:72px; height:72px; border-radius:50%; background:#16A34A; color:#fff; display:flex; align-items:center; justify-content:center; margin:6px auto 10px; font-size:38px; }
+  .ck-demo-aviso{ display:inline-block; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; background:rgba(var(--gold-rgb),.12); color:var(--gold); border:1px solid rgba(var(--gold-rgb),.4); border-radius:999px; padding:5px 12px; margin:0 34px 8px; }
+  .ck-qr-demo{ display:flex; align-items:center; justify-content:center; text-align:center; color:#111; font-family:'Anton', sans-serif; font-size:22px; line-height:1.2; background:repeating-linear-gradient(45deg,#fff 0 10px,#f0f0f0 10px 20px); }
   .ck-passos{ text-align:left; font-size:13px; color:rgba(var(--muted-rgb),0.7); margin:14px 0 0; padding-left:18px; line-height:1.6; }
   .whats-btn{
     display:flex; align-items:center; justify-content:center; gap:10px; width:100%;
@@ -5567,6 +5569,10 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
         .select('ativo, conectado, aceita_pix, aceita_cartao').eq('loja_id', LOJA_ID).maybeSingle();
       CHECKOUT = (data && data.ativo && data.conectado && (data.aceita_pix || data.aceita_cartao)) ? data : null;
     } catch(e){ CHECKOUT = null; }
+    // Catálogo de demonstração: mostra o checkout funcionando com pagamento SIMULADO (ninguém é cobrado).
+    if(!CHECKOUT && typeof EH_LOJA_DEMO !== 'undefined' && EH_LOJA_DEMO){
+      CHECKOUT = { demo: true, aceita_pix: true, aceita_cartao: true };
+    }
     const box = document.getElementById('ckBox');
     if(!box) return;
     box.hidden = !CHECKOUT;
@@ -5589,6 +5595,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   async function ckPagar(metodo){
     ckMostrarErro('');
     if(!CHECKOUT || !order.length) return;
+    if(CHECKOUT.demo) return ckDemo(metodo);
     const v = id => (document.getElementById(id)?.value || '').trim();
     const nome = v('clienteNome'), whats = v('clienteWhats'), email = v('clienteEmail').toLowerCase();
     if(nome.length < 3) return ckMostrarErro(CK_ERROS.nome_invalido);
@@ -5631,19 +5638,39 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     }
   }
 
+  // ---- Modo demonstração (só no catálogo de demonstração) ----
+  function ckDemo(metodo){
+    const total = getSubtotal() + getFreteValor();
+    ckPedido = { demo: true, pedido_id: 'demo', token: 'demo', numero: 1000 + Math.floor(Math.random() * 9000), total, metodo,
+      pix: { copia_cola: '00020126...DEMONSTRACAO...6304ABCD  (código de exemplo, não pague)', qr_base64: null, expira_em: new Date(Date.now() + 30 * 60000).toISOString() } };
+    trackEvent('checkout_demo', { metodo });
+    if(metodo === 'cartao'){
+      ckAbrir(`<div class="ck-demo-aviso">Demonstração · nenhum valor é cobrado</div>
+        <div class="ck-titulo">Cartão em até 12x</div>
+        <div class="ck-sub">Na loja real, o cliente vai para a página segura do Mercado Pago, paga e volta pra cá já confirmado.</div>
+        <div class="ck-valor">${fmt(total)}</div>
+        <div class="ck-status"><span class="ck-ponto"></span>Simulando a aprovação do cartão...</div>`);
+      clearTimeout(ckTimer); ckTimer = setTimeout(() => ckResultado('pago'), 3500);
+      return;
+    }
+    ckAbrirPix();
+  }
+
   function ckAbrir(html){
     document.getElementById('ckConteudo').innerHTML = html;
     document.getElementById('ckOverlay').hidden = false;
   }
   function ckFechar(){
     document.getElementById('ckOverlay').hidden = true;
-    clearInterval(ckTimer); clearInterval(ckRelogio); ckTimer = ckRelogio = null;
+    clearInterval(ckTimer); clearTimeout(ckTimer); clearInterval(ckRelogio); ckTimer = ckRelogio = null;
   }
 
   function ckAbrirPix(){
     const p = ckPedido;
-    const qr = p.pix && p.pix.qr_base64 ? `<div class="ck-qr"><img alt="QR Code PIX" src="data:image/png;base64,${esc(p.pix.qr_base64)}"></div>` : '';
+    const qr = p.pix && p.pix.qr_base64 ? `<div class="ck-qr"><img alt="QR Code PIX" src="data:image/png;base64,${esc(p.pix.qr_base64)}"></div>`
+      : (p.demo ? `<div class="ck-qr ck-qr-demo">QR CODE<br>DE EXEMPLO</div>` : '');
     ckAbrir(`
+      ${p.demo ? '<div class="ck-demo-aviso">Demonstração · nenhum valor é cobrado · confirma sozinho em segundos</div>' : ''}
       <div class="ck-titulo">Pague com PIX</div>
       <div class="ck-sub">Pedido #${esc(p.numero)} · ${esc(STORE_CONFIG.nome)}</div>
       <div class="ck-valor">${fmt(Number(p.total))}</div>
@@ -5682,7 +5709,8 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   }
 
   function ckIniciarConsulta(maxTentativas){
-    clearInterval(ckTimer);
+    clearInterval(ckTimer); clearTimeout(ckTimer);
+    if(ckPedido && ckPedido.demo){ ckTimer = setTimeout(() => ckResultado('pago'), 7000); return; }
     let n = 0;
     const consultar = async () => {
       if(!ckPedido) return;
@@ -5713,7 +5741,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       ckAbrir(`
         <div class="ck-ok">✓</div>
         <div class="ck-titulo">Pagamento confirmado!</div>
-        <div class="ck-sub">Pedido #${esc(p.numero)} · ${fmt(Number(p.total || 0))}<br>A loja já recebeu seu pedido.</div>
+        <div class="ck-sub">Pedido #${esc(p.numero)} · ${fmt(Number(p.total || 0))}<br>${p.demo ? 'Na loja real, o pedido cai no painel do lojista já pago, com o selo PAGO NA LOJA, e o estoque baixa sozinho.' : 'A loja já recebeu seu pedido.'}</div>
         <a class="ck-btn" style="text-decoration:none;" target="_blank" rel="noopener" href="https://wa.me/${esc(STORE_CONFIG.whatsapp)}?text=${msg}">Falar com a loja no WhatsApp</a>
         <button type="button" class="ck-btn sec" onclick="ckFechar(); closeCart && closeCart();">Continuar comprando</button>`);
       return;

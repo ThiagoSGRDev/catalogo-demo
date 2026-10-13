@@ -10,6 +10,18 @@ import {
   REDIRECT_URI, SERVICE_KEY, SITE_URL, SUPABASE_URL,
 } from './mp.ts';
 
+// PKCE (recomendado pelo Mercado Pago): verifier aleatório + challenge S256.
+function base64url(bytes: Uint8Array) {
+  let bin = '';
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function gerarPkce() {
+  const verifier = base64url(crypto.getRandomValues(new Uint8Array(48)));
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+  return { verifier, challenge: base64url(hash) };
+}
+
 function voltarPainel(resultado: string) {
   return new Response(null, { status: 302, headers: { Location: `${SITE_URL}/dashboard/?mp=${encodeURIComponent(resultado)}#checkout` } });
 }
@@ -43,15 +55,23 @@ Deno.serve(async (req: Request) => {
     await db.from('mp_oauth_states').delete().eq('state', state);
     if (Date.now() - new Date(st.criado_em).getTime() > 30 * 60 * 1000) return voltarPainel('expirado');
 
-    const r = await fetch(`${MP_API}/oauth/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const trocar = async (comPkce: boolean) => {
+      const corpo: Record<string, string> = {
         client_id: MP_CLIENT_ID, client_secret: MP_CLIENT_SECRET,
-        grant_type: 'authorization_code', code, redirect_uri: REDIRECT_URI,
-      }),
-    });
-    const t = await r.json().catch(() => ({}));
+        grant_type: 'authorization_code', code, redirect_uri: REDIRECT_URI, test_token: 'false',
+      };
+      if (comPkce && st.code_verifier) corpo.code_verifier = st.code_verifier;
+      const resp = await fetch(`${MP_API}/oauth/token`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo),
+      });
+      return { resp, t: await resp.json().catch(() => ({})) };
+    };
+    // Com PKCE primeiro; se a aplicação não tiver PKCE ligado e recusar, tenta sem.
+    let { resp: r, t } = await trocar(true);
+    if ((!r.ok || !t.access_token) && st.code_verifier) {
+      console.warn('Troca com PKCE falhou, tentando sem', r.status, t);
+      ({ resp: r, t } = await trocar(false));
+    }
     if (!r.ok || !t.access_token) {
       console.error('OAuth MP falhou', r.status, t);
       return voltarPainel('erro');
@@ -90,13 +110,16 @@ Deno.serve(async (req: Request) => {
     if (!mpConfigurado()) return json({ erro: 'nao_configurado' }, 503);
     const state = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
     await db.from('mp_oauth_states').delete().lt('criado_em', new Date(Date.now() - 3600 * 1000).toISOString());
-    await db.from('mp_oauth_states').insert({ state, loja_id: lojaId });
-    const auth = new URL('https://auth.mercadopago.com.br/authorization');
+    const pkce = await gerarPkce();
+    await db.from('mp_oauth_states').insert({ state, loja_id: lojaId, code_verifier: pkce.verifier });
+    const auth = new URL('https://auth.mercadopago.com/authorization');
     auth.searchParams.set('client_id', MP_CLIENT_ID);
     auth.searchParams.set('response_type', 'code');
     auth.searchParams.set('platform_id', 'mp');
     auth.searchParams.set('state', state);
     auth.searchParams.set('redirect_uri', REDIRECT_URI);
+    auth.searchParams.set('code_challenge', pkce.challenge);
+    auth.searchParams.set('code_challenge_method', 'S256');
     return json({ url: auth.toString() });
   }
 
