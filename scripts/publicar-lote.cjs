@@ -166,6 +166,7 @@ function escolherLote(lotes, totalEsperado) {
 
 // ---------- 2) Regras de produto ----------
 function tipoDoProduto(r) {
+  if (/manga\s*longa|long\s*sleeve/i.test(r.titulo || '')) return 'Long Sleeve';
   if (r.generoDetectado === 'Feminina') return 'Feminina';
   if (r.generoDetectado === 'Infantil') return 'Kit Infantil';
   return r.tipoDetectado || 'Torcedor';
@@ -182,6 +183,7 @@ const RE_JA_PERSONALIZADA = /(^|\s)\d{2,4}(\/\d{2,4})?\s+(.*\s)?[#\p{L}][^\s]*\s
 
 function tamanhosDoProduto(r, tipo) {
   if (tipo === 'Kit Infantil') return ['16', '18', '20', '22', '24', '26', '28'];
+  if (tipo === 'Long Sleeve') return ['P', 'M', 'G', 'GG', '2XL'];
   const t = Array.isArray(r.tamanhosDetectados) ? r.tamanhosDetectados : [];
   return t.length ? t : ['P', 'M', 'G', 'GG', '2XL'];
 }

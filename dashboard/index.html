@@ -1440,6 +1440,7 @@
         <div class="filtro-opcao" data-filter="Retrô" onclick="setFilter('Retrô')">Retrô</div>
         <div class="filtro-opcao" data-filter="Kit Infantil" onclick="setFilter('Kit Infantil')">Kit Infantil</div>
         <div class="filtro-opcao" data-filter="Feminina" onclick="setFilter('Feminina')">Feminina</div>
+        <div class="filtro-opcao" data-filter="Long Sleeve" onclick="setFilter('Long Sleeve')">Long Sleeve</div>
         <div class="filtro-opcao" data-filter="Kit Treino" onclick="setFilter('Kit Treino')">Kit Treino</div>
         <div class="filtro-opcao" data-filter="Conjunto de Treino" onclick="setFilter('Conjunto de Treino')">Conjunto de Treino</div>
         <div class="filtro-opcao" data-filter="destaque" onclick="setFilter('destaque')">★ Destaques</div>
@@ -2069,6 +2070,7 @@
           <option value="Retrô">Retrô</option>
           <option value="Kit Infantil">Kit Infantil</option>
           <option value="Feminina">Feminina</option>
+          <option value="Long Sleeve">Long Sleeve</option>
           <option value="Kit Treino">Kit Treino</option>
           <option value="Conjunto de Treino">Conjunto de Treino</option>
         </select>
@@ -3162,6 +3164,7 @@
   function estoqueTamanhosPadrao(tipo){
     if(tipo === 'Kit Infantil') return KID_SIZES;
     if(tipo === 'Feminina') return ESTOQUE_TAM_FEMININA;
+    if(tipo === 'Long Sleeve') return SIZES.filter(s => ['P','M','G','GG','2XL'].includes(s));
     return SIZES;
   }
 
@@ -4434,7 +4437,9 @@
     const picker = document.getElementById('sizePicker');
     const tipo = document.getElementById('fieldTipo').value;
     const isKid = tipo === "Kit Infantil";
-    const list = isKid ? KID_SIZES : SIZES;
+    const list = isKid ? KID_SIZES
+      : tipo === "Long Sleeve" ? SIZES.filter(s => ['P','M','G','GG','2XL'].includes(s))
+      : SIZES;
     picker.innerHTML = list.map(s =>
       `<div class="size-opt ${selectedSizes.includes(s) ? 'active' : ''}" onclick="toggleSize('${s}')">${isKid ? KID_SIZE_LABELS[s] : s}</div>`
     ).join('');
@@ -4448,7 +4453,9 @@
 
   function onTipoChange(){
     const tipo = document.getElementById('fieldTipo').value;
-    const validList = tipo === "Kit Infantil" ? KID_SIZES : SIZES;
+    const validList = tipo === "Kit Infantil" ? KID_SIZES
+      : tipo === "Long Sleeve" ? SIZES.filter(s => ['P','M','G','GG','2XL'].includes(s))
+      : SIZES;
     selectedSizes = selectedSizes.filter(s => validList.includes(s));
     renderSizePicker();
     checkCollisionWarning();
@@ -7449,7 +7456,7 @@
   // mesma tabela store_settings (uma linha por loja). O catálogo público já lê essas
   // colunas em aplicarAparencia() e atualiza o texto na hora.
   // ============================================================
-  const TIPOS_PRECO = ["Torcedor","Jogador","Retrô","Kit Infantil","Feminina","Kit Treino","Conjunto de Treino"];
+  const TIPOS_PRECO = ["Torcedor","Jogador","Retrô","Kit Infantil","Feminina","Long Sleeve","Kit Treino","Conjunto de Treino"];
 
   async function openPrecosOverlay(){
     document.getElementById('precosOverlay').classList.remove('hidden');
@@ -7910,7 +7917,7 @@
   let lojaImagemTextoBarra = null;
 
   // ---- Descrição padrão por tipo (tela Loja) ----
-  const TIPOS_DESCRICAO = ['Torcedor', 'Jogador', 'Retrô', 'Feminina', 'Kit Treino', 'Conjunto de Treino', 'Kit Infantil'];
+  const TIPOS_DESCRICAO = ['Torcedor', 'Jogador', 'Retrô', 'Feminina', 'Long Sleeve', 'Kit Treino', 'Conjunto de Treino', 'Kit Infantil'];
   const descTipoId = tipo => 'descTipo_' + tipo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_');
 
   async function preencherDescricoesTipo(proprias){

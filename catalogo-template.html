@@ -1953,6 +1953,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
     </div>
     <!-- Só aparecem se a loja tiver produto desse tipo (ver atualizarMenuTipos) -->
+    <div class="drawer-link" data-tipo-menu="Long Sleeve" hidden onclick="closeDrawer(); openCategory('Long Sleeve');">
+      <span>Long Sleeve</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
     <div class="drawer-link" data-tipo-menu="Kit Treino" hidden onclick="closeDrawer(); openCategory('Kit Treino');">
       <span>Kit Treino</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
@@ -3620,6 +3624,8 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   const SIZES = ["P","M","G","GG","2XL","3XL","4XL"];
   // Feminina vai só até GG (não tem 2XL) — lista própria, separada da adulta padrão.
   const FEMININA_SIZES = ["P","M","G","GG"];
+  // Long Sleeve (manga longa): só até 2XL.
+  const LONG_SLEEVE_SIZES = ["P","M","G","GG","2XL"];
   // Tamanhos de Kit Infantil — número do tamanho + idade aproximada (mesmo
   // padrão do admin). Idade é só uma referência visual; o cálculo do
   // provador virtual usa altura/peso, igual ao adulto.
@@ -3633,13 +3639,15 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // (mesma referência de Torcedor). Feminina tem lista própria (sem 2XL).
   const KID_TIPOS = ["Kit Infantil"];
   const FEMININA_TIPOS = ["Feminina"];
+  const LONG_SLEEVE_TIPOS = ["Long Sleeve"];
   // Lista de categorias por tipo de produto (usada pra resolver o slug da URL
   // em #/categoria/<slug>, ex.: "torcedor" -> "Torcedor").
-  const CATEGORIAS_TIPO = ["Torcedor", "Jogador", "Retrô", "Kit Infantil", "Feminina", "Kit Treino", "Conjunto de Treino"];
+  const CATEGORIAS_TIPO = ["Torcedor", "Jogador", "Retrô", "Kit Infantil", "Feminina", "Long Sleeve", "Kit Treino", "Conjunto de Treino"];
 
   function getSizeListForTipo(tipo){
     if(KID_TIPOS.includes(tipo)) return KID_SIZES;
     if(FEMININA_TIPOS.includes(tipo)) return FEMININA_SIZES;
+    if(LONG_SLEEVE_TIPOS.includes(tipo)) return LONG_SLEEVE_SIZES;
     return SIZES;
   }
 
@@ -3672,6 +3680,13 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       "Peso (kg)":         { P:"45-58",   M:"55-65",   G:"62-72",   GG:"68-80"   },
       "Comprimento (cm)": { P:"61-63",   M:"63-66",   G:"66-69",   GG:"69-71"   },
       "Largura (cm)":     { P:"40-41",   M:"41-44",   G:"44-47",   GG:"47-50"   }
+    },
+    "Long Sleeve": {
+      // Long Sleeve (manga longa): modelagem da Torcedor, só até 2XL.
+      "Altura (cm)":      { P:"162-170",M:"170-175",G:"176-182",GG:"182-190","2XL":"190-195"},
+      "Busto (cm)":       { P:"53-55",  M:"55-57",  G:"57-58",  GG:"58-60",  "2XL":"60-62"  },
+      "Comprimento (cm)": { P:"69-71",  M:"71-73",  G:"71-75",  GG:"75-78",  "2XL":"78-81"  },
+      "Peso (kg)":        { P:"50-62",  M:"62-78",  G:"78-83",  GG:"83-90",  "2XL":"90-97"  }
     },
     "Kit Treino": {
       // Tabela oficial do Thiago (foto) — camisa + bermuda de treino.
