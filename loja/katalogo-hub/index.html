@@ -5613,21 +5613,37 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
   window.addEventListener('resize', () => syncLigaHeaderToCenter());
 
-  // Página mais curta que a tela (home em PC/modo desktop): o rodapé desce
-  // até o fim da janela, em vez de ficar no meio com uma faixa vazia embaixo.
-  // Só mexe na margem de cima do <footer>; layout do #appShell continua em bloco.
-  (function rodapeNoFimDaTela(){
+  // Página mais curta que a tela (PC, tablet em pé, modo desktop do celular):
+  // nada de faixa vazia. Na tela inicial o banner cresce até a página encher
+  // a janela; nas outras telas o rodapé desce até o fim da janela.
+  // Não muda o layout do #appShell (continua em bloco, ver nota no CSS).
+  (function preencherTela(){
     const shell = document.getElementById('appShell');
     const rodape = shell && shell.querySelector(':scope > footer');
     if (!rodape) return;
+    const hero = document.getElementById('homeHero');
+    const heroFoto = hero && hero.querySelector('.hero-photo');
     let pedido = 0;
     function ajustar(){
       pedido = 0;
-      const atual = parseFloat(rodape.style.marginTop) || 0;
-      const fim = rodape.getBoundingClientRect().bottom + window.scrollY - atual;
-      const falta = Math.floor(document.documentElement.clientHeight - fim);
-      const novo = falta > 1 ? falta : 0;
-      if (novo !== atual) rodape.style.marginTop = novo ? novo + 'px' : '';
+      // Volta ao tamanho natural para medir sem os ajustes anteriores.
+      rodape.style.marginTop = '';
+      if (heroFoto) { heroFoto.style.height = ''; heroFoto.style.maxHeight = ''; }
+      const tela = document.documentElement.clientHeight;
+      let falta = Math.floor(tela - (rodape.getBoundingClientRect().bottom + window.scrollY));
+      if (falta <= 1) return;
+      const homeAtiva = heroFoto && hero.style.display !== 'none' && heroFoto.offsetHeight > 0;
+      if (homeAtiva) {
+        const alturaHero = heroFoto.offsetHeight;
+        // Banner fica no máximo com 75% da tela; o que sobrar vai pro rodapé.
+        const extra = Math.max(0, Math.min(falta, Math.floor(tela * 0.75) - alturaHero));
+        if (extra > 0) {
+          heroFoto.style.maxHeight = 'none';
+          heroFoto.style.height = (alturaHero + extra) + 'px';
+          falta -= extra;
+        }
+      }
+      if (falta > 1) rodape.style.marginTop = falta + 'px';
     }
     const agendar = () => { if (!pedido) pedido = requestAnimationFrame(ajustar); };
     // Observa o shell e cada bloco dele: com min-height:100vh no PC, o shell
