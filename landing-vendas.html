@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Katalogo Hub — catálogo de camisas com painel de verdade</title>
-<meta name="description" content="Catálogo online para lojistas de camisas de futebol, com painel completo no celular e pedido pronto no WhatsApp. Sem taxa por venda.">
+<meta name="description" content="Catálogo online para lojistas de camisas de futebol, com painel completo no celular e pedido pronto no WhatsApp. Sem taxa nos pedidos pelo WhatsApp.">
 <meta name="theme-color" content="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -389,7 +389,7 @@
         </a>
         <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Quero ativar agora</button>
       </div>
-      <p class="hero-nota"><b>Sem taxa por venda.</b> Só a assinatura, a partir de R$ 41,58 por mês.</p>
+      <p class="hero-nota"><b>Sem taxa nos pedidos pelo WhatsApp.</b> Só a assinatura, a partir de R$ 41,58 por mês.</p>
       <div class="selos">
         <div class="selo-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
@@ -450,8 +450,8 @@
 
 <div class="faixa" aria-hidden="true">
   <div class="faixa-trilho">
-    <span>Pedido pronto no WhatsApp</span><span>Sem taxa por venda</span><span>Painel no celular</span><span>Sua logo e sua cor</span><span>Nome e número nas costas</span><span>Estoque por tamanho</span>
-    <span>Pedido pronto no WhatsApp</span><span>Sem taxa por venda</span><span>Painel no celular</span><span>Sua logo e sua cor</span><span>Nome e número nas costas</span><span>Estoque por tamanho</span>
+    <span>Pedido pronto no WhatsApp</span><span>Sem taxa no WhatsApp</span><span>Painel no celular</span><span>Sua logo e sua cor</span><span>Nome e número nas costas</span><span>Estoque por tamanho</span>
+    <span>Pedido pronto no WhatsApp</span><span>Sem taxa no WhatsApp</span><span>Painel no celular</span><span>Sua logo e sua cor</span><span>Nome e número nas costas</span><span>Estoque por tamanho</span>
   </div>
 </div>
 
@@ -556,7 +556,7 @@
         <li>Catálogo pronto com suas cores e sua logo</li>
         <li>Painel completo no celular</li>
         <li>Pedido organizado no WhatsApp</li>
-        <li>Sem taxa ou comissão por venda</li>
+        <li>Sem comissão nos pedidos pelo WhatsApp</li>
         <li>Garantia de 7 dias</li>
       </ul>
       <button class="btn btn-principal" type="button" onclick="abrirCheckout(planoAtual)">Quero ativar agora</button>
@@ -582,7 +582,7 @@
     <div class="duvidas revelar">
       <details><summary>E se eu não gostar?</summary><p>Você tem 7 dias para pedir o dinheiro de volta. Basta me chamar no WhatsApp dentro desse prazo; devolvo o valor cheio, sem precisar justificar.</p></details>
       <details><summary>Preciso ter CNPJ?</summary><p>Não. Dá para assinar com CPF.</p></details>
-      <details><summary>O dinheiro das vendas passa pelo Katalogo Hub?</summary><p>Não. O pedido chega no seu WhatsApp e você recebe do cliente do jeito que já recebe hoje. Não existe comissão por venda.</p></details>
+      <details><summary>O dinheiro das vendas passa pelo Katalogo Hub?</summary><p>Não. O pedido chega no seu WhatsApp e você recebe do cliente do jeito que já recebe hoje, sem comissão. Se quiser, pode ativar o pagamento online (PIX e cartão pelo Mercado Pago): o dinheiro cai direto na sua conta do Mercado Pago, e o Katalogo Hub cobra 1% por pedido pago, no máximo R$ 10. Os 10 primeiros lojistas que ativarem não pagam essa comissão.</p></details>
       <details><summary>Sou obrigado a vender as camisas que já vêm cadastradas?</summary><p>Não. Você esconde as que não quer mostrar e cadastra as suas próprias, com suas fotos e seu preço.</p></details>
       <details><summary>Preciso de computador?</summary><p>Não. O painel e a vitrine foram feitos para funcionar no celular.</p></details>
       <details><summary>Posso trocar de plano depois?</summary><p>Pode. A troca é feita pelo próprio painel e vale a partir da próxima cobrança.</p></details>
@@ -607,6 +607,8 @@
   <div class="wrap">
     <img src="logo.svg" alt="Katalogo Hub" width="73" height="28">
     <span>© <span id="anoAtual">2026</span> Katalogo Hub. Catálogo para lojistas de camisas.</span>
+    <a href="/termos.html" style="color:var(--texto-dim);">Termos de Uso</a>
+    <a href="/privacidade.html" style="color:var(--texto-dim);">Privacidade</a>
     <a href="/dashboard/" style="color:var(--texto-dim);">Já sou assinante</a>
   </div>
 </footer>
@@ -654,6 +656,7 @@
         <input type="password" id="checkoutSenha" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
       </div>
       <button class="btn btn-principal checkout-btn-pagar" id="checkoutBtnPagar" onclick="iniciarCheckout()">Gerar Pix e ativar</button>
+      <p class="checkout-aceite" style="font-size:13px; color:var(--texto-dim); text-align:center; margin:10px 0 0;">Ao ativar, você concorda com os <a href="/termos.html" target="_blank" rel="noopener" style="color:var(--neon);">Termos de Uso</a> e a <a href="/privacidade.html" target="_blank" rel="noopener" style="color:var(--neon);">Política de Privacidade</a>.</p>
       <div class="checkout-fineprint">Você cria sua conta agora, e o acesso libera automaticamente assim que o Pix cair.</div>
     </div>
 
