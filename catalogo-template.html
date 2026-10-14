@@ -1417,6 +1417,18 @@
     body.has-demo-selo .product-buy-bar{ bottom:auto; padding-bottom:0; }
     .product-buy-bar .add-btn{ max-width:none; }
   }
+  #timesPlayerCarousel.cards-altos .player-card{ height:var(--card-h); max-height:none; min-height:0; }
+  /* Produto em monitor grande: a coluna cresce com a altura da tela, então a
+     foto fica maior em vez de sobrar faixa vazia embaixo. */
+  @media (min-width:1024px){
+    #productView{ max-width:clamp(1120px, 150vh, 1700px); }
+  }
+  /* Tablet grande em pé / modo desktop do celular: produto numa coluna,
+     mas com a foto maior pra aproveitar a altura. */
+  @media (min-width:820px) and (max-width:1023px) and (orientation:portrait){
+    #productView{ max-width:900px; }
+    .product-buy-bar .add-btn{ max-width:860px; }
+  }
   /* Nome de time longo (ex.: Mönchengladbach) não estoura o card no celular */
   .pname{ overflow-wrap:anywhere; }
   /* SCOREBOARD */
@@ -6397,12 +6409,17 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     if (!rodape) return;
     const hero = document.getElementById('homeHero');
     const heroFoto = hero && hero.querySelector('.hero-photo');
+    const timesCarrossel = document.getElementById('timesPlayerCarousel');
+    const timesCabecalho = document.querySelector('#timesView > .times-nav-head');
     let pedido = 0;
     function ajustar(){
       pedido = 0;
       // Volta ao tamanho natural para medir sem os ajustes anteriores.
       rodape.style.paddingTop = '';
       if (heroFoto) { heroFoto.style.height = ''; heroFoto.style.maxHeight = ''; }
+      if (timesCarrossel) { timesCarrossel.classList.remove('cards-altos'); timesCarrossel.style.removeProperty('--card-h'); timesCarrossel.style.marginTop = ''; }
+      if (timesCabecalho) timesCabecalho.style.paddingTop = '';
+      shell.querySelectorAll('.favorites-empty').forEach(e => { e.style.paddingTop = ''; });
       const tela = document.documentElement.clientHeight;
       let falta = Math.floor(tela - (rodape.getBoundingClientRect().bottom + window.scrollY));
       if (falta <= 1) return;
@@ -6419,6 +6436,37 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       }
       // padding, não margin: a margem colava (colapsava) com a margem de baixo
       // do último botão da tela e o rodapé ficava curto.
+      const view = shell.querySelector(':scope .active[id$="View"]');
+      // Tela de times: os cards dos jogadores crescem (no máximo 55% da tela
+      // e sem ficar mais alto que 1,6x a largura, pra não virar uma tira).
+      if (falta > 1 && view && view.id === 'timesView' && timesCarrossel) {
+        const card = timesCarrossel.querySelector('.player-card.active') || timesCarrossel.querySelector('.player-card');
+        if (card && card.offsetHeight) {
+          const h = card.offsetHeight;
+          const teto = Math.min(Math.floor(tela * 0.55), Math.floor(card.offsetWidth * 1.6));
+          const extra = Math.max(0, Math.min(falta, teto - h));
+          if (extra > 0) {
+            timesCarrossel.style.setProperty('--card-h', (h + extra) + 'px');
+            timesCarrossel.classList.add('cards-altos');
+            falta -= extra;
+          }
+        }
+        // O que ainda sobrar fica metade acima e metade abaixo do conteúdo:
+        // a busca fica no topo e o bloco de escolha do time fica no meio.
+        if (falta > 1 && timesCabecalho) {
+          const meio = Math.floor(falta / 2);
+          timesCabecalho.style.paddingTop = (parseFloat(getComputedStyle(timesCabecalho).paddingTop) + meio) + 'px';
+          falta -= meio;
+        }
+      }
+      // Tela sem itens (favoritos vazio, categoria sem camisas): o aviso fica
+      // no meio da área livre, e não colado no topo.
+      const vazio = view && [...view.querySelectorAll('.favorites-empty')].find(e => e.offsetHeight > 0);
+      if (falta > 1 && vazio) {
+        const meio = Math.floor(falta / 2);
+        vazio.style.paddingTop = (parseFloat(getComputedStyle(vazio).paddingTop) + meio) + 'px';
+        falta -= meio;
+      }
       if (falta > 1) rodape.style.paddingTop = falta + 'px';
     }
     const agendar = () => { if (!pedido) pedido = requestAnimationFrame(ajustar); };
