@@ -5613,6 +5613,35 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
   window.addEventListener('resize', () => syncLigaHeaderToCenter());
 
+  // Página mais curta que a tela (home em PC/modo desktop): o rodapé desce
+  // até o fim da janela, em vez de ficar no meio com uma faixa vazia embaixo.
+  // Só mexe na margem de cima do <footer>; layout do #appShell continua em bloco.
+  (function rodapeNoFimDaTela(){
+    const shell = document.getElementById('appShell');
+    const rodape = shell && shell.querySelector(':scope > footer');
+    if (!rodape) return;
+    let pedido = 0;
+    function ajustar(){
+      pedido = 0;
+      const atual = parseFloat(rodape.style.marginTop) || 0;
+      const fim = rodape.getBoundingClientRect().bottom + window.scrollY - atual;
+      const falta = Math.floor(document.documentElement.clientHeight - fim);
+      const novo = falta > 1 ? falta : 0;
+      if (novo !== atual) rodape.style.marginTop = novo ? novo + 'px' : '';
+    }
+    const agendar = () => { if (!pedido) pedido = requestAnimationFrame(ajustar); };
+    // Observa o shell e cada bloco dele: com min-height:100vh no PC, o shell
+    // não muda de tamanho quando a view troca por outra mais curta.
+    if ('ResizeObserver' in window) {
+      const ro = new ResizeObserver(agendar);
+      ro.observe(shell);
+      for (const filho of shell.children) if (filho !== rodape && filho.tagName !== 'SCRIPT') ro.observe(filho);
+    }
+    window.addEventListener('resize', agendar);
+    window.addEventListener('load', agendar);
+    agendar();
+  })();
+
 </script>
 
 </div>
