@@ -4418,7 +4418,7 @@
               <span>${p.teams ? p.teams.nome : '—'}</span>
               <span class="tag-mini">${p.tipo}</span>
             </div>
-            <div class="product-card-preco">${fmt((!doMestre && !p.preco_manual && PRECOS_TIPO_ADMIN.has(p.tipo)) ? PRECOS_TIPO_ADMIN.get(p.tipo) : p.preco)}</div>
+            <div class="product-card-preco">${fmt((!doMestre && !p.preco_manual && PRECOS_TIPO_ADMIN.has(p.tipo)) ? PRECOS_TIPO_ADMIN.get(p.tipo) + (p.ja_personalizada ? 50 : 0) : p.preco)}</div>
           </div>
         </div>
       `;
@@ -4497,7 +4497,8 @@
     FORM_ORIGEM_IMPORT = false;
     FORM_PRECO_MANUAL_ORIG = product ? !!product.preco_manual : false;
     const precoInicial = !product ? ''
-      : (!product.preco_manual && PRECOS_TIPO_ADMIN.has(product.tipo)) ? PRECOS_TIPO_ADMIN.get(product.tipo)
+      // Camisa que já vem com nome e número: preço do tipo + R$ 50 (mesma regra do catálogo e do checkout).
+      : (!product.preco_manual && PRECOS_TIPO_ADMIN.has(product.tipo)) ? PRECOS_TIPO_ADMIN.get(product.tipo) + (product.ja_personalizada ? 50 : 0)
       : product.preco;
     FORM_PRECO_INICIAL = precoInicial === '' ? null : Number(precoInicial);
     document.getElementById('fieldPreco').value = precoInicial;

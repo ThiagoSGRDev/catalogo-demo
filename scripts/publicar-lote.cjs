@@ -176,6 +176,10 @@ function subtituloDoProduto(r, tipo) {
   if (tipo === 'Retrô') return 'Retrô Masculina';
   return null;
 }
+// Camisa que já vem com nome e número (ex.: "... 2026/27 Haaland 9", "... 2014 Klose 11 Modelo Retrô").
+// O catálogo esconde a personalização e cobra preço do tipo + R$ 50. Mesma regra usada no backfill do banco.
+const RE_JA_PERSONALIZADA = /(^|\s)\d{2,4}(\/\d{2,4})?\s+(.*\s)?[#\p{L}][^\s]*\s\d{1,3}(\s|$)/iu;
+
 function tamanhosDoProduto(r, tipo) {
   if (tipo === 'Kit Infantil') return ['16', '18', '20', '22', '24', '26', '28'];
   const t = Array.isArray(r.tamanhosDetectados) ? r.tamanhosDetectados : [];
@@ -390,6 +394,7 @@ function ligaDaLoja(c) {
       id, team_id: time.id, tipo, titulo, subtitulo: subtituloDoProduto(r, tipo),
       descricao: null, preco: r.preco, tamanhos: tamanhosDoProduto(r, tipo), tags: [],
       disponivel: false, destaque: false, lancamento: false, loja_id: lojaId,
+      ja_personalizada: RE_JA_PERSONALIZADA.test(titulo),
     };
     const imagens = lote.fotos.map((f, i) => ({
       product_id: id, ordem: i, loja_id: lojaId,
