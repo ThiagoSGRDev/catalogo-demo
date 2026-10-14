@@ -5627,7 +5627,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     function ajustar(){
       pedido = 0;
       // Volta ao tamanho natural para medir sem os ajustes anteriores.
-      rodape.style.marginTop = '';
+      rodape.style.paddingTop = '';
       if (heroFoto) { heroFoto.style.height = ''; heroFoto.style.maxHeight = ''; }
       const tela = document.documentElement.clientHeight;
       let falta = Math.floor(tela - (rodape.getBoundingClientRect().bottom + window.scrollY));
@@ -5643,7 +5643,9 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
           falta -= extra;
         }
       }
-      if (falta > 1) rodape.style.marginTop = falta + 'px';
+      // padding, não margin: a margem colava (colapsava) com a margem de baixo
+      // do último botão da tela e o rodapé ficava curto.
+      if (falta > 1) rodape.style.paddingTop = falta + 'px';
     }
     const agendar = () => { if (!pedido) pedido = requestAnimationFrame(ajustar); };
     // Observa o shell e cada bloco dele: com min-height:100vh no PC, o shell
