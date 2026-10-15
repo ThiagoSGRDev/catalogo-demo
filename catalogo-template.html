@@ -1884,6 +1884,11 @@
   }
   .footer-payment-row{ display:flex; flex-wrap:wrap; justify-content:flex-start; align-items:center; gap:10px; }
   .footer-payment-row img{ height:22px; width:auto; display:block; }
+  /* Selo "feito com Katalogo Hub": divulgação discreta em toda loja */
+  .selo-kh{display:block; padding:16px 20px 0; text-align:center; font-family:var(--font-mono); font-size:11px;
+    letter-spacing:.03em; color:rgba(var(--muted-rgb),0.55); text-decoration:none;}
+  .selo-kh b{color:var(--gold-text, var(--gold)); font-weight:700;}
+  .selo-kh:hover b, .selo-kh:focus-visible b{text-decoration:underline;}
   .footer-copyright{
     padding:18px 20px 10px; font-family:var(--font-mono); font-size:10.5px;
     color:rgba(var(--muted-rgb),0.4); letter-spacing:.03em; text-align:center;
@@ -2635,6 +2640,9 @@
   </div>
 
   <footer>
+    <a class="selo-kh" id="seloKH" href="https://www.katalogohub.com/landing-vendas.html?utm_source=catalogo&amp;utm_medium=selo" target="_blank" rel="noopener">
+      Catálogo feito com <b>Katalogo Hub</b> · Crie o seu
+    </a>
     <div class="footer-copyright">Copyright © <span id="footerYear">2026</span> Katalogo Hub - Todos os direitos reservados<br><a href="/termos.html" target="_blank" rel="noopener" style="color:inherit;">Termos de Uso</a> · <a href="/privacidade.html" target="_blank" rel="noopener" style="color:inherit;">Privacidade</a></div>
     <div class="promo-stripe-footer" id="footerPromoStripe">
       <div class="promo-stripe-track">
@@ -3640,6 +3648,12 @@
 
   const footerYearEl = document.getElementById('footerYear');
   if (footerYearEl) { footerYearEl.textContent = new Date().getFullYear(); }
+  // Selo do rodapé: identifica de qual loja veio o visitante (utm_campaign = slug da loja).
+  try {
+    const selo = document.getElementById('seloKH');
+    const slugSelo = (typeof LOJA_SLUG !== 'undefined' && LOJA_SLUG) ? LOJA_SLUG : '';
+    if(selo && slugSelo) selo.href = 'https://www.katalogohub.com/landing-vendas.html?utm_source=catalogo&utm_medium=selo&utm_campaign=' + encodeURIComponent(slugSelo);
+  } catch(e){ /* sem slug: fica o link padrão */ }
 
   // ⚙️ EDITE ESTA LISTA — adicione seus times, cores e a URL da foto real (campo "imagem")
 
