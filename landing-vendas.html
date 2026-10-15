@@ -390,7 +390,7 @@
         </a>
         <button class="btn btn-principal" type="button" onclick="abrirCheckout('mensal')">Quero ativar agora</button>
       </div>
-      <p class="hero-nota"><b>Sem taxa nos pedidos pelo WhatsApp.</b> Só a assinatura, a partir de R$ 41,58 por mês.</p>
+      <p class="hero-nota"><b>Sem taxa nos pedidos pelo WhatsApp.</b> Só a assinatura, a partir de R$ 24,75 por mês no plano anual.</p>
       <div class="selos">
         <div class="selo-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
@@ -556,7 +556,7 @@
       <div class="abas" role="tablist" aria-label="Planos">
         <button class="aba ativa" type="button" role="tab" aria-selected="true" data-plano="mensal" onclick="trocarPlano('mensal')">Mensal</button>
         <button class="aba" type="button" role="tab" aria-selected="false" data-plano="trimestral" onclick="trocarPlano('trimestral')">Trimestral<small>-10%</small></button>
-        <button class="aba" type="button" role="tab" aria-selected="false" data-plano="anual" onclick="trocarPlano('anual')">Anual<small>2 meses grátis</small></button>
+        <button class="aba" type="button" role="tab" aria-selected="false" data-plano="anual" onclick="trocarPlano('anual')">Anual<small>metade do preço</small></button>
       </div>
       <span class="plano-selo" id="planoSelo">Preço de fundador — carregando vagas…</span>
       <div class="plano-preco" id="planoPreco">R$ 49,90<small>/mês</small></div>
@@ -753,7 +753,7 @@
   const PLANOS_TELA = {
     mensal:     { preco:'R$ 49,90', sufixo:'/mês', selo:'Preço de fundador — carregando vagas…', obs:'Quem entrar agora mantém esse valor enquanto a assinatura estiver ativa.' },
     trimestral: { preco:'R$ 44,97', sufixo:'/mês', selo:'10% mais barato que o mensal', obs:'R$ 134,90 cobrado a cada 3 meses.' },
-    anual:      { preco:'R$ 41,58', sufixo:'/mês', selo:'2 meses grátis', obs:'R$ 499,00 cobrado uma vez por ano.' }
+    anual:      { preco:'R$ 24,75', sufixo:'/mês', selo:'Metade do preço do mensal', obs:'R$ 297,00 cobrado uma vez por ano.' }
   };
   function trocarPlano(chave){
     const p = PLANOS_TELA[chave]; if(!p) return;
@@ -827,10 +827,10 @@
   const PLANOS_RESUMO = {
     mensal:     { nome: 'Plano mensal',     valorTexto: 'R$ 49,90/mês' },
     trimestral: { nome: 'Plano trimestral', valorTexto: 'R$ 134,90 a cada 3 meses' },
-    anual:      { nome: 'Plano anual',      valorTexto: 'R$ 499,00 por ano' },
+    anual:      { nome: 'Plano anual',      valorTexto: 'R$ 297,00 por ano' },
   };
   // Valor de cada plano para o Pixel da Meta (InitiateCheckout / Purchase).
-  const PLANOS_VALOR = { mensal: 49.90, trimestral: 134.90, anual: 499.00 };
+  const PLANOS_VALOR = { mensal: 49.90, trimestral: 134.90, anual: 297.00 };
 
   // Pixel: clique no WhatsApp = Contact; clique em "Teste grátis" = Lead.
   document.addEventListener('click', function(ev){
