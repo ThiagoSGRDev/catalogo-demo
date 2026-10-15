@@ -5071,6 +5071,12 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // Busca só a coluna "id" (consulta leve) e compara o slug de cada uma.
   async function resolverProdutoPorSlug(slug){
     if(!supabaseReady) return null;
+    // Caminho rápido: o banco calcula o slug e devolve só o id (função produto_id_por_slug).
+    try {
+      const { data, error } = await supabaseClient.rpc('produto_id_por_slug', { p_slug: slug, p_lojas: LOJAS_VISIVEIS });
+      if(!error && data) return data;
+    } catch(e){ /* cai no caminho antigo abaixo */ }
+    // Reserva: baixa os ids e compara aqui (usado se a função não existir ou falhar).
     try {
       const { data, error } = await buscarTodas(() => supabaseClient
         .from('products')
