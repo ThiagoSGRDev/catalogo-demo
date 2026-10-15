@@ -2438,6 +2438,12 @@
       <div class="name">Meus Favoritos</div>
     </div>
     <div class="grid" id="favoritesGrid"></div>
+    <!-- Manda a lista de favoritos pronta pro WhatsApp da loja (só aparece com favoritos carregados) -->
+    <a href="#" id="favWhatsBtn" class="whats-btn" style="display:none; margin:22px 0 8px;" target="_blank" rel="noopener"
+       onclick="trackEvent('click_whatsapp', { context: 'favoritos', items_count: FAVORITOS_NA_TELA })">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.07L2 22l5.07-1.32A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.1-.43-4.4-1.18l-.32-.18-3.1.8.83-3.02-.2-.32A7.94 7.94 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8zm4.4-5.9c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.55.12-.16.24-.63.78-.77.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.04.14-1.15-.06-.1-.22-.16-.46-.28z"/></svg>
+      Enviar favoritos pelo WhatsApp
+    </a>
     <div class="favorites-empty" id="favoritesEmpty" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.7-4.35-9.3-8.1C1 10.1 1.6 6.6 4.6 5.1 7 3.9 9.6 4.7 12 7.3 14.4 4.7 17 3.9 19.4 5.1c3 1.5 3.6 5 1.9 7.8C18.7 16.65 12 21 12 21Z"/></svg>
       <div class="title">Nenhum favorito ainda</div>
@@ -4504,9 +4510,28 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     renderFavorites();
     navigateTo('favorites');
   }
+  // Quantos favoritos estão na tela (usado no evento do botão do WhatsApp).
+  let FAVORITOS_NA_TELA = 0;
+
+  // Monta o link do WhatsApp com a lista de favoritos (título, preço e link de cada camisa).
+  function atualizarBotaoFavoritosWhats(items){
+    const btn = document.getElementById('favWhatsBtn');
+    if(!btn) return;
+    FAVORITOS_NA_TELA = items ? items.length : 0;
+    if(!items || !items.length || !STORE_CONFIG.whatsapp){ btn.style.display = 'none'; return; }
+    let txt = `Olá! Separei estas camisas na ${STORE_CONFIG.nome} e queria saber a disponibilidade:\n\n`;
+    items.forEach(({ p }) => {
+      txt += `• ${p.titulo} (${p.tipo}) - ${fmt(p.preco)}\n`;
+      txt += `  ${urlCompartilhavel(['produto', slugify(p.id)])}\n`;
+    });
+    btn.href = `https://wa.me/${STORE_CONFIG.whatsapp}?text=${encodeURIComponent(txt)}`;
+    btn.style.display = 'flex';
+  }
+
   async function renderFavorites(){
     const grid = document.getElementById('favoritesGrid');
     const empty = document.getElementById('favoritesEmpty');
+    atualizarBotaoFavoritosWhats(null);
     if(favorites.length === 0){
       empty.style.display = "flex";
       grid.style.display = "none";
@@ -4573,6 +4598,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       card.onclick = () => openFavoriteProduct(p.id);
       grid.appendChild(card);
     });
+    atualizarBotaoFavoritosWhats(items);
   }
   // Recebe o ID do produto (mesmo formato usado em favoritos: "NomeDoTime||Tipo").
   // Localiza o time a partir do ID e delega para openProduct, que já resolve por ID.
