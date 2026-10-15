@@ -1142,7 +1142,52 @@
     content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
     background:linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 22%);
   }
-  .product-photo-lg img{width:100%; height:100%; object-fit:cover;}
+  .product-photo-lg img{width:100%; height:100%; object-fit:cover; cursor:zoom-in;}
+  /* Troca de foto animada (swipe, setas e miniaturas) */
+  .product-photo-lg img.entra-dir{animation:fotoEntraDir .28s ease-out;}
+  .product-photo-lg img.entra-esq{animation:fotoEntraEsq .28s ease-out;}
+  @keyframes fotoEntraDir{from{opacity:.35; transform:translateX(18%);} to{opacity:1; transform:none;}}
+  @keyframes fotoEntraEsq{from{opacity:.35; transform:translateX(-18%);} to{opacity:1; transform:none;}}
+
+  /* Lightbox: foto em tela cheia com zoom (pinça, duplo toque, roda do mouse) */
+  .lightbox{
+    position:fixed; inset:0; z-index:9999; background:rgba(4,6,8,.96);
+    display:none; align-items:center; justify-content:center; overflow:hidden;
+    touch-action:none; user-select:none; -webkit-user-select:none;
+  }
+  .lightbox.aberto{display:flex; animation:lbFade .18s ease-out;}
+  @keyframes lbFade{from{opacity:0;} to{opacity:1;}}
+  .lightbox img{
+    max-width:100vw; max-height:100vh; max-height:100dvh; object-fit:contain;
+    transform-origin:center center; will-change:transform; cursor:zoom-in;
+    -webkit-user-drag:none;
+  }
+  .lightbox.com-zoom img{cursor:grab;}
+  .lightbox-fechar{
+    position:absolute; top:calc(14px + env(safe-area-inset-top, 0px)); right:calc(14px + env(safe-area-inset-right, 0px));
+    width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.25);
+    background:rgba(20,24,28,.7); color:#fff; display:grid; place-items:center; cursor:pointer; z-index:2;
+  }
+  .lightbox-fechar svg{width:20px; height:20px;}
+  .lightbox-seta{
+    position:absolute; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%;
+    border:1px solid rgba(255,255,255,.2); background:rgba(20,24,28,.6); color:#fff;
+    display:grid; place-items:center; cursor:pointer; z-index:2;
+  }
+  .lightbox-seta svg{width:20px; height:20px;}
+  .lightbox-seta.ant{left:calc(12px + env(safe-area-inset-left, 0px));}
+  .lightbox-seta.prox{right:calc(12px + env(safe-area-inset-right, 0px));}
+  .lightbox-contador{
+    position:absolute; bottom:calc(18px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%);
+    color:rgba(255,255,255,.85); font-family:var(--font-mono); font-size:12px; font-weight:600;
+    background:rgba(20,24,28,.6); padding:5px 12px; border-radius:999px; z-index:2;
+  }
+  .lightbox-dica{
+    position:absolute; top:calc(24px + env(safe-area-inset-top, 0px)); left:50%; transform:translateX(-50%);
+    color:rgba(255,255,255,.6); font-size:12px; white-space:nowrap; z-index:1; pointer-events:none;
+  }
+  .lightbox-fechar:focus-visible,.lightbox-seta:focus-visible{outline:2px solid #fff; outline-offset:2px;}
+  @media (hover:none){ .lightbox-seta{display:none;} }
   .product-photo-inner{width:100%; height:100%;}
   .product-photo-tag{
     position:absolute; top:12px; left:12px; z-index:2; background:rgba(10,13,16,0.5);
@@ -2543,6 +2588,21 @@
   </footer>
 
 <!-- Biblioteca oficial do Supabase, carregada de um CDN público -->
+<!-- Lightbox da foto do produto (zoom) -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto ampliada">
+  <span class="lightbox-dica" id="lightboxDica">Pinça ou toque duplo para dar zoom</span>
+  <button class="lightbox-fechar" type="button" onclick="Lightbox.fechar()" aria-label="Fechar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <button class="lightbox-seta ant" type="button" onclick="Lightbox.mudar(-1)" aria-label="Foto anterior">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <img id="lightboxImg" alt="">
+  <button class="lightbox-seta prox" type="button" onclick="Lightbox.mudar(1)" aria-label="Próxima foto">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+  <div class="lightbox-contador" id="lightboxContador"></div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // ============================================================
@@ -4877,13 +4937,15 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   let currentPhotos = null;
   let currentPhotoIndex = 0;
 
-  function renderProductPhoto(photos, activeIndex){
+  // dir: 1 = veio da direita (próxima), -1 = da esquerda (anterior), 0/undefined = sem animação.
+  function renderProductPhoto(photos, activeIndex, dir){
     currentPhotos = photos;
     currentPhotoIndex = activeIndex;
     const photoEl = document.getElementById('productPhoto');
     const counterEl = document.getElementById('photoCounter');
     if(photos && photos[activeIndex]){
-      photoEl.innerHTML = `<img src="${safeUrl(photos[activeIndex])}" alt="${esc(currentProduct.titulo)}">`;
+      const anim = dir > 0 ? ' class="entra-dir"' : dir < 0 ? ' class="entra-esq"' : '';
+      photoEl.innerHTML = `<img${anim} src="${safeUrl(photos[activeIndex])}" alt="${esc(currentProduct.titulo)}">`;
     } else {
       photoEl.innerHTML = `<div class="badge" style="--badge-ring:${cssCor(currentTeam.cor)}; width:96px; height:96px; font-size:22px;">${esc(currentTeam.sigla)}</div>`;
     }
@@ -4902,7 +4964,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     let next = currentPhotoIndex + delta;
     if(next < 0) next = currentPhotos.length - 1;
     if(next >= currentPhotos.length) next = 0;
-    renderProductPhoto(currentPhotos, next);
+    renderProductPhoto(currentPhotos, next, delta);
   }
 
   (function setupPhotoSwipe(){
@@ -4921,6 +4983,170 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     }, { passive: true });
   })();
 
+  // Toque/clique na foto grande abre o lightbox (o swipe continua trocando de foto).
+  document.getElementById('productPhoto').addEventListener('click', () => {
+    if(currentPhotos && currentPhotos.length) Lightbox.abrir(currentPhotos, currentPhotoIndex);
+  });
+
+  // ===== LIGHTBOX: foto em tela cheia com zoom =====
+  // Celular: pinça (2 dedos), toque duplo, arrastar com zoom, deslizar sem zoom troca a foto.
+  // PC: roda do mouse, duplo clique, arrastar, setas do teclado e Esc.
+  const Lightbox = (() => {
+    const el = document.getElementById('lightbox');
+    const img = document.getElementById('lightboxImg');
+    const contador = document.getElementById('lightboxContador');
+    const dica = document.getElementById('lightboxDica');
+    const ZOOM_DUPLO = 2.5, ZOOM_MAX = 4;
+    let fotos = [], idx = 0, escala = 1, tx = 0, ty = 0;
+    let toque = null;      // estado do gesto atual
+    let ultimoToque = 0;   // pra detectar toque duplo
+    let tocouEm = 0;       // celular também dispara dblclick/mousedown "falsos" depois do toque
+
+    function aplicar(animar){
+      img.style.transition = animar ? 'transform .22s ease' : 'none';
+      img.style.transform = `translate(${tx}px, ${ty}px) scale(${escala})`;
+      el.classList.toggle('com-zoom', escala > 1);
+    }
+    // Não deixa a foto sair da tela quando está com zoom.
+    function limitar(){
+      if(escala <= 1){ escala = 1; tx = 0; ty = 0; return; }
+      const maxX = Math.max(0, (img.offsetWidth * escala - window.innerWidth) / 2);
+      const maxY = Math.max(0, (img.offsetHeight * escala - window.innerHeight) / 2);
+      tx = Math.min(maxX, Math.max(-maxX, tx));
+      ty = Math.min(maxY, Math.max(-maxY, ty));
+    }
+    // Zoom mantendo o ponto (px, py) da tela parado.
+    function zoomEm(nova, px, py){
+      nova = Math.min(ZOOM_MAX, Math.max(1, nova));
+      const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+      const f = nova / escala;
+      tx = (px - cx) - f * ((px - cx) - tx);
+      ty = (py - cy) - f * ((py - cy) - ty);
+      escala = nova;
+      limitar();
+    }
+    function mostrar(){
+      escala = 1; tx = 0; ty = 0; aplicar(false);
+      img.src = fotos[idx];
+      img.alt = currentProduct ? currentProduct.titulo : '';
+      contador.textContent = fotos.length > 1 ? `${idx + 1} / ${fotos.length}` : '';
+      contador.style.display = fotos.length > 1 ? '' : 'none';
+      el.querySelectorAll('.lightbox-seta').forEach(b => b.style.visibility = fotos.length > 1 ? '' : 'hidden');
+    }
+    function abrir(lista, i){
+      fotos = (lista || []).map(safeUrl);
+      if(!fotos.length) return;
+      idx = Math.min(Math.max(0, i || 0), fotos.length - 1);
+      mostrar();
+      el.classList.add('aberto');
+      document.body.style.overflow = 'hidden';
+      dica.style.display = '';
+      setTimeout(() => { dica.style.display = 'none'; }, 2200);
+      trackEvent('open_photo_zoom', { product_id: currentProduct ? currentProduct.id : null });
+    }
+    function fechar(){
+      if(!el.classList.contains('aberto')) return;
+      el.classList.remove('aberto');
+      document.body.style.overflow = '';
+      // A foto da página acompanha a última foto vista no lightbox.
+      if(currentPhotos && idx !== currentPhotoIndex) renderProductPhoto(currentPhotos, idx, 0);
+    }
+    function mudar(delta){
+      if(fotos.length < 2) return;
+      idx = (idx + delta + fotos.length) % fotos.length;
+      mostrar();
+    }
+    function alternarZoom(px, py){
+      if(escala > 1){ escala = 1; tx = 0; ty = 0; } else { zoomEm(ZOOM_DUPLO, px, py); }
+      aplicar(true);
+    }
+    const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+    // --- toque ---
+    el.addEventListener('touchstart', (e) => {
+      tocouEm = Date.now();
+      if(e.target.closest('button')) return;
+      if(e.touches.length === 2){
+        const [a, b] = e.touches;
+        toque = { tipo: 'pinca', d0: dist(a, b), e0: escala,
+                  mx: (a.clientX + b.clientX) / 2, my: (a.clientY + b.clientY) / 2 };
+      } else if(e.touches.length === 1){
+        const t = e.touches[0];
+        toque = { tipo: 'um', x0: t.clientX, y0: t.clientY, tx0: tx, ty0: ty, moveu: false };
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+      if(!toque) return;
+      e.preventDefault();
+      if(toque.tipo === 'pinca' && e.touches.length === 2){
+        const [a, b] = e.touches;
+        const nova = toque.e0 * (dist(a, b) / toque.d0);
+        zoomEm(nova, toque.mx, toque.my);
+        aplicar(false);
+      } else if(toque.tipo === 'um' && e.touches.length === 1){
+        const t = e.touches[0];
+        const dx = t.clientX - toque.x0, dy = t.clientY - toque.y0;
+        if(Math.abs(dx) > 6 || Math.abs(dy) > 6) toque.moveu = true;
+        if(escala > 1){ tx = toque.tx0 + dx; ty = toque.ty0 + dy; limitar(); }
+        else { tx = dx; ty = 0; }   // sem zoom: a foto acompanha o dedo (prévia do swipe)
+        aplicar(false);
+      }
+    }, { passive: false });
+
+    el.addEventListener('touchend', (e) => {
+      if(!toque) return;
+      if(toque.tipo === 'pinca'){
+        if(e.touches.length === 0){ limitar(); aplicar(true); toque = null; }
+        return;
+      }
+      const t = e.changedTouches[0];
+      const dx = t.clientX - toque.x0, dy = t.clientY - toque.y0;
+      const agora = Date.now();
+      if(!toque.moveu){
+        if(agora - ultimoToque < 300){ alternarZoom(t.clientX, t.clientY); ultimoToque = 0; }
+        else ultimoToque = agora;
+      } else if(escala === 1){
+        if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) mudar(dx < 0 ? 1 : -1);
+        else if(dy > 110 && Math.abs(dy) > Math.abs(dx)) fechar();   // arrastar pra baixo fecha
+        else { tx = 0; ty = 0; aplicar(true); }
+      }
+      toque = null;
+    });
+
+    // --- mouse / teclado ---
+    el.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      zoomEm(escala * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY);
+      aplicar(false);
+    }, { passive: false });
+    const veioDoToque = () => Date.now() - tocouEm < 800;
+    img.addEventListener('dblclick', (e) => { if(!veioDoToque()) alternarZoom(e.clientX, e.clientY); });
+    let arraste = null;
+    img.addEventListener('mousedown', (e) => {
+      if(escala <= 1 || veioDoToque()) return;
+      e.preventDefault();
+      arraste = { x0: e.clientX, y0: e.clientY, tx0: tx, ty0: ty };
+    });
+    window.addEventListener('mousemove', (e) => {
+      if(!arraste) return;
+      tx = arraste.tx0 + e.clientX - arraste.x0; ty = arraste.ty0 + e.clientY - arraste.y0;
+      limitar(); aplicar(false);
+    });
+    window.addEventListener('mouseup', () => { arraste = null; });
+    // Clique no fundo escuro (fora da foto) fecha.
+    el.addEventListener('click', (e) => { if(e.target === el) fechar(); });
+    document.addEventListener('keydown', (e) => {
+      if(!el.classList.contains('aberto')) return;
+      if(e.key === 'Escape') fechar();
+      else if(e.key === 'ArrowRight') mudar(1);
+      else if(e.key === 'ArrowLeft') mudar(-1);
+    });
+    window.addEventListener('resize', () => { if(el.classList.contains('aberto')){ limitar(); aplicar(false); } });
+
+    return { abrir, fechar, mudar };
+  })();
+
   function renderProductThumbs(photos){
     const thumbsEl = document.getElementById('productThumbs');
     thumbsEl.innerHTML = "";
@@ -4933,7 +5159,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       const t = document.createElement('div');
       t.className = "product-thumb" + (i === 0 ? " active" : "");
       t.innerHTML = `<img loading="lazy" src="${safeUrl(src)}" alt="Foto ${i + 1}">`;
-      t.onclick = () => renderProductPhoto(photos, i);
+      t.onclick = () => { if(i !== currentPhotoIndex) renderProductPhoto(photos, i, i > currentPhotoIndex ? 1 : -1); };
       thumbsEl.appendChild(t);
     });
   }
