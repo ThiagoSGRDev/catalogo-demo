@@ -196,6 +196,7 @@
     .header h1 { font-size:30px; }
   }
 </style>
+<script src="/assets/js/meta-pixel.js"></script>
 </head>
 <body>
 <div class="container">
@@ -585,6 +586,7 @@
         ]);
       } catch (_) { /* ignora: o cadastro já foi concluído */ }
 
+      if(window.khTrack) khTrack('CompleteRegistration', { content_name: 'Teste grátis 3 dias', status: 'trial' });
       showAlert('Conta criada com sucesso! Redirecionando...', 'success');
       setTimeout(() => { window.location.href = '/dashboard/'; }, 1200);
 

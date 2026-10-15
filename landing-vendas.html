@@ -360,6 +360,7 @@
 <!-- Com JS ligado, os blocos começam escondidos e aparecem ao rolar.
      Sem JS, tudo aparece normalmente (nada some). -->
 <script>document.documentElement.classList.add('js');</script>
+<script src="/assets/js/meta-pixel.js"></script>
 </head>
 <body>
 
@@ -828,6 +829,17 @@
     trimestral: { nome: 'Plano trimestral', valorTexto: 'R$ 134,90 a cada 3 meses' },
     anual:      { nome: 'Plano anual',      valorTexto: 'R$ 499,00 por ano' },
   };
+  // Valor de cada plano para o Pixel da Meta (InitiateCheckout / Purchase).
+  const PLANOS_VALOR = { mensal: 49.90, trimestral: 134.90, anual: 499.00 };
+
+  // Pixel: clique no WhatsApp = Contact; clique em "Teste grátis" = Lead.
+  document.addEventListener('click', function(ev){
+    const a = ev.target.closest && ev.target.closest('a[href]');
+    if(!a || !window.khTrack) return;
+    const href = a.getAttribute('href') || '';
+    if(href.indexOf('wa.me/') !== -1) khTrack('Contact');
+    else if(href.indexOf('register.html') !== -1) khTrack('Lead', { content_name: 'Teste grátis 3 dias' });
+  });
 
   // planoAtual vem do seletor de planos (bloco anterior).
   let cronometroInterval = null;
@@ -845,6 +857,7 @@
     document.getElementById('checkoutPassoPix').style.display = 'none';
     document.getElementById('checkoutOverlay').classList.add('aberto');
     document.body.style.overflow = 'hidden';
+    if(window.khTrack) khTrack('InitiateCheckout', { value: PLANOS_VALOR[planoAtual] || 49.90, currency: 'BRL', content_name: resumo.nome });
   }
 
   function fecharCheckout(){
@@ -999,6 +1012,7 @@
         clearInterval(cronometroInterval);
         document.getElementById('checkoutAguardando').style.display = 'none';
         document.getElementById('checkoutPago').style.display = 'block';
+        if(window.khTrack) khTrack('Purchase', { value: PLANOS_VALOR[planoAtual] || 49.90, currency: 'BRL', content_name: (PLANOS_RESUMO[planoAtual] || PLANOS_RESUMO.mensal).nome });
       }
     }, 5000);
   }
