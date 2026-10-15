@@ -222,6 +222,55 @@
   .home-link-btns{ display:flex; gap:8px; }
   .home-link-btns .btn{ padding:10px 16px; width:auto; text-decoration:none; display:inline-flex; align-items:center; }
   .home-cards{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:24px; }
+  /* ===== Primeiro acesso: loja pronta em 3 passos ===== */
+  .ob-fundo{position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.72); display:flex; align-items:flex-end; justify-content:center;
+    padding:max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));}
+  .ob-fundo.hidden{display:none;}
+  @media (min-width:720px){ .ob-fundo{align-items:center;} }
+  .ob-caixa{width:100%; max-width:520px; max-height:100%; overflow-y:auto; background:var(--panel-solid); color:var(--text);
+    border:1px solid var(--line); border-radius:22px 22px 0 0; padding:22px 20px calc(22px + env(safe-area-inset-bottom));}
+  @media (min-width:720px){ .ob-caixa{border-radius:22px;} }
+  .ob-topo{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px;}
+  .ob-passos{display:flex; gap:6px;}
+  .ob-passos span{width:26px; height:5px; border-radius:99px; background:var(--line);}
+  .ob-passos span.feito{background:var(--neon-green);}
+  .ob-pular{background:none; border:0; color:var(--text-dim); font:inherit; font-size:13px; cursor:pointer; padding:6px;}
+  .ob-caixa h2{font-family:'Anton',sans-serif; font-weight:400; font-size:26px; letter-spacing:.02em; text-transform:uppercase; margin:10px 0 4px;}
+  .ob-sub{color:var(--text-dim); font-size:14px; margin:0 0 18px; line-height:1.45;}
+  .ob-logo-slot{display:flex; align-items:center; justify-content:center; height:170px; border:1.5px dashed var(--line-glow);
+    border-radius:18px; background:var(--foto-bg); cursor:pointer; overflow:hidden; color:var(--text-dim); font-size:14px; text-align:center; padding:12px;}
+  .ob-logo-slot img{max-width:80%; max-height:80%; object-fit:contain;}
+  .ob-cores{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px;}
+  .ob-cor{width:44px; height:44px; border-radius:50%; border:3px solid transparent; cursor:pointer; padding:0; box-shadow:0 0 0 1px var(--line) inset;}
+  .ob-cor.ativa{border-color:var(--text);}
+  .ob-cor-livre{position:relative; overflow:hidden; background:conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);}
+  .ob-cor-livre input{position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;}
+  .ob-rotulo{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); margin:16px 0 10px;}
+  .ob-previa{border-radius:18px; overflow:hidden; border:1px solid var(--line); margin-top:16px;}
+  .ob-previa-topo{display:flex; align-items:center; justify-content:center; height:58px; padding:8px;}
+  .ob-previa-topo img{max-height:42px; max-width:60%; object-fit:contain;}
+  .ob-previa-topo strong{font-family:'Anton',sans-serif; font-weight:400; font-size:18px; text-transform:uppercase;}
+  .ob-previa-faixa{height:6px;}
+  .ob-previa-corpo{padding:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .ob-previa-card{border-radius:12px; height:84px; opacity:.9;}
+  .ob-previa-botao{grid-column:1 / -1; border-radius:999px; padding:11px; text-align:center; font-family:'Anton',sans-serif; text-transform:uppercase; font-size:14px;}
+  .ob-modos{display:flex; gap:8px;}
+  .ob-modos button{flex:1; padding:10px; border-radius:12px; border:1px solid var(--line); background:transparent; color:var(--text); font:inherit; cursor:pointer;}
+  .ob-modos button.ativo{border-color:var(--neon-green); color:var(--neon-green);}
+  .ob-campo{width:100%; box-sizing:border-box; padding:14px 16px; border-radius:14px; border:1px solid var(--line); background:var(--input-bg);
+    color:var(--text); font:inherit; font-size:17px;}
+  .ob-acoes{display:flex; gap:10px; margin-top:22px;}
+  .ob-acoes button, .ob-acoes a{flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:15px; border-radius:999px; cursor:pointer;
+    font-family:'Anton',sans-serif; font-size:15px; letter-spacing:.04em; text-transform:uppercase; text-decoration:none;}
+  .ob-prim{background:var(--btn-bg); color:var(--btn-text); border:0;}
+  .ob-prim:disabled{opacity:.5; cursor:default;}
+  .ob-sec{background:transparent; color:var(--text); border:1px solid var(--line);}
+  .ob-link{display:flex; align-items:center; gap:8px; padding:14px; border-radius:14px; background:var(--input-bg); border:1px solid var(--line);
+    font-size:14px; word-break:break-all;}
+  .ob-ok{width:64px; height:64px; border-radius:50%; display:grid; place-items:center; background:var(--neon-green-glow); color:var(--neon-green); margin:4px 0 6px;}
+  .ob-ok svg{width:32px; height:32px;}
+  .ob-caixa :focus-visible{outline:2px solid var(--neon-green); outline-offset:2px;}
+
   .home-card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; }
   .home-card small{ display:block; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
   .home-card strong{ font-family:'Anton',sans-serif; font-weight:400; font-size:32px; color:var(--neon-green); }
@@ -2988,6 +3037,7 @@
     // Faixas (marquee): só o mestre (Katalogo Hub) edita, ou loja que ele liberou. Na dúvida, travado.
     ADMIN_MARQUEE_LIBERADO = ADMIN_EH_MESTRE || !!(lojaInfo && lojaInfo.marquee_liberado);
     ADMIN_LOJA_SLUG = lojaInfo ? lojaInfo.slug : null;
+    setTimeout(verificarPrimeiroAcesso, 800);   // loja nova: abre o "loja pronta em 3 passos"
     await carregarPrecosTipoAdmin();
     const btnMestre = document.getElementById('btnCatalogoMestre');
     if(btnMestre) btnMestre.style.display = ADMIN_USA_MESTRE ? '' : 'none';
@@ -3932,6 +3982,211 @@
     if(home) carregarHome();
   }
   function irParaProdutos(){ mostrarSecao('produtos'); }
+  // ============================================================
+  // PRIMEIRO ACESSO: "Sua loja pronta em 3 passos" (logo -> cor -> WhatsApp -> link).
+  // Abre sozinho em loja nova (sem logo) até o lojista concluir ou tocar em "Fazer depois".
+  // A cor é sugerida a partir das cores da própria logo.
+  // ============================================================
+  const OB_CORES_PADRAO = ['#00E5FF','#35FFC0','#FFD400','#FF3B30','#2563EB','#A855F7','#F97316','#E5E7EB'];
+  const ob = { passo: 0, logo: null, cor: '#00E5FF', modo: 'dark', zap: '', sugeridas: [], salvando: false };
+  const obChave = () => 'kh_onboarding_' + ADMIN_LOJA_ID;
+
+  async function verificarPrimeiroAcesso(){
+    try {
+      if(!ADMIN_LOJA_ID || ADMIN_EH_MESTRE) return;
+      try { if(localStorage.getItem(obChave())) return; } catch(e){}
+      const { data } = await supabaseClient.from('store_settings')
+        .select('logo_url, cor_primaria, modo, telefone_contato').eq('loja_id', ADMIN_LOJA_ID).maybeSingle();
+      if(!data || data.logo_url) return;          // loja já configurada
+      abrirOnboarding(data);
+    } catch(e){ console.error('Primeiro acesso', e); }
+  }
+
+  function abrirOnboarding(dados){
+    dados = dados || {};
+    ob.passo = 0; ob.logo = dados.logo_url || null;
+    ob.cor = dados.cor_primaria || '#00E5FF'; ob.modo = dados.modo === 'light' ? 'light' : 'dark';
+    ob.zap = (dados.telefone_contato || '').replace(/\D/g, '');
+    document.getElementById('obFundo').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    obRender();
+  }
+  function fecharOnboarding(){
+    document.getElementById('obFundo').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+  function obPular(){
+    try { localStorage.setItem(obChave(), 'depois'); } catch(e){}
+    fecharOnboarding();
+  }
+
+  function obEsc(t){ return String(t || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function obZapFormatado(d){
+    d = (d || '').replace(/\D/g, '').slice(0, 11);
+    if(d.length <= 2) return d;
+    if(d.length <= 7) return `(${d.slice(0,2)}) ${d.slice(2)}`;
+    return `(${d.slice(0,2)}) ${d.slice(2, d.length - 4)}-${d.slice(-4)}`;
+  }
+
+  function obPrevia(){
+    const escuro = ob.modo !== 'light';
+    const fundo = escuro ? '#0B0E12' : '#FFFFFF', card = escuro ? '#1A1F27' : '#EEF0F3', texto = escuro ? '#FFFFFF' : '#111111';
+    const nome = (document.getElementById('lojaNomeInput') && document.getElementById('lojaNomeInput').value) || 'Sua loja';
+    const contraste = obCorDoTexto(ob.cor);
+    return `<div class="ob-previa" style="background:${fundo}; color:${texto}">
+      <div class="ob-previa-topo">${ob.logo ? `<img src="${obEsc(ob.logo)}" alt="">` : `<strong>${obEsc(nome)}</strong>`}</div>
+      <div class="ob-previa-faixa" style="background:${ob.cor}"></div>
+      <div class="ob-previa-corpo">
+        <div class="ob-previa-card" style="background:${card}"></div><div class="ob-previa-card" style="background:${card}"></div>
+        <div class="ob-previa-botao" style="background:${ob.cor}; color:${contraste}">Enviar pedido</div>
+      </div></div>`;
+  }
+  // Texto preto ou branco, o que ler melhor sobre a cor escolhida.
+  function obCorDoTexto(hex){
+    const n = parseInt(hex.replace('#',''), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#0A0A0A' : '#FFFFFF';
+  }
+
+  function obRender(){
+    document.querySelectorAll('#obPassos span').forEach((el, i) => el.classList.toggle('feito', i <= Math.min(ob.passo, 2)));
+    document.getElementById('obPular').style.display = ob.passo === 3 ? 'none' : '';
+    const box = document.getElementById('obConteudo');
+    if(ob.passo === 0){
+      box.innerHTML = `
+        <h2 id="obTitulo">Sua loja em 3 passos</h2>
+        <p class="ob-sub">Primeiro, a sua logo. Ela aparece no topo do catálogo e a gente tira a cor dela pra montar a loja.</p>
+        <div class="ob-logo-slot" onclick="document.getElementById('obLogoInput').click()" role="button" tabindex="0"
+             onkeydown="if(event.key==='Enter')this.click()" id="obLogoSlot">
+          ${ob.logo ? `<img src="${obEsc(ob.logo)}" alt="Sua logo">` : 'Toque para escolher a logo<br><small>PNG sem fundo fica melhor</small>'}
+        </div>
+        <div class="ob-acoes">
+          <button type="button" class="ob-sec" onclick="ob.passo=1; obRender()">Sem logo</button>
+          <button type="button" class="ob-prim" onclick="ob.passo=1; obRender()" ${ob.logo ? '' : 'disabled'}>Continuar</button>
+        </div>`;
+    } else if(ob.passo === 1){
+      const cores = [...new Set([...ob.sugeridas, ...OB_CORES_PADRAO])].slice(0, 10);
+      box.innerHTML = `
+        <h2 id="obTitulo">A cor da sua loja</h2>
+        <p class="ob-sub">${ob.sugeridas.length ? 'As primeiras cores vieram da sua logo.' : 'Escolha a cor da sua marca.'} Ela vai nos botões e nas faixas.</p>
+        <div class="ob-cores">
+          ${cores.map(c => `<button type="button" class="ob-cor${c.toLowerCase() === ob.cor.toLowerCase() ? ' ativa' : ''}" style="background:${c}" aria-label="Cor ${c}" onclick="ob.cor='${c}'; obRender()"></button>`).join('')}
+          <label class="ob-cor ob-cor-livre" aria-label="Outra cor"><input type="color" value="${ob.cor}" oninput="ob.cor=this.value; obRender()"></label>
+        </div>
+        <div class="ob-rotulo">Fundo do catálogo</div>
+        <div class="ob-modos">
+          <button type="button" class="${ob.modo !== 'light' ? 'ativo' : ''}" onclick="ob.modo='dark'; obRender()">Escuro</button>
+          <button type="button" class="${ob.modo === 'light' ? 'ativo' : ''}" onclick="ob.modo='light'; obRender()">Claro</button>
+        </div>
+        ${obPrevia()}
+        <div class="ob-acoes">
+          <button type="button" class="ob-sec" onclick="ob.passo=0; obRender()">Voltar</button>
+          <button type="button" class="ob-prim" onclick="ob.passo=2; obRender()">Continuar</button>
+        </div>`;
+    } else if(ob.passo === 2){
+      box.innerHTML = `
+        <h2 id="obTitulo">Seu WhatsApp</h2>
+        <p class="ob-sub">É pra onde os pedidos vão chegar, já com camisa, tamanho e valor.</p>
+        <label class="ob-rotulo" for="obZap">WhatsApp com DDD</label>
+        <input class="ob-campo" id="obZap" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(11) 90000-0000"
+               value="${obZapFormatado(ob.zap)}" oninput="ob.zap=this.value.replace(/[^0-9]/g,'').slice(0,11); this.value=obZapFormatado(ob.zap); document.getElementById('obFinalizar').disabled = ob.zap.length < 10">
+        <div class="ob-acoes">
+          <button type="button" class="ob-sec" onclick="ob.passo=1; obRender()">Voltar</button>
+          <button type="button" class="ob-prim" id="obFinalizar" onclick="obFinalizar()" ${ob.zap.length >= 10 ? '' : 'disabled'}>Deixar a loja pronta</button>
+        </div>`;
+      setTimeout(() => { const i = document.getElementById('obZap'); if(i && !ob.zap) i.focus(); }, 50);
+    } else {
+      const url = urlPublicaCatalogo();
+      const msg = encodeURIComponent('Olha a minha loja nova, com todas as camisas e pedido direto no WhatsApp: ' + url);
+      box.innerHTML = `
+        <div class="ob-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <h2 id="obTitulo">Sua loja está no ar</h2>
+        <p class="ob-sub">Os produtos já estão lá com os preços padrão por tipo. Mande o link para os seus clientes.</p>
+        <div class="ob-link">${obEsc(url)}</div>
+        <div class="ob-acoes">
+          <button type="button" class="ob-sec" onclick="copiarLinkCatalogo()">Copiar link</button>
+          <a class="ob-prim" href="${obEsc(url)}" target="_blank" rel="noopener">Ver minha loja</a>
+        </div>
+        <div class="ob-acoes" style="margin-top:10px">
+          <a class="ob-sec" href="https://wa.me/?text=${msg}" target="_blank" rel="noopener">Divulgar no WhatsApp</a>
+        </div>
+        <div class="ob-acoes" style="margin-top:10px">
+          <button type="button" class="ob-sec" onclick="fecharOnboarding(); irParaProdutos()">Ajustar preços e produtos</button>
+        </div>`;
+    }
+  }
+
+  async function obLogoEscolhida(event){
+    const file = event.target.files[0];
+    event.target.value = '';
+    if(!file) return;
+    const slot = document.getElementById('obLogoSlot');
+    if(slot) slot.innerHTML = '<span class="spinner"></span>';
+    let arquivo = file;
+    try { arquivo = await comprimirImagem(await recortarEspacoVazio(file), 600, 0.9); }
+    catch(e){ console.error('Não consegui processar a logo, enviando original', e); }
+    const path = `${ADMIN_LOJA_ID}/logo-loja-${Date.now()}.webp`;
+    const { error } = await supabaseClient.storage.from(TEAMS_BUCKET).upload(path, arquivo, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO });
+    if(error){ showToast('Não consegui enviar a logo: ' + error.message, 'error'); obRender(); return; }
+    ob.logo = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path).data.publicUrl;
+    try {
+      ob.sugeridas = await obCoresDaImagem(arquivo);
+      if(ob.sugeridas[0]) ob.cor = ob.sugeridas[0];
+    } catch(e){ ob.sugeridas = []; }
+    obRender();
+  }
+
+  // Cores mais marcantes da logo: ignora transparente, quase branco, quase preto e cinza.
+  function obCoresDaImagem(arquivo){
+    return new Promise((ok, falha) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas'), t = 64;
+        c.width = t; c.height = t;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, t, t);
+        const px = ctx.getImageData(0, 0, t, t).data, baldes = new Map();
+        for(let i = 0; i < px.length; i += 4){
+          const [r, g, b, a] = [px[i], px[i+1], px[i+2], px[i+3]];
+          if(a < 200) continue;
+          const max = Math.max(r, g, b), min = Math.min(r, g, b);
+          if(max < 40 || min > 225 || (max - min) < 40) continue;
+          const k = [r, g, b].map(v => Math.round(v / 32) * 32).join(',');
+          const e = baldes.get(k) || { n: 0, r: 0, g: 0, b: 0 };
+          e.n++; e.r += r; e.g += g; e.b += b; baldes.set(k, e);
+        }
+        const hex = v => Math.min(255, Math.round(v)).toString(16).padStart(2, '0');
+        const lista = [...baldes.values()].sort((a, b) => b.n - a.n).slice(0, 4)
+          .map(e => '#' + hex(e.r / e.n) + hex(e.g / e.n) + hex(e.b / e.n));
+        URL.revokeObjectURL(img.src);
+        ok(lista);
+      };
+      img.onerror = falha;
+      img.src = URL.createObjectURL(arquivo);
+    });
+  }
+
+  async function obFinalizar(){
+    if(ob.salvando) return;
+    ob.salvando = true;
+    const btn = document.getElementById('obFinalizar');
+    if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
+    const dados = {
+      cor_primaria: ob.cor, cor_primaria_clara: clarearCor(ob.cor, 0.4), modo: ob.modo,
+      telefone_contato: ob.zap, updated_at: new Date().toISOString(),
+    };
+    if(ob.logo) dados.logo_url = ob.logo;
+    const { error } = await supabaseClient.from('store_settings').update(dados).eq('loja_id', ADMIN_LOJA_ID);
+    ob.salvando = false;
+    if(error){
+      showToast('Não consegui salvar: ' + error.message, 'error');
+      if(btn){ btn.disabled = false; btn.textContent = 'Deixar a loja pronta'; }
+      return;
+    }
+    if(ob.logo) lojaLogoUrl = ob.logo;
+    try { localStorage.setItem(obChave(), 'feito'); } catch(e){}
+    ob.passo = 3; obRender();
+  }
+
   function urlPublicaCatalogo(){
     return ADMIN_LOJA_SLUG ? 'https://www.katalogohub.com/catalogo/loja/' + encodeURIComponent(ADMIN_LOJA_SLUG) : '';
   }
@@ -8735,5 +8990,17 @@
     loadTopbarLoja();
   }
 </script>
+
+<!-- Primeiro acesso: loja pronta em 3 passos (logo, cor, WhatsApp) -->
+<div class="ob-fundo hidden" id="obFundo" role="dialog" aria-modal="true" aria-labelledby="obTitulo">
+  <div class="ob-caixa">
+    <div class="ob-topo">
+      <div class="ob-passos" id="obPassos"><span></span><span></span><span></span></div>
+      <button type="button" class="ob-pular" id="obPular" onclick="obPular()">Fazer depois</button>
+    </div>
+    <div id="obConteudo"></div>
+  </div>
+  <input type="file" id="obLogoInput" accept="image/*" class="hidden" onchange="obLogoEscolhida(event)">
+</div>
 </body>
 </html>
