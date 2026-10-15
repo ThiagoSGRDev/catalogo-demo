@@ -1079,6 +1079,26 @@
   .team-search:focus{outline:none; border-color:var(--gold);}
   .topbar-actions{display:flex; align-items:center; gap:2px;}
   .search-wrap{position:relative;}
+  /* Sugestões de times na busca */
+  .busca-sugestoes{
+    position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:30;
+    background:var(--pitch-deep); border:1.5px solid var(--line); border-radius:14px;
+    box-shadow:0 10px 28px var(--sombra-media); overflow:hidden; display:none;
+  }
+  .busca-sugestoes.aberta{display:block;}
+  .busca-sugestao{
+    display:flex; align-items:center; gap:12px; width:100%; padding:10px 14px; border:0;
+    background:transparent; color:inherit; text-align:left; cursor:pointer; font:inherit;
+  }
+  .busca-sugestao + .busca-sugestao{border-top:1px solid var(--line);}
+  .busca-sugestao:hover, .busca-sugestao.ativa{background:rgba(var(--muted-rgb),0.08);}
+  .busca-sugestao .mini-escudo{
+    width:34px; height:34px; border-radius:50%; flex:none; display:grid; place-items:center;
+    background:rgba(var(--muted-rgb),0.06); font-size:11px; font-weight:700; overflow:hidden;
+  }
+  .busca-sugestao .mini-escudo img{width:78%; height:78%; object-fit:contain;}
+  .busca-sugestao .nome{font-weight:600; font-size:14px;}
+  .busca-sugestao .liga{font-size:12px; color:rgba(var(--muted-rgb),0.55);}
   .search-wrap .search-icon{
     position:absolute; left:16px; top:14px; width:18px; height:18px;
     color:rgba(var(--muted-rgb),0.4); pointer-events:none;
@@ -2528,7 +2548,10 @@
     </div>
     <div class="search-wrap" id="categorySearchWrap" style="display:none;">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" class="team-search search-with-icon" id="categorySearch" placeholder="Buscar time ou camisa..." oninput="renderCategoryResults()">
+      <input type="text" class="team-search search-with-icon" id="categorySearch" placeholder="Buscar time ou camisa..." oninput="renderCategoryResults(); sugerirTimes()"
+             autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="buscaSugestoes" aria-expanded="false"
+             onkeydown="teclaSugestao(event)" onblur="setTimeout(fecharSugestoes, 150)" onfocus="sugerirTimes()">
+      <div class="busca-sugestoes" id="buscaSugestoes" role="listbox" aria-label="Times"></div>
     </div>
     <div class="product-count" id="categoryCount" style="display:none;"></div>
     <div class="grid" id="categoryGrid"></div>
@@ -4730,18 +4753,75 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   }
 
   // Filtra o que já está carregado (nome da camisa, time ou tipo).
+  const semAcento = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  // --- Sugestões de times na busca (usa TEAMS já carregado, sem consulta nova) ---
+  let sugestoesAtuais = [], sugestaoAtiva = -1;
+  function sugerirTimes(){
+    const input = document.getElementById('categorySearch');
+    const box = document.getElementById('buscaSugestoes');
+    if(!input || !box) return;
+    const q = semAcento(input.value.trim());
+    if(q.length < 2){ fecharSugestoes(); return; }
+    const comecam = [], contem = [];
+    TEAMS.forEach(t => {
+      const n = semAcento(t.nome);
+      if(n.startsWith(q) || n.split(' ').some(w => w.startsWith(q))) comecam.push(t);
+      else if(n.includes(q)) contem.push(t);
+    });
+    sugestoesAtuais = comecam.concat(contem).slice(0, 6);
+    sugestaoAtiva = -1;
+    if(!sugestoesAtuais.length){ fecharSugestoes(); return; }
+    box.innerHTML = sugestoesAtuais.map((t, i) => `
+      <button type="button" class="busca-sugestao" role="option" id="sug${i}" onmousedown="event.preventDefault()" onclick="escolherSugestao(${i})">
+        <span class="mini-escudo">${t.imagem ? `<img src="${safeUrl(t.imagem)}" alt="">` : esc(t.sigla)}</span>
+        <span><span class="nome">${esc(t.nome)}</span><br><span class="liga">${esc(t.liga || '')}</span></span>
+      </button>`).join('');
+    box.classList.add('aberta');
+    input.setAttribute('aria-expanded', 'true');
+  }
+  function fecharSugestoes(){
+    const box = document.getElementById('buscaSugestoes');
+    const input = document.getElementById('categorySearch');
+    if(box){ box.classList.remove('aberta'); box.innerHTML = ''; }
+    if(input){ input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); }
+    sugestoesAtuais = []; sugestaoAtiva = -1;
+  }
+  function escolherSugestao(i){
+    const t = sugestoesAtuais[i];
+    if(!t) return;
+    trackEvent('search_suggestion', { team: t.nome });
+    fecharSugestoes();
+    chooseTeam(t);
+  }
+  function teclaSugestao(e){
+    if(!sugestoesAtuais.length) return;
+    const input = e.target;
+    if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+      e.preventDefault();
+      sugestaoAtiva = (sugestaoAtiva + (e.key === 'ArrowDown' ? 1 : -1) + sugestoesAtuais.length) % sugestoesAtuais.length;
+      document.querySelectorAll('.busca-sugestao').forEach((b, i) => b.classList.toggle('ativa', i === sugestaoAtiva));
+      input.setAttribute('aria-activedescendant', 'sug' + sugestaoAtiva);
+    } else if(e.key === 'Enter' && sugestaoAtiva >= 0){
+      e.preventDefault(); escolherSugestao(sugestaoAtiva);
+    } else if(e.key === 'Escape'){
+      fecharSugestoes();
+    }
+  }
+
   function renderCategoryResults(){
     const grid = document.getElementById('categoryGrid');
     const empty = document.getElementById('categoryEmpty');
     const countEl = document.getElementById('categoryCount');
     const searchEl = document.getElementById('categorySearch');
-    const query = (searchEl ? searchEl.value : '').trim().toLowerCase();
+    const query = semAcento((searchEl ? searchEl.value : '').trim());
 
+    // Busca ignora acentos e maiúsculas ("sao paulo" acha "São Paulo").
     const filtrados = query
       ? categoryResultsCache.filter(({ team, p }) =>
-          p.titulo.toLowerCase().includes(query) ||
-          team.nome.toLowerCase().includes(query) ||
-          p.tipo.toLowerCase().includes(query))
+          semAcento(p.titulo).includes(query) ||
+          semAcento(team.nome).includes(query) ||
+          semAcento(p.tipo).includes(query))
       : categoryResultsCache;
 
     grid.innerHTML = "";
