@@ -1044,6 +1044,19 @@
   }
   .filtros-sheet-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
   .filtros-sheet-header h3{font-family:'Anton', sans-serif; font-weight:600; font-size:17px; text-transform:uppercase; margin:0;}
+  .filtro-grupo + .filtro-grupo{margin-top:18px;}
+  .filtro-grupo-titulo{
+    font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+    color:rgba(var(--muted-rgb),0.5); margin-bottom:10px;
+  }
+  .filtros-acoes{display:flex; gap:10px; margin-top:22px;}
+  .filtros-acoes button{
+    flex:1; padding:13px; border-radius:999px; cursor:pointer;
+    font-family:'Anton', sans-serif; font-size:14px; letter-spacing:.03em; text-transform:uppercase;
+  }
+  .filtros-limpar{background:transparent; border:1.5px solid var(--line); color:var(--chalk);}
+  .filtros-ver{background:var(--gold); border:1.5px solid var(--gold); color:var(--ink);}
+  .category-pill:focus-visible,.filtros-acoes button:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
 
   /* LEAGUE SELECT VIEW */
   .liga-select-grid{display:grid; grid-template-columns:1fr; gap:14px; margin-top:6px;}
@@ -4439,23 +4452,88 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     { id: 'jogador', label: 'Jogador', test: p => p.tipo === 'Jogador' },
     { id: 'retro', label: 'Retrô', test: p => p.tipo === 'Retrô' },
     { id: 'feminina', label: 'Feminina', test: p => p.tipo === 'Feminina' },
+    { id: 'long-sleeve', label: 'Long Sleeve', test: p => p.tipo === 'Long Sleeve' },
     { id: 'infantil', label: 'Infantil', test: p => p.tipo === 'Kit Infantil' },
   ];
   let categoriaAtiva = 'todos';
 
-  function renderCategoryPills(){
+  // Faixas de preço do filtro (o preço já é o final que o cliente paga).
+  const FAIXAS_PRECO = [
+    { id: 'ate-180', label: 'Até R$ 180', test: v => v <= 180 },
+    { id: '180-220', label: 'R$ 180 a 220', test: v => v > 180 && v <= 220 },
+    { id: 'acima-220', label: 'Acima de R$ 220', test: v => v > 220 },
+  ];
+  let tamanhoFiltro = null;   // ex.: "G"
+  let precoFiltro = null;     // id de FAIXAS_PRECO
+
+  // Tamanho disponível de verdade no produto (na lista e não esgotado).
+  function produtoTemTamanho(p, t){
+    const lista = p.tamanhos || getSizeListForTipo(p.tipo);
+    return lista.includes(t) && !tamanhoEsgotado(p, t);
+  }
+  function passaFiltrosExtras(p){
+    if(tamanhoFiltro && !produtoTemTamanho(p, tamanhoFiltro)) return false;
+    if(precoFiltro){ const f = FAIXAS_PRECO.find(x => x.id === precoFiltro); if(f && !f.test(p.preco)) return false; }
+    return true;
+  }
+  const temFiltroAtivo = () => categoriaAtiva !== 'todos' || !!tamanhoFiltro || !!precoFiltro;
+
+  // Filtros na URL (?tipo=jogador&tam=G&preco=ate-180): o link compartilhado abre já filtrado.
+  function gravarFiltrosNaUrl(){
+    const params = new URLSearchParams(location.search);
+    const set = (k, v) => v ? params.set(k, v) : params.delete(k);
+    set('tipo', categoriaAtiva !== 'todos' ? categoriaAtiva : null);
+    set('tam', tamanhoFiltro);
+    set('preco', precoFiltro);
+    const q = params.toString();
+    const nova = location.pathname + (q ? '?' + q : '') + location.hash;
+    if(nova !== location.pathname + location.search + location.hash) history.replaceState(history.state, '', nova);
+  }
+  function lerFiltrosDaUrl(){
+    const params = new URLSearchParams(location.search);
+    const tipo = params.get('tipo'), tam = params.get('tam'), preco = params.get('preco');
+    categoriaAtiva = CATEGORY_PILLS.some(c => c.id === tipo) ? tipo : 'todos';
+    tamanhoFiltro = tam && /^[A-Z0-9]{1,4}$/i.test(tam) ? tam.toUpperCase() : null;
+    precoFiltro = FAIXAS_PRECO.some(f => f.id === preco) ? preco : null;
+  }
+  function limparFiltrosProduto(){
+    categoriaAtiva = 'todos'; tamanhoFiltro = null; precoFiltro = null;
+    renderTeamProducts();
+  }
+
+  // Folha de filtros: Tipo, Tamanho (só os que existem neste time) e Preço.
+  // Cada toque já atualiza a lista; "Ver produtos" fecha a folha.
+  function renderCategoryPills(total){
     const el = document.getElementById('categoryPills');
-    el.innerHTML = CATEGORY_PILLS.map(c =>
-      `<div class="category-pill${c.id === categoriaAtiva ? ' active' : ''}" data-id="${esc(c.id)}">${esc(c.label)}</div>`
-    ).join('');
-    el.querySelectorAll('.category-pill').forEach(pillEl => {
-      pillEl.onclick = () => {
-        categoriaAtiva = pillEl.dataset.id;
+    const base = currentTeamProductsCache.filter(p => p.disponivel !== false);
+    const tiposComProduto = CATEGORY_PILLS.filter(c => c.id === 'todos' || c.id === categoriaAtiva || base.some(c.test));
+    const ordemTam = ["P","M","G","GG","2XL","3XL","4XL","16","18","20","22","24","26","28"];
+    const tamanhos = ordemTam.filter(t => base.some(p => produtoTemTamanho(p, t)));
+    const faixas = FAIXAS_PRECO.filter(f => f.id === precoFiltro || base.some(p => f.test(p.preco)));
+    const pill = (grupo, id, label, ativo) =>
+      `<button type="button" class="category-pill${ativo ? ' active' : ''}" data-grupo="${grupo}" data-id="${esc(id)}" aria-pressed="${ativo}">${esc(label)}</button>`;
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div class="filtro-grupo"><div class="filtro-grupo-titulo">Tipo</div>
+        <div class="category-pills">${tiposComProduto.map(c => pill('tipo', c.id, c.label, c.id === categoriaAtiva)).join('')}</div></div>
+      ${tamanhos.length > 1 ? `<div class="filtro-grupo"><div class="filtro-grupo-titulo">Tamanho disponível</div>
+        <div class="category-pills">${tamanhos.map(t => pill('tam', t, t, t === tamanhoFiltro)).join('')}</div></div>` : ''}
+      ${faixas.length > 1 ? `<div class="filtro-grupo"><div class="filtro-grupo-titulo">Preço</div>
+        <div class="category-pills">${faixas.map(f => pill('preco', f.id, f.label, f.id === precoFiltro)).join('')}</div></div>` : ''}
+      <div class="filtros-acoes">
+        <button type="button" class="filtros-limpar" onclick="limparFiltrosProduto()">Limpar</button>
+        <button type="button" class="filtros-ver" onclick="fecharFiltrosProduto()">Ver ${typeof total === 'number' ? total + (total === 1 ? ' produto' : ' produtos') : 'produtos'}</button>
+      </div>`;
+    el.querySelectorAll('.category-pill').forEach(b => {
+      b.onclick = () => {
+        const { grupo, id } = b.dataset;
+        if(grupo === 'tipo') categoriaAtiva = id;
+        else if(grupo === 'tam') tamanhoFiltro = tamanhoFiltro === id ? null : id;
+        else if(grupo === 'preco') precoFiltro = precoFiltro === id ? null : id;
         renderTeamProducts();
-        fecharFiltrosProduto();
       };
     });
-    document.getElementById('filtrosBtn').classList.toggle('tem-filtro', categoriaAtiva !== 'todos');
+    document.getElementById('filtrosBtn').classList.toggle('tem-filtro', temFiltroAtivo());
   }
 
   function abrirFiltrosProduto(){
@@ -4480,6 +4558,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const route = ['time', slugify(prox.nome)];
     await chooseTeam(prox, false);
     history.replaceState({ view: 'team', route }, "", urlDaRota(route));
+    gravarFiltrosNaUrl();   // mantém os filtros ao passar de time pelas setas
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -4490,7 +4569,9 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     document.getElementById('teamListBadge').innerHTML = badgeContent(team);
     document.getElementById('teamListName').textContent = team.nome;
     document.getElementById('teamProductSearch').value = "";
-    categoriaAtiva = 'todos';
+    // Veio por link (sem empilhar histórico)? Respeita os filtros da URL; senão, começa limpo.
+    if(push === false) lerFiltrosDaUrl();
+    else { categoriaAtiva = 'todos'; tamanhoFiltro = null; precoFiltro = null; }
     navigateTo('team', ['time', slugify(team.nome)], push);
     await renderTeamProducts();
     trackEvent('view_team', { team: team.nome, liga: team.liga });
@@ -4515,7 +4596,6 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     if(!currentTeam) return;
     const grid = document.getElementById('productGrid');
     const query = document.getElementById('teamProductSearch').value.trim().toLowerCase();
-    renderCategoryPills();
 
     grid.innerHTML = skeletonCards(6);
 
@@ -4534,14 +4614,19 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const products = allProducts
       .filter(p => p.disponivel !== false)
       .filter(p => p.titulo.toLowerCase().includes(query) || p.tipo.toLowerCase().includes(query))
-      .filter(filtroCategoria.test);
+      .filter(filtroCategoria.test)
+      .filter(passaFiltrosExtras);
     document.getElementById('productCount').textContent = products.length + (products.length === 1 ? " produto" : " produtos");
+    renderCategoryPills(products.length);
+    gravarFiltrosNaUrl();
     grid.innerHTML = "";
 
     if(products.length === 0){
       grid.innerHTML = query
         ? '<div class="no-results">Nenhum resultado pra essa busca.</div>'
-        : '<div class="no-results">Novos mantos em breve.</div>';
+        : temFiltroAtivo()
+          ? '<div class="no-results">Nenhuma camisa com esses filtros.<br><button class="pbuy" style="margin-top:10px;" onclick="limparFiltrosProduto()">Limpar filtros</button></div>'
+          : '<div class="no-results">Novos mantos em breve.</div>';
       return;
     }
 
