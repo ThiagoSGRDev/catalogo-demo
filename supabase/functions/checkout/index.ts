@@ -8,6 +8,7 @@ import {
   admin, aplicarPagamento, calcularTaxa, CORS, json, mpGet, mpPost, SERVICE_KEY,
   SITE_URL, SUPABASE_URL, tokenDaLoja,
 } from './mp.ts';
+import { ipConfirmar, ipCriarLink } from './ip.ts';
 
 const FRETE_PADRAO: Record<string, number> = { motoboy: 15, pac: 24.9, sedex: 39.9, retirar: 0 };
 const FRETE_NOMES: Record<string, string> = { motoboy: 'Motoboy', pac: 'PAC', sedex: 'Sedex', retirar: 'Retirar no local' };
@@ -17,6 +18,8 @@ const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 const dinheiro = (n: number) => Math.round(n * 100) / 100;
 // Camisa que já vem com nome e número: preço do tipo + este valor (igual ao catalogo-template.html).
 const ACRESCIMO_JA_PERSONALIZADA = 50;
+// Calçados não têm nome/número (igual ao catálogo).
+const CALCADO_TIPOS = ['Tênis', 'Chuteira'];
 
 // Descontos por quantidade (mesma conta do catalogo-template.html, calcularDescontos):
 // 1º "Pague X leve Y" (a cada Y peças, as mais baratas saem grátis), depois a faixa de % sobre o resto.
@@ -51,20 +54,27 @@ function expiracaoPix(minutos: number) {
 async function criar(body: any) {
   const db = admin();
   const slug = txt(body.loja_slug, 80).toLowerCase();
-  const metodo = body.metodo === 'cartao' ? 'cartao' : 'pix';
+  const metodo = body.metodo === 'cartao' ? 'cartao' : body.metodo === 'infinitepay' ? 'infinitepay' : 'pix';
 
   const { data: loja } = await db.from('lojas').select('id, nome, slug, ativa, status, trial_expira_em, usa_catalogo_mestre')
     .eq('slug', slug).maybeSingle();
   const lojaNoAr = loja && loja.ativa && (loja.status === 'ativo' || (loja.status === 'trial' && new Date(loja.trial_expira_em) > new Date()));
   if (!lojaNoAr) return json({ erro: 'loja_indisponivel' }, 404);
 
-  const { data: ck } = await db.from('loja_checkout').select('*').eq('loja_id', loja.id).maybeSingle();
-  if (!ck || !ck.ativo || !ck.conectado) return json({ erro: 'checkout_desligado' }, 400);
-  if (metodo === 'pix' && !ck.aceita_pix) return json({ erro: 'meio_indisponivel' }, 400);
-  if (metodo === 'cartao' && !ck.aceita_cartao) return json({ erro: 'meio_indisponivel' }, 400);
-
-  const token = await tokenDaLoja(db, loja.id);
-  if (!token) return json({ erro: 'checkout_desligado' }, 400);
+  let ck: any = null, token: string | null = null, ipConta: any = null;
+  if (metodo === 'infinitepay') {
+    const { data } = await db.from('loja_infinitepay').select('handle, ativo').eq('loja_id', loja.id).maybeSingle();
+    if (!data || !data.ativo) return json({ erro: 'checkout_desligado' }, 400);
+    ipConta = data;
+  } else {
+    const { data } = await db.from('loja_checkout').select('*').eq('loja_id', loja.id).maybeSingle();
+    ck = data;
+    if (!ck || !ck.ativo || !ck.conectado) return json({ erro: 'checkout_desligado' }, 400);
+    if (metodo === 'pix' && !ck.aceita_pix) return json({ erro: 'meio_indisponivel' }, 400);
+    if (metodo === 'cartao' && !ck.aceita_cartao) return json({ erro: 'meio_indisponivel' }, 400);
+    token = await tokenDaLoja(db, loja.id);
+    if (!token) return json({ erro: 'checkout_desligado' }, 400);
+  }
 
   // ---- Cliente ----
   const cliente = {
@@ -91,8 +101,10 @@ async function criar(body: any) {
     db.from('loja_precos_customizados').select('product_id, preco').eq('loja_id', loja.id).in('product_id', ids),
     db.from('loja_precos_por_tipo').select('tipo, preco').eq('loja_id', loja.id),
     db.from('loja_produtos_override').select('product_id, titulo, subtitulo, tamanhos').eq('loja_id', loja.id).in('product_id', ids),
-    db.from('store_settings').select('preco_personalizacao, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho, preco_frete, preco_frete_outros_estados, preco_frete_sedex, usa_estoque').eq('loja_id', loja.id).maybeSingle(),
+    db.from('store_settings').select('preco_personalizacao, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho, moeda, preco_frete, preco_frete_outros_estados, preco_frete_sedex, usa_estoque').eq('loja_id', loja.id).maybeSingle(),
   ]);
+  // Mercado Pago e InfinitePay só recebem em real.
+  if (cfg?.moeda && cfg.moeda !== 'BRL') return json({ erro: 'checkout_desligado' }, 400);
   const mapaProd = new Map((prods || []).map((p: any) => [p.id, p]));
   const oculto = new Set((ocultos || []).map((o: any) => o.product_id));
   // Linha só com "De" (promoção) e sem preço próprio continua usando o preço do tipo.
@@ -120,8 +132,9 @@ async function criar(body: any) {
     if (tamanhos.length && !tamanhos.includes(tamanho)) return json({ erro: 'tamanho_invalido', produto: p.id }, 400);
     const qty = Math.max(1, Math.min(20, parseInt(i.qty, 10) || 1));
     const jaPers = !!p.ja_personalizada;
-    const nome = jaPers ? '' : txt(i.nome, 20).toUpperCase();
-    const numero = jaPers ? '' : txt(i.numero, 3).replace(/\D/g, '');
+    const semPers = jaPers || CALCADO_TIPOS.includes(p.tipo);
+    const nome = semPers ? '' : txt(i.nome, 20).toUpperCase();
+    const numero = semPers ? '' : txt(i.numero, 3).replace(/\D/g, '');
     // Preço por tipo: vale pro catálogo mestre e pros produtos importados/em lote.
     // Produto cadastrado à mão (preco_manual) usa o preço que o lojista digitou.
     const base = precoCustom.has(p.id) ? precoCustom.get(p.id)!
@@ -193,7 +206,8 @@ async function criar(body: any) {
   const desconto = dinheiro(descontoQtd + descontoPix);
   const total = dinheiro(valorProdutos - descontoPix + freteValor + acrescimo);
   const descontoDetalhe = desconto > 0 ? { ...descontos, pix: descontoPix ? { pct: pctPix, valor: descontoPix } : null } : null;
-  const taxa = calcularTaxa(total, ck);
+  // InfinitePay não repassa comissão pra plataforma.
+  const taxa = metodo === 'infinitepay' ? 0 : calcularTaxa(total, ck);
 
   // ---- Pedido ----
   const { data: ped, error: errPed } = await db.from('pedidos').insert({
@@ -208,9 +222,28 @@ async function criar(body: any) {
   const notificacao = `${SUPABASE_URL}/functions/v1/mp-webhook?loja=${loja.id}`;
   const [primeiro, ...resto] = cliente.nome.split(/\s+/);
 
+  if (metodo === 'infinitepay') {
+    const fone = cliente.whats.replace(/\D/g, '');
+    const { url, resposta } = await ipCriarLink({
+      handle: ipConta.handle,
+      items: [{ quantity: 1, price: Math.round(total * 100), description: descricao }],
+      order_nsu: ped.id,
+      redirect_url: `${SITE_URL}/catalogo/loja/${encodeURIComponent(loja.slug)}?pedido=${ped.id}&t=${ped.token_publico}`,
+      webhook_url: `${SUPABASE_URL}/functions/v1/infinitepay-webhook`,
+      customer: { name: cliente.nome, email: cliente.email, ...(fone.length >= 10 ? { phone_number: '+' + (fone.length <= 11 ? '55' + fone : fone) } : {}) },
+    });
+    if (!url) {
+      console.error('InfinitePay link falhou', JSON.stringify(resposta));
+      await db.from('pedidos').update({ status: 'cancelado', mp_status_detalhe: 'erro_criar_link_infinitepay' }).eq('id', ped.id);
+      return json({ erro: 'falha_pagamento' }, 502);
+    }
+    await db.from('pedidos').update({ link_pagamento: url }).eq('id', ped.id);
+    return json({ pedido_id: ped.id, token: ped.token_publico, numero: ped.numero, total, metodo, link: url });
+  }
+
   if (metodo === 'pix') {
     const expira = expiracaoPix(30);
-    const r = await mpPost(token, '/v1/payments', {
+    const r = await mpPost(token!, '/v1/payments', {
       transaction_amount: total,
       description: descricao,
       payment_method_id: 'pix',
@@ -238,7 +271,7 @@ async function criar(body: any) {
 
   // Cartão (parcelado): página segura do Mercado Pago, volta pra loja no fim.
   const volta = `${SITE_URL}/catalogo/loja/${encodeURIComponent(loja.slug)}?pedido=${ped.id}&t=${ped.token_publico}`;
-  const r = await mpPost(token, '/checkout/preferences', {
+  const r = await mpPost(token!, '/checkout/preferences', {
     items: [{ id: ped.id, title: descricao, quantity: 1, unit_price: total, currency_id: 'BRL' }],
     payer: { email: cliente.email, name: primeiro, surname: resto.join(' ') || undefined },
     external_reference: ped.id,
@@ -267,6 +300,16 @@ async function status(body: any) {
   let { data: ped } = await db.from('pedidos').select('id, loja_id, numero, status, total, metodo, token_publico, mp_payment_id, pix_expira_em, criado_em')
     .eq('id', id).maybeSingle();
   if (!ped || ped.token_publico !== tk) return json({ erro: 'pedido_invalido' }, 404);
+
+  // InfinitePay: a volta traz transaction_nsu + slug; confere direto na InfinitePay.
+  if (ped.status === 'aguardando_pagamento' && ped.metodo === 'infinitepay') {
+    if (body.transaction_nsu && body.slug) {
+      await ipConfirmar(db, ped.id, txt(body.transaction_nsu, 80), txt(body.slug, 80), txt(body.receipt_url, 300));
+      const { data: novo } = await db.from('pedidos').select('status').eq('id', ped.id).single();
+      if (novo) ped = { ...ped, status: novo.status };
+    }
+    return json({ pedido_id: ped.id, numero: ped.numero, status: ped.status, total: ped.total, metodo: ped.metodo });
+  }
 
   // Reserva caso o aviso (webhook) do Mercado Pago atrase: pergunta direto pro Mercado Pago.
   if (ped.status === 'aguardando_pagamento') {

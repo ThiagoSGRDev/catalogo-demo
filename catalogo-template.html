@@ -1599,6 +1599,12 @@
     font-family:var(--font-mono); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:3px 8px; border-radius:999px;}
   .entrega-info{margin-top:10px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; color:rgba(var(--muted-rgb),0.8);}
   .entrega-info.pronta{color:#16A34A;}
+  /* Selos de confiança e "pessoas vendo agora" (contagem real) */
+  .selos-confianca{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:16px;}
+  .selos-confianca div{display:flex; align-items:center; gap:8px; padding:10px; border-radius:12px; border:1px solid var(--line);
+    font-size:12px; line-height:1.3; color:rgba(var(--muted-rgb),0.85);}
+  .selos-confianca span{font-size:18px; line-height:1;}
+  .vendo-agora{margin-top:8px; font-size:12.5px; font-weight:600; color:#D97706;}
   /* Novidades na home */
   .novidades-section{padding:22px 0 6px;}
   .novidades-section .liga-head{margin-bottom:12px;}
@@ -2110,6 +2116,14 @@
       <span>Conjunto de Treino</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
     </div>
+    <div class="drawer-link" data-tipo-menu="Tênis" hidden onclick="closeDrawer(); openCategory('Tênis');">
+      <span>Tênis</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="drawer-link" data-tipo-menu="Chuteira" hidden onclick="closeDrawer(); openCategory('Chuteira');">
+      <span>Chuteira</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
 
     <div class="drawer-footer">
       <a href="#">Trocas e devoluções</a>
@@ -2247,7 +2261,11 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg>
           Cartão em até 12x<span class="ck-valor-btn" id="ckCartaoValor"></span>
         </button>
-        <div class="ck-seguro">Pagamento seguro pelo Mercado Pago · cai direto na loja</div>
+        <button type="button" class="ck-btn sec" id="ckIpBtn" onclick="ckPagar('infinitepay')" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg>
+          Pix ou cartão (InfinitePay)<span class="ck-valor-btn" id="ckIpValor"></span>
+        </button>
+        <div class="ck-seguro" id="ckSeguroTxt">Pagamento seguro pelo Mercado Pago · cai direto na loja</div>
         <div class="ck-erro" id="ckErro"></div>
         <div class="ck-divisor">ou combine pelo WhatsApp</div>
       </div>
@@ -2497,6 +2515,7 @@
     <div class="product-price-lg" id="productPriceLg"></div>
     <div class="promo-qtd-aviso" id="promoQtdAviso" hidden></div>
     <div class="entrega-info" id="entregaInfo" hidden></div>
+    <div class="vendo-agora" id="vendoAgora" hidden></div>
 
     <div class="size-row-head">
       <div class="size-label" style="margin:0;">Escolha o tamanho</div>
@@ -2540,6 +2559,7 @@
     <div class="product-buy-bar">
       <button class="add-btn" id="addToCartBtn" onclick="addToCart()">+ Adicionar ao carrinho</button>
     </div>
+    <div class="selos-confianca" id="selosConfianca" hidden></div>
     </div>
     </div>
   </div>
@@ -3061,6 +3081,16 @@
   let ORDEM_LIGAS = [];           // ordem das ligas na home definida pelo lojista
   let MOSTRAR_NOVIDADES = true;
   let META_PIXEL_ID = '';
+  let SELOS_CONFIANCA = [];
+  let MOSTRAR_VENDO_AGORA = false;
+  const SELOS_INFO = {
+    compra_segura: ['🔒', 'Compra 100% segura'],
+    troca: ['🔄', 'Troca garantida'],
+    envio_brasil: ['🚚', 'Enviamos para todo o Brasil'],
+    atendimento: ['💬', 'Atendimento pelo WhatsApp'],
+    conferido: ['✅', 'Produto conferido antes do envio'],
+    rastreio: ['📦', 'Código de rastreio em todo envio'],
+  };
   const PAGAMENTO_NOMES = { pix: 'Pix', dinheiro: 'Dinheiro', cartao_entrega: 'Cartão na entrega', link: 'Link de pagamento (cartão)' };
   let DESCONTO_QTD = [];   // [{min:4, pct:10}, ...]
   let PAGUE_LEVE = null;   // {pague:2, leve:3}
@@ -3193,7 +3223,7 @@
     try {
       const { data, error } = await supabaseClient
         .from('store_settings')
-        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho, prazo_encomenda, pagamentos_manuais, ordem_ligas, mostrar_novidades, meta_pixel_id, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
+        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho, prazo_encomenda, pagamentos_manuais, ordem_ligas, mostrar_novidades, meta_pixel_id, selos_confianca, mostrar_vendo_agora, idioma, moeda, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
         .eq('loja_id', LOJA_ID)
         .single();
       if(error || !data) return;
@@ -3265,6 +3295,14 @@
       ORDEM_LIGAS = Array.isArray(data.ordem_ligas) ? data.ordem_ligas.filter(n => typeof n === 'string').slice(0, 60) : [];
       MOSTRAR_NOVIDADES = data.mostrar_novidades !== false;
       META_PIXEL_ID = /^[0-9]{8,20}$/.test(String(data.meta_pixel_id || '')) ? String(data.meta_pixel_id) : '';
+      IDIOMA = ['en', 'es'].includes(data.idioma) ? data.idioma : 'pt';
+      MOEDA = ['USD', 'EUR'].includes(data.moeda) ? data.moeda : 'BRL';
+      fmtIntl = null;
+      aplicarIdioma();
+      if(MOEDA !== 'BRL'){ CHECKOUT = null; const ckb = document.getElementById('ckBox'); if(ckb) ckb.hidden = true; }
+      SELOS_CONFIANCA = Array.isArray(data.selos_confianca) ? data.selos_confianca.filter(k => SELOS_INFO[k]) : [];
+      MOSTRAR_VENDO_AGORA = data.mostrar_vendo_agora === true;
+      renderSelosConfianca();
       iniciarPixelLoja();
       renderPagamentosManuais();
       FRETE_GRATIS_ACIMA = posNum(data.frete_gratis_acima);
@@ -3931,14 +3969,20 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   const KID_TIPOS = ["Kit Infantil"];
   const FEMININA_TIPOS = ["Feminina"];
   const LONG_SLEEVE_TIPOS = ["Long Sleeve"];
+  // Calçados: numeração 34 a 45, sem personalização e sem tabela de camisa.
+  const CALCADO_TIPOS = ["Tênis", "Chuteira"];
+  const CALCADO_SIZES = ["34","35","36","37","38","39","40","41","42","43","44","45"];
+  const ehCalcado = p => !!(p && CALCADO_TIPOS.includes(p.tipo));
+  const semPersonalizacao = p => !!(p && (p.ja_personalizada || ehCalcado(p)));
   // Lista de categorias por tipo de produto (usada pra resolver o slug da URL
   // em #/categoria/<slug>, ex.: "torcedor" -> "Torcedor").
-  const CATEGORIAS_TIPO = ["Torcedor", "Jogador", "Retrô", "Kit Infantil", "Feminina", "Long Sleeve", "Kit Treino", "Conjunto de Treino"];
+  const CATEGORIAS_TIPO = ["Torcedor", "Jogador", "Retrô", "Kit Infantil", "Feminina", "Long Sleeve", "Kit Treino", "Conjunto de Treino", "Tênis", "Chuteira"];
 
   function getSizeListForTipo(tipo){
     if(KID_TIPOS.includes(tipo)) return KID_SIZES;
     if(FEMININA_TIPOS.includes(tipo)) return FEMININA_SIZES;
     if(LONG_SLEEVE_TIPOS.includes(tipo)) return LONG_SLEEVE_SIZES;
+    if(CALCADO_TIPOS.includes(tipo)) return CALCADO_SIZES;
     return SIZES;
   }
 
@@ -4463,7 +4507,19 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       .sort((a, b) => a.ordem_exibicao - b.ordem_exibicao);
   }
 
-  function fmt(v){ return "R$ " + v.toFixed(2).replace(".", ","); }
+  // Moeda da loja (painel > Loja > Idioma e moeda). Real usa o formato de sempre.
+  let MOEDA = 'BRL', IDIOMA = 'pt';
+  let fmtIntl = null;
+  function fmt(v){
+    v = Number(v) || 0;
+    if(MOEDA === 'BRL') return "R$ " + v.toFixed(2).replace(".", ",");
+    if(!fmtIntl){
+      const loc = MOEDA === 'USD' ? (IDIOMA === 'es' ? 'es-US' : IDIOMA === 'pt' ? 'pt-BR' : 'en-US')
+        : (IDIOMA === 'en' ? 'en-IE' : IDIOMA === 'es' ? 'es-ES' : 'pt-PT');
+      fmtIntl = new Intl.NumberFormat(loc, { style: 'currency', currency: MOEDA });
+    }
+    return fmtIntl.format(v);
+  }
 
   // ============================================================
   // 🧠 LÓGICA DO CATÁLOGO — navegação, carrinho, favoritos, render.
@@ -4481,6 +4537,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     document.getElementById('categoryView').classList.toggle('active', name === 'category');
     document.getElementById('timesView').classList.toggle('active', name === 'times');
     document.body.setAttribute('data-view', name);
+    if(name !== 'product') sairVendoAgora();
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
     if(name === 'times') timesCentralizarDepoisDoLayout();
   }
@@ -4664,6 +4721,8 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     { id: 'feminina', label: 'Feminina', test: p => p.tipo === 'Feminina' },
     { id: 'long-sleeve', label: 'Long Sleeve', test: p => p.tipo === 'Long Sleeve' },
     { id: 'infantil', label: 'Infantil', test: p => p.tipo === 'Kit Infantil' },
+    { id: 'tenis', label: 'Tênis', test: p => p.tipo === 'Tênis' },
+    { id: 'chuteira', label: 'Chuteira', test: p => p.tipo === 'Chuteira' },
   ];
   let categoriaAtiva = 'todos';
 
@@ -4717,9 +4776,10 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const el = document.getElementById('categoryPills');
     const base = currentTeamProductsCache.filter(p => p.disponivel !== false);
     const tiposComProduto = CATEGORY_PILLS.filter(c => c.id === 'todos' || c.id === categoriaAtiva || base.some(c.test));
-    const ordemTam = ["P","M","G","GG","2XL","3XL","4XL","16","18","20","22","24","26","28"];
+    const ordemTam = ["P","M","G","GG","2XL","3XL","4XL","16","18","20","22","24","26","28", ...CALCADO_SIZES];
     const tamanhos = ordemTam.filter(t => base.some(p => produtoTemTamanho(p, t)));
-    const faixas = FAIXAS_PRECO.filter(f => f.id === precoFiltro || base.some(p => f.test(p.preco)));
+    const faixas = FAIXAS_PRECO.filter(f => f.id === precoFiltro || base.some(p => f.test(p.preco)))
+      .map(f => MOEDA === 'BRL' ? f : Object.assign({}, f, { label: f.label.replace(/R\$ ?/g, fmt(0).replace(/[\d.,\s]/g, '')) }));
     const pill = (grupo, id, label, ativo) =>
       `<button type="button" class="category-pill${ativo ? ' active' : ''}" data-grupo="${grupo}" data-id="${esc(id)}" aria-pressed="${ativo}">${esc(label)}</button>`;
     el.style.display = 'block';
@@ -5211,12 +5271,16 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     // Tamanho padrão: "M" pra adulto, o do meio da lista pra infantil (nenhum
     // dos dois é garantido existir na lista do produto, então cai pro primeiro).
     const tamanhosDisponiveis = defaultSizeList.filter(s => !tamanhoEsgotado(currentProduct, s));
-    selectedSize = tamanhosDisponiveis.includes("M") ? "M" : (tamanhosDisponiveis[0] || null);
+    selectedSize = tamanhosDisponiveis.includes("M") ? "M" : tamanhosDisponiveis.includes("40") ? "40" : (tamanhosDisponiveis[0] || null);
     document.getElementById('personalizeNome').value = "";
     document.getElementById('personalizeNumero').value = "";
     // Camisa que já vem com nome e número não oferece personalização.
     const boxPers = document.querySelector('.personalize-box');
-    if(boxPers) boxPers.style.display = currentProduct.ja_personalizada ? 'none' : '';
+    if(boxPers) boxPers.style.display = semPersonalizacao(currentProduct) ? 'none' : '';
+    entrarVendoAgora(currentProduct.id);
+    // Calçado: sem provador virtual e sem tabela de medidas de camisa.
+    const linksTam = document.querySelector('.size-row-links');
+    if(linksTam) linksTam.style.display = ehCalcado(currentProduct) ? 'none' : '';
     trackEvent('view_product', { product_id: currentProduct.id, team: currentTeam.nome, product_type: currentProduct.tipo, price: currentProduct.preco });
 
     const photos = getProductImages(currentProduct, currentTeam);
@@ -5339,7 +5403,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   }
 
   function hasPersonalization(){
-    if(currentProduct && currentProduct.ja_personalizada) return false;
+    if(currentProduct && semPersonalizacao(currentProduct)) return false;
     const nome = document.getElementById('personalizeNome').value.trim();
     const numero = document.getElementById('personalizeNumero').value.trim();
     return !!(nome || numero);
@@ -5741,7 +5805,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     abrirDemoPopup();
     if(!selectedSize || tamanhoEsgotado(currentProduct, selectedSize)) return;
 
-    const jaPers = !!currentProduct.ja_personalizada;
+    const jaPers = semPersonalizacao(currentProduct);
     const nome = jaPers ? '' : document.getElementById('personalizeNome').value.trim().toUpperCase();
     const numero = jaPers ? '' : document.getElementById('personalizeNumero').value.trim();
     const precoFinal = currentProduct.preco + ((nome || numero) ? PRECO_PERSONALIZACAO : 0) + acrescimoTamanho(selectedSize);
@@ -5918,13 +5982,15 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const vPix = document.getElementById('ckPixValor'), vCartao = document.getElementById('ckCartaoValor');
     if(vPix) vPix.textContent = order.length ? '· ' + fmt(totalPorMetodo('pix')) : '';
     if(vCartao) vCartao.textContent = order.length ? '· ' + fmt(totalPorMetodo('cartao')) : '';
+    const vIp = document.getElementById('ckIpValor');
+    if(vIp) vIp.textContent = order.length ? '· ' + fmt(totalPorMetodo('infinitepay')) : '';
     const minEl = document.getElementById('minimoAviso');
     const falta = faltaPedidoMinimo();
     if(minEl){
       minEl.hidden = !falta;
       minEl.innerHTML = falta ? `Pedido mínimo de <b>${fmt(PEDIDO_MINIMO)}</b>. Falta <b>${fmt(falta)}</b> em produtos para finalizar.` : '';
     }
-    ['ckPixBtn', 'ckCartaoBtn'].forEach(id => { const b = document.getElementById(id); if(b) b.disabled = !!falta; });
+    ['ckPixBtn', 'ckCartaoBtn', 'ckIpBtn'].forEach(id => { const b = document.getElementById(id); if(b) b.disabled = !!falta; });
   }
 
   // Linhas de desconto + dica "falta 1 peça pra ganhar 10%" no carrinho.
@@ -6187,7 +6253,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       const personalizacaoTxt = (item.nome || item.numero)
         ? ` (Personalização: ${item.nome || 'sem nome'}${item.numero ? ' / Nº ' + item.numero : ''})`
         : '';
-      msg += `• ${nomeCompleto} — ${item.subtitulo || item.modelo}, Tam ${item.tamanho}, Qtd ${item.qty}${personalizacaoTxt} — R$ ${subtotal}%0A`;
+      msg += `• ${nomeCompleto} — ${item.subtitulo || item.modelo}, Tam ${item.tamanho}, Qtd ${item.qty}${personalizacaoTxt} — ${encodeURIComponent(fmt(item.preco * item.qty))}%0A`;
       // Link direto pro produto no catálogo (não é foto/thumbnail -- WhatsApp
       // não permite anexar imagem via link de texto). Só entra se o item tiver
       // o ID do produto salvo (itens antigos guardados no carrinho antes dessa
@@ -6203,22 +6269,161 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const freteNomes = { motoboy: "Motoboy", pac: "PAC", sedex: "Sedex" };
     const nomeFrete = TRANSPORTADORAS_DINAMICAS[freteEscolhido]?.nome || freteNomes[freteEscolhido];
     const freteTxt = nomeFrete
-      ? (freteGratisAtivo() ? `${nomeFrete} (frete grátis)` : `${nomeFrete} (R$ ${freteValor.toFixed(2).replace(".", ",")})`)
+      ? (freteGratisAtivo() ? `${nomeFrete} (frete grátis)` : `${nomeFrete} (${fmt(freteValor)})`)
       : "Retirar no local (grátis)";
     const descontos = calcularDescontos();
     const total = getTotalPedido().toFixed(2).replace(".", ",");
 
-    msg += `%0A*Subtotal: R$ ${subtotal.toFixed(2).replace(".", ",")}*%0A`;
-    if(descontos.gratis) msg += encodeURIComponent(`*Pague ${PAGUE_LEVE.pague} leve ${PAGUE_LEVE.leve}:* − R$ ${descontos.valorGratis.toFixed(2).replace(".", ",")}\n`);
-    if(descontos.faixa) msg += encodeURIComponent(`*${descontos.faixa.pct}% OFF (${descontos.faixa.min}+ peças):* − R$ ${descontos.valorFaixa.toFixed(2).replace(".", ",")}\n`);
+    msg += `%0A*Subtotal: ${fmt(subtotal)}*%0A`;
+    if(descontos.gratis) msg += encodeURIComponent(`*Pague ${PAGUE_LEVE.pague} leve ${PAGUE_LEVE.leve}:* − ${fmt(descontos.valorGratis)}\n`);
+    if(descontos.faixa) msg += encodeURIComponent(`*${descontos.faixa.pct}% OFF (${descontos.faixa.min}+ peças):* − ${fmt(descontos.valorFaixa)}\n`);
     msg += `*Entrega:* ${freteTxt}%0A`;
-    msg += `%0A*Total: R$ ${total}*%0A`;
-    if(DESCONTO_PIX) msg += encodeURIComponent(`*No Pix (${DESCONTO_PIX}% OFF): R$ ${totalPorMetodo('pix').toFixed(2).replace(".", ",")}*\n`);
+    msg += `%0A*Total: ${encodeURIComponent(fmt(getTotalPedido()))}*%0A`;
+    if(DESCONTO_PIX) msg += encodeURIComponent(`*No Pix (${DESCONTO_PIX}% OFF): ${fmt(totalPorMetodo('pix'))}*\n`);
     msg += PAGAMENTO_ESCOLHIDO ? encodeURIComponent(`\n*Pagamento:* ${PAGAMENTO_NOMES[PAGAMENTO_ESCOLHIDO]}`) : `%0AComo fechamos o pagamento?`;
 
     btn.href = `https://wa.me/${STORE_CONFIG.whatsapp}?text=${msg}`;
     agendarSalvarCarrinho();
   }
+
+  // ===== Idioma da loja (painel > Loja > Idioma e moeda) =====
+  // Traduz os textos fixos da tela (PT -> EN/ES). Nomes de produtos, times e
+  // textos que o lojista escreveu continuam como ele cadastrou.
+  // A mensagem do WhatsApp continua em português (quem lê é o lojista).
+  const I18N = [
+    ['Meu Pedido','My Order','Mi pedido'],['Meus Favoritos','My Favorites','Mis favoritos'],['Categorias','Categories','Categorías'],
+    ['Página Inicial','Home','Inicio'],['Todos os produtos','All products','Todos los productos'],['Tipo de camisa','Jersey type','Tipo de camiseta'],
+    ['Torcedor','Fan','Aficionado'],['Jogador','Player','Jugador'],['Retrô','Retro','Retro'],['Kit Infantil','Kids Kit','Kit infantil'],
+    ['Feminina','Women','Mujer'],['Kit Treino','Training Kit','Kit de entrenamiento'],['Conjunto de Treino','Training Set','Conjunto de entrenamiento'],
+    ['Tênis','Sneakers','Zapatillas'],['Chuteira','Football Boots','Botines'],['Trocas e devoluções','Returns & exchanges','Cambios y devoluciones'],
+    ['Formas de pagamento','Payment methods','Formas de pago'],['SEGUIR NO INSTAGRAM','FOLLOW ON INSTAGRAM','SEGUIR EN INSTAGRAM'],
+    ['FALE NO WHATSAPP','CHAT ON WHATSAPP','HABLA POR WHATSAPP'],['Voltar','Back','Volver'],['Nenhum item ainda','No items yet','Aún no hay productos'],
+    ['Adicione camisas ao seu pedido pra ver tudo aqui','Add items to your order to see them here','Agrega productos a tu pedido para verlos aquí'],
+    ['Entrega','Delivery','Entrega'],['Retirar no local','Pick up in store','Retirar en tienda'],
+    ['Combinar horário pelo WhatsApp','Arrange a time on WhatsApp','Coordina el horario por WhatsApp'],['Grátis','Free','Gratis'],
+    ['Subtotal','Subtotal','Subtotal'],['Frete','Shipping','Envío'],['Total','Total','Total'],['Pagar com PIX','Pay with PIX','Pagar con PIX'],
+    ['Cartão em até 12x','Card in up to 12 installments','Tarjeta hasta 12 cuotas'],
+    ['Pagamento seguro pelo Mercado Pago · cai direto na loja','Secure payment by Mercado Pago','Pago seguro por Mercado Pago'],
+    ['ou combine pelo WhatsApp','or arrange on WhatsApp','o coordina por WhatsApp'],
+    ['Como prefere pagar? (combinado no WhatsApp)','How would you like to pay? (arranged on WhatsApp)','¿Cómo prefieres pagar? (por WhatsApp)'],
+    ['Enviar pedido pelo WhatsApp','Send order on WhatsApp','Enviar pedido por WhatsApp'],['Buscar time ou camisa...','Search team or jersey...','Buscar equipo o camiseta...'],
+    ['Mostrando só pronta entrega','Showing ready to ship only','Mostrando solo entrega inmediata'],['Ver tudo','See all','Ver todo'],
+    ['LIGAS.','LEAGUES.','LIGAS.'],['Ver modelos ›','See models ›','Ver modelos ›'],['Pronta entrega','Ready to ship','Entrega inmediata'],
+    ['NOVIDADES.','NEW ARRIVALS.','NOVEDADES.'],['Mantos disponíveis','Available jerseys','Camisetas disponibles'],['Filtros','Filters','Filtros'],
+    ['Esgotado','Sold out','Agotado'],['Escolha o tamanho','Choose your size','Elige la talla'],['Provador virtual','Size finder','Probador virtual'],
+    ['Tabela de medidas','Size chart','Tabla de medidas'],['Personalização da camisa','Jersey customization','Personalización de la camiseta'],
+    ['Opcional — nome e número nas costas ·','Optional — name and number on the back ·','Opcional — nombre y número en la espalda ·'],
+    ['Nome nas costas','Name on the back','Nombre en la espalda'],['Número','Number','Número'],['Detalhes','Details','Detalles'],
+    ['+ Adicionar ao carrinho','+ Add to cart','+ Agregar al carrito'],['Enviar favoritos pelo WhatsApp','Send favorites on WhatsApp','Enviar favoritos por WhatsApp'],
+    ['Nenhum favorito ainda','No favorites yet','Aún no hay favoritos'],
+    ['Toque no coração de uma camisa pra guardar aqui','Tap the heart on a jersey to save it here','Toca el corazón de una camiseta para guardarla aquí'],
+    ['Ainda sem camisas nessa categoria','No jerseys in this category yet','Aún no hay camisetas en esta categoría'],
+    ['Qual o meu tamanho?','What is my size?','¿Cuál es mi talla?'],['Altura (cm)','Height (cm)','Altura (cm)'],['Peso (kg)','Weight (kg)','Peso (kg)'],
+    ['Calcular meu tamanho','Find my size','Calcular mi talla'],['Tamanho sugerido','Suggested size','Talla sugerida'],
+    ['Termos de Uso','Terms of Use','Términos de uso'],['Privacidade','Privacy','Privacidad'],['Comprar','Buy','Comprar'],['Todos','All','Todos'],
+    ['Lançamentos','New releases','Lanzamientos'],['Em promoção','On sale','En oferta'],['Infantil','Kids','Infantil'],['Tipo','Type','Tipo'],
+    ['Tamanho disponível','Available size','Talla disponible'],['Preço','Price','Precio'],['Limpar','Clear','Limpiar'],
+    ['⚡ Pronta entrega neste tamanho','⚡ Ready to ship in this size','⚡ Entrega inmediata en esta talla'],
+    ['📦 Sob encomenda','📦 Made to order','📦 Por encargo'],['Resta 1','1 left','Queda 1'],['Dinheiro','Cash','Efectivo'],
+    ['Cartão na entrega','Card on delivery','Tarjeta al recibir'],['Link de pagamento (cartão)','Payment link (card)','Enlace de pago (tarjeta)'],
+    ['Compra 100% segura','100% secure purchase','Compra 100% segura'],['Troca garantida','Guaranteed exchange','Cambio garantizado'],
+    ['Enviamos para todo o Brasil','We ship nationwide','Enviamos a todo el país'],['Atendimento pelo WhatsApp','Support on WhatsApp','Atención por WhatsApp'],
+    ['Produto conferido antes do envio','Checked before shipping','Revisado antes del envío'],['Código de rastreio em todo envio','Tracking code on every shipment','Código de seguimiento en cada envío'],
+    ['frete grátis','free shipping','envío gratis'],['pra ganhar','to get','para ganar'],['Falta','Add','Faltan'],['Faltam','Add','Faltan'],
+    ['no pedido.','on the order.','en el pedido.'],['Você ganhou','You got','¡Ganaste'],['Pedido mínimo de','Minimum order of','Pedido mínimo de'],
+    ['em produtos para finalizar.','in products to check out.','en productos para finalizar.'],['Nome completo','Full name','Nombre completo'],
+    ['Seu WhatsApp (ex: 11987654321)','Your WhatsApp number','Tu WhatsApp'],['CEP','ZIP code','Código postal'],['Rua / Logradouro','Street','Calle'],
+    ['Complemento (opcional)','Apt, suite (optional)','Depto. (opcional)'],['Bairro','District','Barrio'],['Cidade','City','Ciudad'],['UF','State','Estado'],
+    ['Observações do pedido (opcional)','Order notes (optional)','Notas del pedido (opcional)'],['Seu e-mail (para o comprovante)','Your e-mail (for the receipt)','Tu e-mail (para el comprobante)'],
+    ['Buscar no time','Search in team','Buscar en el equipo'],['Buscar time...','Search team...','Buscar equipo...'],
+  ];
+  const I18N_RE = [
+    [/^(\d+) produtos?$/, '$1 products', '$1 productos'],
+    [/^Ver (\d+) produtos?$/, 'See $1 products', 'Ver $1 productos'],
+    [/^Últimas (\d+)$/, '$1 left', 'Quedan $1'],
+    [/^Tamanhos maiores: (.*)$/, 'Larger sizes: $1', 'Tallas grandes: $1'],
+    [/^· chega em (.*)$/, '· arrives in $1', '· llega en $1'],
+    [/^No Pix \((.*)\)$/, 'With Pix ($1)', 'Con Pix ($1)'],
+    [/^👀 (\d+) pessoas vendo esta camisa agora$/, '👀 $1 people viewing this now', '👀 $1 personas viendo esto ahora'],
+    [/^📦 Sob encomenda · chega em (.*)$/, '📦 Made to order · arrives in $1', '📦 Por encargo · llega en $1'],
+  ];
+  let I18N_MAPA = null, i18nObs = null;
+  function traduzirTexto(t){
+    const k = t.trim();
+    if(!k) return null;
+    const col = IDIOMA === 'en' ? 1 : 2;
+    if(I18N_MAPA.has(k)) return t.replace(k, I18N_MAPA.get(k)[col]);
+    for(const r of I18N_RE){ if(r[0].test(k)) return t.replace(k, k.replace(r[0], r[col])); }
+    return null;
+  }
+  function traduzirNo(raiz){
+    if(!raiz) return;
+    if(raiz.nodeType === 3){ const n = traduzirTexto(raiz.textContent); if(n != null && n !== raiz.textContent) raiz.textContent = n; return; }
+    if(raiz.nodeType !== 1 || ['SCRIPT','STYLE','svg'].includes(raiz.tagName)) return;
+    ['placeholder','aria-label','title'].forEach(a => { const v = raiz.getAttribute && raiz.getAttribute(a); if(v){ const n = traduzirTexto(v); if(n != null) raiz.setAttribute(a, n); } });
+    const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+    let n;
+    while((n = w.nextNode())){
+      if(n.nodeType === 3){
+        if(n.parentElement && ['SCRIPT','STYLE'].includes(n.parentElement.tagName)) continue;
+        const t = traduzirTexto(n.textContent); if(t != null && t !== n.textContent) n.textContent = t;
+      } else {
+        ['placeholder','aria-label','title'].forEach(a => { const v = n.getAttribute(a); if(v){ const t = traduzirTexto(v); if(t != null) n.setAttribute(a, t); } });
+      }
+    }
+  }
+  function aplicarIdioma(){
+    if(IDIOMA === 'pt' || i18nObs) return;
+    I18N_MAPA = new Map(I18N.map(l => [l[0], l]));
+    document.documentElement.lang = IDIOMA === 'en' ? 'en' : 'es';
+    traduzirNo(document.body);
+    i18nObs = new MutationObserver(lista => {
+      lista.forEach(m => {
+        if(m.type === 'characterData') traduzirNo(m.target);
+        else m.addedNodes.forEach(traduzirNo);
+      });
+    });
+    i18nObs.observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+
+  // ===== Selos de confiança =====
+  function renderSelosConfianca(){
+    const el = document.getElementById('selosConfianca');
+    if(!el) return;
+    el.hidden = !SELOS_CONFIANCA.length;
+    el.innerHTML = SELOS_CONFIANCA.map(k => `<div><span>${SELOS_INFO[k][0]}</span>${esc(SELOS_INFO[k][1])}</div>`).join('');
+  }
+
+  // ===== "N pessoas vendo agora": contagem REAL (Supabase Realtime Presence) =====
+  // Cada visitante na página da camisa entra num canal; mostra só quando há 2+ pessoas.
+  let vendoCanal = null;
+  function sairVendoAgora(){
+    try{ if(vendoCanal && supabaseClient) supabaseClient.removeChannel(vendoCanal); }catch(e){}
+    vendoCanal = null;
+    const el = document.getElementById('vendoAgora'); if(el) el.hidden = true;
+  }
+  function entrarVendoAgora(produtoId){
+    sairVendoAgora();
+    if(!MOSTRAR_VENDO_AGORA || !supabaseClient || !LOJA_ID || !produtoId || document.hidden) return;
+    try{
+      const chave = Math.random().toString(36).slice(2);
+      const canal = supabaseClient.channel(`vendo:${LOJA_ID}:${produtoId}`.slice(0, 180), { config: { presence: { key: chave } } });
+      canal.on('presence', { event: 'sync' }, () => {
+        if(vendoCanal !== canal) return;
+        const n = Object.keys(canal.presenceState()).length;
+        const el = document.getElementById('vendoAgora');
+        if(!el) return;
+        el.hidden = n < 2;
+        el.textContent = n >= 2 ? `👀 ${n} pessoas vendo esta camisa agora` : '';
+      });
+      canal.subscribe(st => { if(st === 'SUBSCRIBED') canal.track({ t: Date.now() }).catch(() => {}); });
+      vendoCanal = canal;
+    }catch(e){ vendoCanal = null; }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) sairVendoAgora();
+    else if(currentProduct && document.body.getAttribute('data-view') === 'product') entrarVendoAgora(currentProduct.id);
+  });
 
   // ===== Forma de pagamento combinada no WhatsApp =====
   function renderPagamentosManuais(){
@@ -6569,16 +6774,25 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
         .select('ativo, conectado, aceita_pix, aceita_cartao').eq('loja_id', LOJA_ID).maybeSingle();
       CHECKOUT = (data && data.ativo && data.conectado && (data.aceita_pix || data.aceita_cartao)) ? data : null;
     } catch(e){ CHECKOUT = null; }
+    // InfinitePay (alternativa ou complemento ao Mercado Pago).
+    try {
+      const { data: ip } = await supabaseClient.from('loja_infinitepay').select('ativo').eq('loja_id', LOJA_ID).maybeSingle();
+      if(ip && ip.ativo) CHECKOUT = Object.assign({ aceita_pix: false, aceita_cartao: false }, CHECKOUT || {}, { infinitepay: true });
+    } catch(e){}
     // Catálogo de demonstração: mostra o checkout funcionando com pagamento SIMULADO (ninguém é cobrado).
     if(!CHECKOUT && typeof EH_LOJA_DEMO !== 'undefined' && EH_LOJA_DEMO){
       CHECKOUT = { demo: true, aceita_pix: true, aceita_cartao: true };
     }
+    // Mercado Pago (e InfinitePay) só recebem em real.
+    if(MOEDA !== 'BRL') CHECKOUT = null;
     const box = document.getElementById('ckBox');
     if(!box) return;
     box.hidden = !CHECKOUT;
     if(CHECKOUT){
       document.getElementById('ckPixBtn').style.display = CHECKOUT.aceita_pix ? '' : 'none';
       document.getElementById('ckCartaoBtn').style.display = CHECKOUT.aceita_cartao ? '' : 'none';
+      document.getElementById('ckIpBtn').style.display = CHECKOUT.infinitepay && !CHECKOUT.demo ? '' : 'none';
+      if(CHECKOUT.infinitepay && !CHECKOUT.aceita_pix && !CHECKOUT.aceita_cartao) document.getElementById('ckSeguroTxt').textContent = 'Pagamento seguro pela InfinitePay · cai direto na loja';
     }
     ckRetornoDoCartao();
   }
@@ -6609,7 +6823,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     if(freteEscolhido !== 'retirar' && (endereco.cep.replace(/\D/g, '').length !== 8 || !endereco.rua || !endereco.numero)){
       return ckMostrarErro(CK_ERROS.endereco_incompleto);
     }
-    const btn = document.getElementById(metodo === 'pix' ? 'ckPixBtn' : 'ckCartaoBtn');
+    const btn = document.getElementById(metodo === 'pix' ? 'ckPixBtn' : metodo === 'infinitepay' ? 'ckIpBtn' : 'ckCartaoBtn');
     const txtOriginal = btn.innerHTML;
     btn.disabled = true; btn.textContent = 'Gerando pagamento...';
     try {
@@ -6625,7 +6839,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       }
       trackEvent('checkout_iniciado', { metodo, total: data.total });
       carrinhoConvertido();
-      if(metodo === 'cartao' && data.link){
+      if((metodo === 'cartao' || metodo === 'infinitepay') && data.link){
         try { sessionStorage.setItem('ckPendente', JSON.stringify({ pedido_id: data.pedido_id, token: data.token })); } catch(_){}
         window.location.href = data.link;
         return;
@@ -6719,7 +6933,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       n++;
       if(maxTentativas && n > maxTentativas){ clearInterval(ckTimer); ckResultado('aguardando_longo'); return; }
       try {
-        const { data } = await supabaseClient.functions.invoke('checkout', { body: { acao: 'status', pedido_id: ckPedido.pedido_id, token: ckPedido.token } });
+        const { data } = await supabaseClient.functions.invoke('checkout', { body: Object.assign({ acao: 'status', pedido_id: ckPedido.pedido_id, token: ckPedido.token }, ckPedido.ip || {}) });
         if(!data) return;
         if(data.numero) ckPedido.numero = data.numero;
         if(data.total) ckPedido.total = data.total;
@@ -6776,14 +6990,18 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       try { const pend = JSON.parse(sessionStorage.getItem('ckPendente') || 'null'); if(pend){ pedido = pend.pedido_id; token = pend.token; } } catch(_){}
     }
     if(!pedido || !token) return;
+    // Volta da InfinitePay: traz transaction_nsu e slug, usados pra conferir o pagamento no servidor.
+    const ip = q.get('transaction_nsu') && q.get('slug')
+      ? { transaction_nsu: q.get('transaction_nsu'), slug: q.get('slug'), receipt_url: q.get('receipt_url') || '' } : null;
     if(q.get('pedido')){
+      ['transaction_nsu', 'slug', 'receipt_url', 'order_nsu', 'capture_method'].forEach(k => q.delete(k));
       q.delete('pedido'); q.delete('t'); q.delete('collection_id'); q.delete('collection_status'); q.delete('payment_id');
       q.delete('status'); q.delete('external_reference'); q.delete('payment_type'); q.delete('merchant_order_id');
       q.delete('preference_id'); q.delete('site_id'); q.delete('processing_mode'); q.delete('merchant_account_id');
       const resto = q.toString();
       history.replaceState(history.state, '', location.pathname + (resto ? '?' + resto : '') + location.hash);
     }
-    ckPedido = { pedido_id: pedido, token, metodo: 'cartao' };
+    ckPedido = { pedido_id: pedido, token, metodo: ip ? 'infinitepay' : 'cartao', ip };
     ckVerificarDeNovo();
   }
 

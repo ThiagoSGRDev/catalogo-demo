@@ -1526,6 +1526,8 @@
         <div class="filtro-opcao" data-filter="Kit Infantil" onclick="setFilter('Kit Infantil')">Kit Infantil</div>
         <div class="filtro-opcao" data-filter="Feminina" onclick="setFilter('Feminina')">Feminina</div>
         <div class="filtro-opcao" data-filter="Long Sleeve" onclick="setFilter('Long Sleeve')">Long Sleeve</div>
+        <div class="filtro-opcao" data-filter="Tênis" onclick="setFilter('Tênis')">Tênis</div>
+        <div class="filtro-opcao" data-filter="Chuteira" onclick="setFilter('Chuteira')">Chuteira</div>
         <div class="filtro-opcao" data-filter="Kit Treino" onclick="setFilter('Kit Treino')">Kit Treino</div>
         <div class="filtro-opcao" data-filter="Conjunto de Treino" onclick="setFilter('Conjunto de Treino')">Conjunto de Treino</div>
         <div class="filtro-opcao" data-filter="destaque" onclick="setFilter('destaque')">★ Destaques</div>
@@ -1974,6 +1976,20 @@
         <button type="button" class="btn btn-danger" style="width:100%; margin-top:14px;" onclick="desconectarMercadoPago()">Desconectar Mercado Pago</button>
       </div>
     </div>
+    <div class="form-section">
+      <h3>InfinitePay (opcional)</h3>
+      <div class="field-hint" style="margin-bottom:12px;">Alternativa ou complemento ao Mercado Pago. O cliente toca em "Pix ou cartão (InfinitePay)", paga na página da InfinitePay e o pedido vira "Pago" sozinho. O dinheiro cai na sua conta InfinitePay. Não tem comissão do Katalogo Hub.</div>
+      <div class="field">
+        <label for="ipHandle">Sua InfiniteTag</label>
+        <input type="text" id="ipHandle" maxlength="41" placeholder="Ex.: mantodez (sem o $)" autocapitalize="off" autocomplete="off">
+        <div class="field-hint">Está no app da InfinitePay, no seu perfil (começa com $).</div>
+      </div>
+      <div class="toggle-row" style="margin-bottom:12px;">
+        <div><div class="label">Mostrar InfinitePay na loja</div></div>
+        <label class="switch"><input type="checkbox" id="ipAtivo"><span class="track"></span></label>
+      </div>
+      <button type="button" class="btn btn-primary" style="width:100%; margin-bottom:12px;" id="ipSalvarBtn" onclick="salvarInfinitePay()">Salvar InfinitePay</button>
+    </div>
     <button type="button" class="btn btn-secondary" style="width:100%;" onclick="fecharCheckoutConfig(); abrirPedidos();">Ver pedidos</button>
   </div>
 </div>
@@ -2110,6 +2126,35 @@
       <div class="label" style="margin-bottom:4px;">Ordem das ligas</div>
       <div class="field-hint" style="margin-bottom:10px;">A primeira aparece primeiro no carrossel da loja e no menu.</div>
       <div class="ordem-ligas" id="ordemLigasLista"><div class="field-hint">Carregando...</div></div>
+    </div>
+    <div class="form-section">
+      <h3>Selos de confiança</h3>
+      <div class="field-hint" style="margin-bottom:8px;">Aparecem embaixo do botão "Adicionar ao carrinho". Marque só o que a sua loja cumpre de verdade.</div>
+      <div class="pag-checks" id="selosChecks">
+        <label><input type="checkbox" value="compra_segura"> 🔒 Compra 100% segura</label>
+        <label><input type="checkbox" value="troca"> 🔄 Troca garantida</label>
+        <label><input type="checkbox" value="envio_brasil"> 🚚 Enviamos para todo o Brasil</label>
+        <label><input type="checkbox" value="atendimento"> 💬 Atendimento pelo WhatsApp</label>
+        <label><input type="checkbox" value="conferido"> ✅ Produto conferido antes do envio</label>
+        <label><input type="checkbox" value="rastreio"> 📦 Código de rastreio em todo envio</label>
+      </div>
+      <div class="toggle-row" style="margin-top:10px;">
+        <div>
+          <div class="label">"Pessoas vendo agora"</div>
+          <div class="desc">Mostra "👀 3 pessoas vendo esta camisa agora" quando 2 ou mais pessoas estão na mesma camisa ao mesmo tempo. A contagem é real, nunca inventada.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="lojaVendoAgora"><span class="track"></span></label>
+      </div>
+    </div>
+    <div class="form-section">
+      <h3>Idioma e moeda da loja</h3>
+      <div class="preco-par">
+        <div><small>Idioma</small>
+          <select id="lojaIdioma" class="pd-input"><option value="pt">Português</option><option value="en">English</option><option value="es">Español</option></select></div>
+        <div><small>Moeda</small>
+          <select id="lojaMoeda" class="pd-input"><option value="BRL">Real (R$)</option><option value="USD">Dólar (US$)</option><option value="EUR">Euro (€)</option></select></div>
+      </div>
+      <div class="field-hint" style="margin-top:8px;">Traduz os textos da loja (botões, carrinho, filtros). Nomes das camisas ficam como você cadastrou. Os preços não são convertidos: cadastre na moeda escolhida. Fora do real, o Pix/cartão do Mercado Pago e da InfinitePay saem da loja e o pedido vai só pelo WhatsApp.</div>
     </div>
     <div class="form-section">
       <h3>Pixel da Meta (anúncios)</h3>
@@ -2279,6 +2324,8 @@
           <option value="Long Sleeve">Long Sleeve</option>
           <option value="Kit Treino">Kit Treino</option>
           <option value="Conjunto de Treino">Conjunto de Treino</option>
+          <option value="Tênis">Tênis</option>
+          <option value="Chuteira">Chuteira</option>
         </select>
         <div class="field-hint">Você pode cadastrar quantos produtos quiser do mesmo Time + Tipo (ex.: várias camisas "Torcedor" diferentes do mesmo time).</div>
         <div class="field-hint" id="collisionWarning" style="display:none; color:var(--amber);"></div>
@@ -2773,6 +2820,9 @@
 
   const SIZES = ["P","M","G","GG","2XL","3XL","4XL"];
   const KID_SIZES = ["16","18","20","22","24","26","28"];
+  // Tênis e Chuteira: numeração 34 a 45 (só aparecem no catálogo se a loja cadastrar).
+  const CALCADO_TIPOS = ["Tênis", "Chuteira"];
+  const CALCADO_SIZES = ["34","35","36","37","38","39","40","41","42","43","44","45"];
   const KID_SIZE_LABELS = {
     "16": "16 (2 anos)", "18": "18 (3 anos)", "20": "20 (4 anos)",
     "22": "22 (6 anos)", "24": "24 (8 anos)", "26": "26 (10 anos)", "28": "28 (12 anos)"
@@ -3394,6 +3444,7 @@
     if(tipo === 'Kit Infantil') return KID_SIZES;
     if(tipo === 'Feminina') return ESTOQUE_TAM_FEMININA;
     if(tipo === 'Long Sleeve') return SIZES.filter(s => ['P','M','G','GG','2XL'].includes(s));
+    if(CALCADO_TIPOS.includes(tipo)) return CALCADO_SIZES;
     return SIZES;
   }
 
@@ -4877,6 +4928,7 @@
     const isKid = tipo === "Kit Infantil";
     const list = isKid ? KID_SIZES
       : tipo === "Long Sleeve" ? SIZES.filter(s => ['P','M','G','GG','2XL'].includes(s))
+      : CALCADO_TIPOS.includes(tipo) ? CALCADO_SIZES
       : SIZES;
     picker.innerHTML = list.map(s =>
       `<div class="size-opt ${selectedSizes.includes(s) ? 'active' : ''}" onclick="toggleSize('${s}')">${isKid ? KID_SIZE_LABELS[s] : s}</div>`
@@ -4893,6 +4945,7 @@
     const tipo = document.getElementById('fieldTipo').value;
     const validList = tipo === "Kit Infantil" ? KID_SIZES
       : tipo === "Long Sleeve" ? SIZES.filter(s => ['P','M','G','GG','2XL'].includes(s))
+      : CALCADO_TIPOS.includes(tipo) ? CALCADO_SIZES
       : SIZES;
     selectedSizes = selectedSizes.filter(s => validList.includes(s));
     renderSizePicker();
@@ -7971,7 +8024,7 @@
       </div>${semCusto ? `<div class="field-hint" style="margin-top:8px;">${semCusto} venda(s) com item sem custo cadastrado ficaram de fora.</div>` : ''}`;
   }
 
-  const TIPOS_PRECO = ["Torcedor","Jogador","Retrô","Kit Infantil","Feminina","Long Sleeve","Kit Treino","Conjunto de Treino"];
+  const TIPOS_PRECO = ["Torcedor","Jogador","Retrô","Kit Infantil","Feminina","Long Sleeve","Kit Treino","Conjunto de Treino","Tênis","Chuteira"];
 
   async function openPrecosOverlay(){
     document.getElementById('precosOverlay').classList.remove('hidden');
@@ -8198,7 +8251,27 @@
   async function abrirCheckoutConfig(){
     document.getElementById('checkoutOverlay').classList.remove('hidden');
     window.scrollTo(0,0);
+    carregarInfinitePay();
     await carregarCheckoutConfig();
+  }
+  async function carregarInfinitePay(){
+    const { data } = await supabaseClient.from('loja_infinitepay').select('handle, ativo').eq('loja_id', ADMIN_LOJA_ID).maybeSingle();
+    document.getElementById('ipHandle').value = data ? data.handle : '';
+    document.getElementById('ipAtivo').checked = data ? !!data.ativo : false;
+  }
+  async function salvarInfinitePay(){
+    const handle = document.getElementById('ipHandle').value.trim().replace(/^\$/, '').toLowerCase();
+    const ativo = document.getElementById('ipAtivo').checked;
+    let error = null;
+    if(!handle){
+      ({ error } = await supabaseClient.from('loja_infinitepay').delete().eq('loja_id', ADMIN_LOJA_ID));
+      if(!error) showToast('InfinitePay removida da loja.');
+    } else {
+      if(!/^[a-z0-9_.-]{2,40}$/.test(handle)){ showToast('InfiniteTag inválida: use só letras, números, ponto, traço ou _.', 'error'); return; }
+      ({ error } = await supabaseClient.from('loja_infinitepay').upsert({ loja_id: ADMIN_LOJA_ID, handle, ativo, atualizado_em: new Date().toISOString() }, { onConflict: 'loja_id' }));
+      if(!error) showToast(ativo ? 'InfinitePay ligada na loja!' : 'InfinitePay salva (desligada).');
+    }
+    if(error) showToast('Não consegui salvar a InfinitePay.', 'error');
   }
   function fecharCheckoutConfig(){ document.getElementById('checkoutOverlay').classList.add('hidden'); }
 
@@ -8407,7 +8480,7 @@
       novo: ['novo','Novo'], respondido: ['respondido','Respondido'], perdido: ['outro','Perdido'],
       expirado: ['outro','Não pago'], cancelado: ['outro','Cancelado'], estornado: ['outro','Estornado'] };
     const origens = { whatsapp: 'WhatsApp', manual: 'Venda manual', checkout: 'Checkout' };
-    const metodos = { pix: 'PIX', cartao: 'Cartão', dinheiro: 'Dinheiro', outro: 'Outro', whatsapp: '' };
+    const metodos = { pix: 'PIX', cartao: 'Cartão', dinheiro: 'Dinheiro', outro: 'Outro', whatsapp: '', infinitepay: 'InfinitePay' };
     const entregas = [['novo','Entrega: a separar'],['separando','Separando'],['enviado','Enviado'],['entregue','Entregue'],['cancelado','Cancelado']];
     const statusVenda = [['novo','Novo'],['respondido','Respondido'],['vendido','Vendido'],['perdido','Perdido']];
     el.innerHTML = lista.map(p => {
@@ -8768,7 +8841,7 @@
   let lojaImagemTextoBarra = null;
 
   // ---- Descrição padrão por tipo (tela Loja) ----
-  const TIPOS_DESCRICAO = ['Torcedor', 'Jogador', 'Retrô', 'Feminina', 'Long Sleeve', 'Kit Treino', 'Conjunto de Treino', 'Kit Infantil'];
+  const TIPOS_DESCRICAO = ['Torcedor', 'Jogador', 'Retrô', 'Feminina', 'Long Sleeve', 'Kit Treino', 'Conjunto de Treino', 'Kit Infantil', 'Tênis', 'Chuteira'];
   const descTipoId = tipo => 'descTipo_' + tipo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_');
 
   async function preencherDescricoesTipo(proprias){
@@ -8823,7 +8896,7 @@
 
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, prazo_encomenda, mostrar_novidades, ordem_ligas, meta_pixel_id, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
+      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, prazo_encomenda, mostrar_novidades, ordem_ligas, meta_pixel_id, selos_confianca, mostrar_vendo_agora, idioma, moeda, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     if(!error && data){
@@ -8832,6 +8905,11 @@
       document.getElementById('lojaPrazoEncomenda').value = data.prazo_encomenda || '';
       document.getElementById('lojaMostrarNovidades').checked = data.mostrar_novidades !== false;
       document.getElementById('lojaPixelId').value = data.meta_pixel_id || '';
+      const selos = Array.isArray(data.selos_confianca) ? data.selos_confianca : [];
+      document.querySelectorAll('#selosChecks input').forEach(c => c.checked = selos.includes(c.value));
+      document.getElementById('lojaVendoAgora').checked = data.mostrar_vendo_agora === true;
+      document.getElementById('lojaIdioma').value = data.idioma || 'pt';
+      document.getElementById('lojaMoeda').value = data.moeda || 'BRL';
       carregarOrdemLigas(Array.isArray(data.ordem_ligas) ? data.ordem_ligas : []);
       preencherDescricoesTipo(data.descricoes_por_tipo || {});
       lojaLogoUrl = data.logo_url || null;
@@ -9607,6 +9685,10 @@
         mostrar_novidades: document.getElementById('lojaMostrarNovidades').checked,
         ...(ORDEM_LIGAS_EDIT ? { ordem_ligas: ORDEM_LIGAS_EDIT } : {}),
         meta_pixel_id: lerPixelId(),
+        selos_confianca: [...document.querySelectorAll('#selosChecks input:checked')].map(c => c.value),
+        mostrar_vendo_agora: document.getElementById('lojaVendoAgora').checked,
+        idioma: document.getElementById('lojaIdioma').value || 'pt',
+        moeda: document.getElementById('lojaMoeda').value || 'BRL',
         ...(lerDescricoesTipo() ? { descricoes_por_tipo: lerDescricoesTipo() } : {}),
         updated_at: new Date().toISOString()
       })
