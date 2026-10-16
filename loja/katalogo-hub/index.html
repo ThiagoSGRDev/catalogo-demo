@@ -2489,7 +2489,7 @@
         // resultado da busca pela mestre acima, então dispara junto.
         tarefas.push(
           supabaseClient.from('loja_precos_customizados').select('product_id, preco').eq('loja_id', LOJA_ID)
-            .then(({ data: precos }) => { if(precos) precos.forEach(p => PRECOS_CUSTOMIZADOS.set(p.product_id, p.preco)); }),
+            .then(({ data: precos }) => { if(precos) precos.forEach(p => { if(p.preco != null) PRECOS_CUSTOMIZADOS.set(p.product_id, p.preco); }); }),
           supabaseClient.from('loja_precos_por_tipo').select('tipo, preco').eq('loja_id', LOJA_ID)
             .then(({ data: precosTipo }) => { if(precosTipo) precosTipo.forEach(p => PRECOS_POR_TIPO.set(p.tipo, p.preco)); })
         );

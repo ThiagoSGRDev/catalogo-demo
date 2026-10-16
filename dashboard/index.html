@@ -222,6 +222,10 @@
   .home-link-btns{ display:flex; gap:8px; }
   .home-link-btns .btn{ padding:10px 16px; width:auto; text-decoration:none; display:inline-flex; align-items:center; }
   .home-cards{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:24px; }
+  /* Preço + preço "De" (promoção) lado a lado */
+  .preco-par{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .preco-par small{ display:block; font-size:11px; color:var(--text-dim); margin-bottom:4px; }
+  .preco-off{ font-size:11px; font-weight:700; color:var(--green); margin-top:4px; min-height:14px; }
   /* ===== Primeiro acesso: loja pronta em 3 passos ===== */
   .ob-fundo{position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.72); display:flex; align-items:flex-end; justify-content:center;
     padding:max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));}
@@ -1634,7 +1638,9 @@
         Define de uma vez "toda camisa Retrô custa X pra mim", em vez de
         ajustar produto por produto. Deixe em branco pra usar o preço
         padrão de cada produto. Um preço específico em "💲 Meus preços"
-        sempre tem prioridade sobre isso.
+        sempre tem prioridade sobre isso.<br><br>
+        <b>Promoção:</b> preencha o "De" (preço riscado) maior que o preço. A loja mostra
+        "De R$ 259,90 por R$ 169,90" e o selo de desconto. O cliente paga sempre o preço normal.
       </div>
       <div id="precosPorTipoCampos"></div>
     </div>
@@ -2145,7 +2151,13 @@
       </div>
       <div class="field">
         <label for="fieldPreco">Preço (R$)</label>
-        <input type="number" id="fieldPreco" step="0.01" min="0" placeholder="189.90">
+        <input type="number" id="fieldPreco" step="0.01" min="0" placeholder="189.90" oninput="mostrarOffForm()">
+      </div>
+      <div class="field">
+        <label for="fieldPrecoDe">Preço "De" — promoção (opcional)</label>
+        <input type="number" id="fieldPrecoDe" step="0.01" min="0" placeholder="Ex.: 259.90" oninput="mostrarOffForm()">
+        <div class="field-hint">Aparece riscado na loja ("De R$ 259,90 por R$ 169,90") com o selo de desconto. Deixe em branco pra não ter promoção.</div>
+        <div class="preco-off" id="fieldPrecoOff"></div>
       </div>
       <div class="field">
         <label for="fieldTags">Tags (opcional, separadas por vírgula)</label>
@@ -4764,6 +4776,8 @@
       : product.preco;
     FORM_PRECO_INICIAL = precoInicial === '' ? null : Number(precoInicial);
     document.getElementById('fieldPreco').value = precoInicial;
+    document.getElementById('fieldPrecoDe').value = product && product.preco_de != null ? product.preco_de : '';
+    mostrarOffForm();
     document.getElementById('fieldTags').value = product && product.tags ? product.tags.join(', ') : '';
     document.getElementById('fieldDisponivel').checked = product ? product.disponivel : true;
     document.getElementById('fieldDestaque').checked = product ? !!product.destaque : false;
@@ -4827,6 +4841,14 @@
     return prefix + "||" + n;
   }
 
+  function mostrarOffForm(){
+    const el = document.getElementById('fieldPrecoOff');
+    if(!el) return;
+    const p = parseFloat(document.getElementById('fieldPreco').value), d = parseFloat(document.getElementById('fieldPrecoDe').value);
+    el.textContent = textoOff(p, d);
+    el.style.color = (d && p && d > p) ? 'var(--green)' : 'var(--amber)';
+  }
+
   async function saveProduct(){
     const teamId = document.getElementById('fieldTeam').value;
     const team = TEAMS_CACHE.find(t => t.id === teamId);
@@ -4878,6 +4900,7 @@
       .from('products')
       .upsert({
         id, team_id: team.id, tipo, titulo, subtitulo, descricao, preco, preco_manual: !!precoManual,
+        preco_de: (() => { const d = parseFloat(document.getElementById('fieldPrecoDe').value); return (d && d > preco) ? d : null; })(),
         tamanhos, tags, disponivel, destaque, lancamento, loja_id: ADMIN_LOJA_ID
       });
 
@@ -7732,21 +7755,46 @@
       secao.style.display = '';
       const { data: precosTipo } = await supabaseClient
         .from('loja_precos_por_tipo')
-        .select('tipo, preco')
+        .select('tipo, preco, preco_de')
         .eq('loja_id', ADMIN_LOJA_ID);
-      const mapaTipo = new Map((precosTipo || []).map(p => [p.tipo, p.preco]));
-      document.getElementById('precosPorTipoCampos').innerHTML = TIPOS_PRECO.map(tipo => `
+      const mapaTipo = new Map((precosTipo || []).map(p => [p.tipo, p]));
+      document.getElementById('precosPorTipoCampos').innerHTML = TIPOS_PRECO.map(tipo => {
+        const k = tipo.replace(/\s/g,'_'), r = mapaTipo.get(tipo) || {};
+        return `
         <div class="field">
-          <label for="precoTipo_${tipo.replace(/\s/g,'_')}">${tipo}</label>
-          <input type="number" step="0.01" min="0" id="precoTipo_${tipo.replace(/\s/g,'_')}"
-            data-tipo="${tipo}" placeholder="Padrão do produto" value="${mapaTipo.has(tipo) ? mapaTipo.get(tipo) : ''}">
-        </div>
-      `).join('');
+          <label for="precoTipo_${k}">${tipo}</label>
+          <div class="preco-par">
+            <div><small>Preço</small>
+              <input type="number" step="0.01" min="0" id="precoTipo_${k}" data-tipo="${tipo}" placeholder="Padrão do produto"
+                value="${r.preco != null ? r.preco : ''}" oninput="mostrarOffTipo('${k}')"></div>
+            <div><small>De (riscado, opcional)</small>
+              <input type="number" step="0.01" min="0" id="precoDeTipo_${k}" placeholder="Sem promoção"
+                value="${r.preco_de != null ? r.preco_de : ''}" oninput="mostrarOffTipo('${k}')"></div>
+          </div>
+          <div class="preco-off" id="precoOffTipo_${k}"></div>
+        </div>`;
+      }).join('');
+      TIPOS_PRECO.forEach(t => mostrarOffTipo(t.replace(/\s/g,'_')));
     } else {
       secao.style.display = 'none';
     }
     window.scrollTo(0,0);
   }
+  // Mostra "-35% de desconto" (ou o erro) embaixo do par Preço / De.
+  function textoOff(preco, de){
+    if(!de) return '';
+    if(!preco) return 'Preencha o preço também.';
+    if(de <= preco) return 'O "De" precisa ser maior que o preço.';
+    return `Promoção: -${Math.round((1 - preco / de) * 100)}% na loja`;
+  }
+  function mostrarOffTipo(k){
+    const el = document.getElementById('precoOffTipo_' + k);
+    if(!el) return;
+    const p = parseFloat(document.getElementById('precoTipo_' + k).value), d = parseFloat(document.getElementById('precoDeTipo_' + k).value);
+    el.textContent = textoOff(p, d);
+    el.style.color = (d && p && d > p) ? 'var(--green)' : 'var(--amber)';
+  }
+
   function closePrecosOverlay(){
     document.getElementById('precosOverlay').classList.add('hidden');
   }
@@ -7760,6 +7808,7 @@
   // ============================================================
   let CATALOGO_MESTRE_PRODUTOS = [];
   let CATALOGO_MESTRE_PRECOS = new Map(); // product_id -> preço customizado já salvo
+  let CATALOGO_MESTRE_PRECOS_DE = new Map(); // product_id -> preço "De" (promoção) já salvo
 
   async function openCatalogoMestreOverlay(){
     document.getElementById('catalogoMestreOverlay').classList.remove('hidden');
@@ -7780,7 +7829,7 @@
         .eq('disponivel', true)
         .order('titulo', { ascending: true })),
       supabaseClient.from('loja_precos_customizados')
-        .select('product_id, preco')
+        .select('product_id, preco, preco_de')
         .eq('loja_id', ADMIN_LOJA_ID)
     ]);
 
@@ -7791,6 +7840,7 @@
 
     CATALOGO_MESTRE_PRODUTOS = produtos || [];
     CATALOGO_MESTRE_PRECOS = new Map((precos || []).map(p => [p.product_id, p.preco]));
+    CATALOGO_MESTRE_PRECOS_DE = new Map((precos || []).filter(p => p.preco_de != null).map(p => [p.product_id, p.preco_de]));
     document.getElementById('catalogoMestreBusca').value = '';
     renderCatalogoMestreLista();
   }
@@ -8057,22 +8107,38 @@
             <div class="team-row-name">${p.titulo}</div>
             <div class="team-row-tag">${p.teams?.nome || ''} · padrão: R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
           </div>
-          <input type="number" step="0.01" min="0" placeholder="Padrão"
-            style="width:110px;" value="${precoCustom != null ? precoCustom : ''}"
-            onchange="salvarPrecoCustomizado('${p.id}', this.value)">
+          <div style="display:flex; gap:6px;">
+            <input type="number" step="0.01" min="0" placeholder="Preço" aria-label="Preço"
+              style="width:92px;" value="${precoCustom != null ? precoCustom : ''}"
+              onchange="salvarPrecoCustomizado('${p.id}', this.value, this.nextElementSibling.value)">
+            <input type="number" step="0.01" min="0" placeholder="De" aria-label="Preço De (riscado)"
+              style="width:92px;" value="${CATALOGO_MESTRE_PRECOS_DE.has(p.id) ? CATALOGO_MESTRE_PRECOS_DE.get(p.id) : ''}"
+              onchange="salvarPrecoCustomizado('${p.id}', this.previousElementSibling.value, this.value)">
+          </div>
         </div>`;
     }).join('');
   }
 
-  async function salvarPrecoCustomizado(productId, valor){
-    const precoLimpo = valor.trim();
+  async function salvarPrecoCustomizado(productId, valor, valorDe){
+    const precoLimpo = String(valor || '').trim();
+    const de = parseFloat(String(valorDe || '').trim());
+
+    // Só o "De" preenchido: promoção em cima do preço do tipo (preço fica vazio = usa o do tipo).
+    if(!precoLimpo && de > 0){
+      const { error } = await supabaseClient.from('loja_precos_customizados')
+        .upsert({ loja_id: ADMIN_LOJA_ID, product_id: productId, preco: null, preco_de: de, updated_at: new Date().toISOString() });
+      if(error){ showToast('Erro ao salvar promoção: ' + error.message, 'error'); return; }
+      CATALOGO_MESTRE_PRECOS.delete(productId); CATALOGO_MESTRE_PRECOS_DE.set(productId, de);
+      showToast('Promoção salva! O "De" só aparece se for maior que o preço da camisa.', 'success');
+      return;
+    }
 
     if(!precoLimpo){
       // Campo esvaziado: remove o override e volta pro preço padrão.
       const { error } = await supabaseClient.from('loja_precos_customizados')
         .delete().eq('loja_id', ADMIN_LOJA_ID).eq('product_id', productId);
       if(error){ showToast('Erro ao remover preço customizado: ' + error.message, 'error'); return; }
-      CATALOGO_MESTRE_PRECOS.delete(productId);
+      CATALOGO_MESTRE_PRECOS.delete(productId); CATALOGO_MESTRE_PRECOS_DE.delete(productId);
       showToast('Voltou a usar o preço padrão.', 'success');
       return;
     }
@@ -8080,12 +8146,15 @@
     const preco = parseFloat(precoLimpo);
     if(isNaN(preco) || preco < 0){ showToast('Preço inválido.', 'error'); return; }
 
+    const precoDe = (de && de > preco) ? de : null;
+    if(de && !precoDe){ showToast('O "De" precisa ser maior que o preço. Salvei só o preço.', 'error'); }
     const { error } = await supabaseClient.from('loja_precos_customizados')
-      .upsert({ loja_id: ADMIN_LOJA_ID, product_id: productId, preco, updated_at: new Date().toISOString() });
+      .upsert({ loja_id: ADMIN_LOJA_ID, product_id: productId, preco, preco_de: precoDe, updated_at: new Date().toISOString() });
     if(error){ showToast('Erro ao salvar preço: ' + error.message, 'error'); return; }
 
     CATALOGO_MESTRE_PRECOS.set(productId, preco);
-    showToast('Preço salvo!', 'success');
+    if(precoDe) CATALOGO_MESTRE_PRECOS_DE.set(productId, precoDe); else CATALOGO_MESTRE_PRECOS_DE.delete(productId);
+    if(!de || precoDe) showToast(precoDe ? `Promoção salva: -${Math.round((1 - preco / precoDe) * 100)}%` : 'Preço salvo!', 'success');
   }
 
   async function salvarPrecos(){
@@ -8136,9 +8205,11 @@
 
     if(ADMIN_USA_MESTRE){
       const linhas = TIPOS_PRECO.map(tipo => {
-        const input = document.getElementById('precoTipo_' + tipo.replace(/\s/g,'_'));
-        const valor = input.value.trim();
-        return valor ? { loja_id: ADMIN_LOJA_ID, tipo, preco: parseFloat(valor), updated_at: new Date().toISOString() } : null;
+        const k = tipo.replace(/\s/g,'_');
+        const valor = document.getElementById('precoTipo_' + k).value.trim();
+        const de = parseFloat(document.getElementById('precoDeTipo_' + k).value);
+        const preco = parseFloat(valor);
+        return valor ? { loja_id: ADMIN_LOJA_ID, tipo, preco, preco_de: (de && de > preco) ? de : null, updated_at: new Date().toISOString() } : null;
       }).filter(Boolean);
 
       const tiposParaRemover = TIPOS_PRECO.filter(tipo => {

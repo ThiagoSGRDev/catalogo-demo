@@ -71,7 +71,8 @@ async function criar(body: any) {
   ]);
   const mapaProd = new Map((prods || []).map((p: any) => [p.id, p]));
   const oculto = new Set((ocultos || []).map((o: any) => o.product_id));
-  const precoCustom = new Map((precos || []).map((p: any) => [p.product_id, Number(p.preco)]));
+  // Linha só com "De" (promoção) e sem preço próprio continua usando o preço do tipo.
+  const precoCustom = new Map((precos || []).filter((p: any) => p.preco != null).map((p: any) => [p.product_id, Number(p.preco)]));
   const precoTipo = new Map((precosTipo || []).map((p: any) => [p.tipo, Number(p.preco)]));
   const override = new Map((ovs || []).map((o: any) => [o.product_id, o]));
   const precoPers = typeof cfg?.preco_personalizacao === 'number' ? Number(cfg.preco_personalizacao) : 60;

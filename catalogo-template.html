@@ -1179,6 +1179,17 @@
     font-family:'Anton', sans-serif; font-size:19px; margin-bottom:10px;
     background:var(--gold-text); -webkit-background-clip:text; background-clip:text; color:transparent;
   }
+  /* Promoção: preço "De" riscado + selo de % OFF */
+  .product-card .pde{font-family:var(--font-mono); font-size:11px; color:rgba(var(--muted-rgb),0.5); margin-bottom:2px;}
+  .product-card .pde s{text-decoration-thickness:1px;}
+  .tag-off{
+    position:absolute; right:10px; bottom:10px; z-index:2; background:#16A34A; color:#fff;
+    font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.04em;
+    padding:3px 8px; border-radius:999px;
+  }
+  .product-price-de{font-family:var(--font-mono); font-size:13px; color:rgba(var(--muted-rgb),0.55); margin-top:8px; display:flex; align-items:center; gap:8px;}
+  .product-price-de .tag-off{position:static;}
+  .product-price-de + .product-price-lg{margin-top:0;}
   .product-card .pbuy{
     width:100%; background:var(--gold); color:var(--ink); border:none; border-radius:999px;
     padding:10px; font-family:'Anton', sans-serif; font-weight:600; font-size:12px;
@@ -2441,6 +2452,7 @@
       </button>
     </div>
     <div class="product-subtitle" id="productSubtitleLg"></div>
+    <div class="product-price-de" id="productPriceDe" hidden></div>
     <div class="product-price-lg" id="productPriceLg"></div>
 
     <div class="size-row-head">
@@ -2952,8 +2964,19 @@
     return lista.length > 0 && lista.every(t => zerados.has(t));
   }
 
+  // Promoção: % de desconto, linha "De R$ X" e selo do card.
+  const pctOff = p => (p && p.preco_de && p.preco_de > p.preco) ? Math.round((1 - p.preco / p.preco_de) * 100) : 0;
+  function precoCardHtml(p){
+    const off = pctOff(p);
+    return (off ? `<div class="pde">De <s>${fmt(p.preco_de)}</s></div>` : '') + `<div class="pprice">${fmt(p.preco)}</div>`;
+  }
+  function seloOff(p){
+    const off = pctOff(p);
+    return off ? `<span class="tag-off">-${off}%</span>` : '';
+  }
+
   function seloEsgotado(p){
-    return produtoEsgotado(p) ? '<span class="tag-esgotado">Esgotado</span>' : '';
+    return (produtoEsgotado(p) ? '<span class="tag-esgotado">Esgotado</span>' : '') + seloOff(p);
   }
 
   // Ids que ESTA loja marcou como destaque/lançamento na personalização dela
@@ -2966,6 +2989,9 @@
   }
 
   let PRECOS_POR_TIPO = new Map(); // tipo -> preço padrão desta loja pra esse tipo (fallback entre customizado e o preco base)
+  // Promoção ("De" riscado), só exibição: o valor cobrado é sempre o preço normal.
+  let PRECOS_DE_TIPO = new Map();     // tipo -> preço "De" desta loja
+  let PRECOS_DE_PRODUTO = new Map();  // product_id -> preço "De" desta loja
 
   // Devolve { ok, extras }: "ok" já pode ser checado assim que o essencial
   // (id/nome/ativa) está resolvido, e "extras" é uma promise com o resto
@@ -3015,10 +3041,16 @@
         // sem precisar de uma segunda loja de teste. Não depende do
         // resultado da busca pela mestre acima, então dispara junto.
         tarefas.push(
-          supabaseClient.from('loja_precos_customizados').select('product_id, preco').eq('loja_id', LOJA_ID)
-            .then(({ data: precos }) => { if(precos) precos.forEach(p => PRECOS_CUSTOMIZADOS.set(p.product_id, p.preco)); }),
-          supabaseClient.from('loja_precos_por_tipo').select('tipo, preco').eq('loja_id', LOJA_ID)
-            .then(({ data: precosTipo }) => { if(precosTipo) precosTipo.forEach(p => PRECOS_POR_TIPO.set(p.tipo, p.preco)); })
+          supabaseClient.from('loja_precos_customizados').select('product_id, preco, preco_de').eq('loja_id', LOJA_ID)
+            .then(({ data: precos }) => { if(precos) precos.forEach(p => {
+              if(p.preco != null) PRECOS_CUSTOMIZADOS.set(p.product_id, Number(p.preco));
+              if(p.preco_de != null) PRECOS_DE_PRODUTO.set(p.product_id, Number(p.preco_de));
+            }); }),
+          supabaseClient.from('loja_precos_por_tipo').select('tipo, preco, preco_de').eq('loja_id', LOJA_ID)
+            .then(({ data: precosTipo }) => { if(precosTipo) precosTipo.forEach(p => {
+              PRECOS_POR_TIPO.set(p.tipo, Number(p.preco));
+              if(p.preco_de != null) PRECOS_DE_TIPO.set(p.tipo, Number(p.preco_de));
+            }); })
         );
 
         descricoesPromise = mestrePromise.then(({ data: mestre }) => {
@@ -4067,16 +4099,25 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
         : [];
     const fotos = fotosMestre.concat(FOTOS_LOJA.get(row.id) || []);
 
-    return {
-      id: row.id,
-      tipo: row.tipo,
-      preco: PRECOS_CUSTOMIZADOS.has(row.id) ? PRECOS_CUSTOMIZADOS.get(row.id)
+    const usaTipo = !PRECOS_CUSTOMIZADOS.has(row.id) && (row.loja_id !== LOJA_ID || !row.preco_manual) && PRECOS_POR_TIPO.has(row.tipo);
+    const extraPers = row.ja_personalizada ? ACRESCIMO_JA_PERSONALIZADA : 0;
+    const precoFinal = PRECOS_CUSTOMIZADOS.has(row.id) ? PRECOS_CUSTOMIZADOS.get(row.id)
         // Preço por tipo: vale pro catálogo mestre e pros produtos importados/em lote.
         // Produto cadastrado à mão (preco_manual) usa o preço que o lojista digitou.
         // Camisa já personalizada: preço do tipo + acréscimo fixo, mostrado como um valor só.
-        : ((row.loja_id !== LOJA_ID || !row.preco_manual) && PRECOS_POR_TIPO.has(row.tipo))
-          ? PRECOS_POR_TIPO.get(row.tipo) + (row.ja_personalizada ? ACRESCIMO_JA_PERSONALIZADA : 0)
-        : parseFloat(row.preco),
+        : usaTipo ? PRECOS_POR_TIPO.get(row.tipo) + extraPers
+        : parseFloat(row.preco);
+    // Promoção: "De" do produto nesta loja > "De" do tipo (quando usa preço do tipo) > "De" do produto próprio.
+    const precoDe = PRECOS_DE_PRODUTO.has(row.id) ? PRECOS_DE_PRODUTO.get(row.id)
+        : (usaTipo && PRECOS_DE_TIPO.has(row.tipo)) ? PRECOS_DE_TIPO.get(row.tipo) + extraPers
+        : (row.loja_id === LOJA_ID && row.preco_de != null) ? parseFloat(row.preco_de)
+        : null;
+
+    return {
+      id: row.id,
+      tipo: row.tipo,
+      preco: precoFinal,
+      preco_de: (precoDe && precoDe > precoFinal) ? precoDe : null,
       ja_personalizada: !!row.ja_personalizada,
       titulo: herda('titulo'),
       subtitulo: herda('subtitulo') || null,
@@ -4109,7 +4150,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       </div>
       <div class="info">
         <div class="pname">${esc(p.titulo)}</div>
-        <div class="pprice">${fmt(p.preco)}</div>
+        ${precoCardHtml(p)}
         <button class="pbuy" onclick="event.stopPropagation(); openFavoriteProduct(${jsArg(p.id)})">Comprar</button>
       </div>
     `;
@@ -4462,6 +4503,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   const CATEGORY_PILLS = [
     { id: 'todos', label: 'Todos', test: () => true },
     { id: 'lancamentos', label: 'Lançamentos', test: p => p.lancamento },
+    { id: 'promocao', label: 'Em promoção', test: p => pctOff(p) > 0 },
     { id: 'torcedor', label: 'Torcedor', test: p => p.tipo === 'Torcedor' },
     { id: 'jogador', label: 'Jogador', test: p => p.tipo === 'Jogador' },
     { id: 'retro', label: 'Retrô', test: p => p.tipo === 'Retrô' },
@@ -4662,7 +4704,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
         </div>
         <div class="info">
           <div class="pname">${esc(p.titulo)}</div>
-          <div class="pprice">${fmt(p.preco)}</div>
+          ${precoCardHtml(p)}
           <button class="pbuy" onclick="event.stopPropagation(); openProduct(${jsArg(p.id)})">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px; vertical-align:-2px; margin-right:4px;"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Comprar
           </button>
@@ -4802,7 +4844,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
         </div>
         <div class="info">
           <div class="pname">${esc(p.titulo)}</div>
-          <div class="pprice">${fmt(p.preco)}</div>
+          ${precoCardHtml(p)}
           <button class="pbuy" onclick="event.stopPropagation(); openFavoriteProduct(${jsArg(p.id)})">Comprar</button>
         </div>
       `;
@@ -4843,7 +4885,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       <div class="info">
         <div class="pname">${esc(p.titulo)}</div>
         <div class="pteam">${esc(team.nome)}</div>
-        <div class="pprice">${fmt(p.preco)}</div>
+        ${precoCardHtml(p)}
         <button class="pbuy" onclick="event.stopPropagation(); openFavoriteProduct(${jsArg(p.id)})">Comprar</button>
       </div>
     `;
@@ -5041,7 +5083,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     } else {
       subEl.style.display = "none";
     }
-    document.getElementById('productPriceLg').textContent = fmt(currentProduct.preco);
+    updatePriceDisplay();
 
     const sizeGrid = document.getElementById('sizeGrid');
     sizeGrid.innerHTML = "";
@@ -5144,8 +5186,14 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
   function updatePriceDisplay(){
     if(!currentProduct) return;
-    const total = currentProduct.preco + (hasPersonalization() ? PRECO_PERSONALIZACAO : 0);
-    document.getElementById('productPriceLg').textContent = fmt(total);
+    const extra = hasPersonalization() ? PRECO_PERSONALIZACAO : 0;
+    document.getElementById('productPriceLg').textContent = fmt(currentProduct.preco + extra);
+    const deEl = document.getElementById('productPriceDe');
+    const off = pctOff(currentProduct);
+    if(deEl){
+      deEl.hidden = !off;
+      deEl.innerHTML = off ? `<span>De <s>${fmt(currentProduct.preco_de + extra)}</s></span><span class="tag-off">-${off}%</span>` : '';
+    }
   }
 
   let currentPhotos = null;
