@@ -6076,6 +6076,9 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       clearTimeout(carrinhoTimer);
       const sessao = carrinhoSessao();
       if(supabaseClient && sessao && LOJA_SLUG) supabaseClient.rpc('carrinho_convertido', { p_slug: LOJA_SLUG, p_sessao: sessao }).then(() => {}, () => {});
+      // Próximo carrinho neste aparelho vira um registro novo.
+      try{ localStorage.removeItem('khCarrinho_' + (LOJA_SLUG || '')); }catch(e){}
+      carrinhoUltimo = '';
     }catch(e){}
   }
 
