@@ -934,7 +934,7 @@
   .pd-total{ font-size:17px; font-weight:800; }
   .pd-acoes{ display:flex; gap:8px; align-items:center; }
   .pd-acoes select{ background:var(--input-bg); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:8px; font-size:13px; }
-  .pd-acoes a{ font-size:13px; padding:8px 12px; }
+  .pd-acoes a{ font-size:13px; padding:8px 12px; text-decoration:none; text-align:center; }
   .pd-selo.novo{ background:rgba(245,158,11,.12); color:var(--amber); border:1px solid rgba(245,158,11,.4); }
   .pd-selo.respondido{ background:rgba(59,130,246,.12); color:#60A5FA; border:1px solid rgba(59,130,246,.4); }
   .pd-origem{ font-size:11px; font-weight:700; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em; }
@@ -1963,6 +1963,7 @@
       <button type="button" data-f="vendidos" onclick="filtrarPedidos('vendidos')">Vendidos</button>
       <button type="button" data-f="aguardando_pagamento" onclick="filtrarPedidos('aguardando_pagamento')">Aguardando Pix</button>
       <button type="button" data-f="perdidos" onclick="filtrarPedidos('perdidos')">Perdidos</button>
+      <button type="button" data-f="abandonados" onclick="filtrarPedidos('abandonados')">🛒 Abandonados</button>
     </div>
     <div id="pdLista"><div class="field-hint">Carregando...</div></div>
   </div>
@@ -8072,7 +8073,7 @@
     if(error){ document.getElementById('pdLista').innerHTML = '<div class="field-hint">Não consegui carregar os pedidos.</div>'; return; }
     PEDIDOS_CACHE = data || [];
     atualizarResumoPedidos();
-    renderPedidos();
+    if(PEDIDOS_FILTRO === 'abandonados') carregarAbandonados(); else renderPedidos();
   }
   function fecharPedidos(){ document.getElementById('pedidosOverlay').classList.add('hidden'); }
 
@@ -8094,7 +8095,71 @@
   function filtrarPedidos(f){
     PEDIDOS_FILTRO = f;
     document.querySelectorAll('#pdFiltros button').forEach(b => b.classList.toggle('ativo', b.dataset.f === f));
+    if(f === 'abandonados') return carregarAbandonados();
     renderPedidos();
+  }
+
+  // ---- Carrinhos abandonados ----
+  // Cliente deixou o WhatsApp no carrinho e não enviou o pedido nem pagou há mais de 30 min.
+  let ABANDONADOS_CACHE = [];
+  async function carregarAbandonados(){
+    const el = document.getElementById('pdLista');
+    el.innerHTML = '<div class="field-hint">Carregando...</div>';
+    const limite = new Date(Date.now() - 30 * 60000).toISOString();
+    const { data, error } = await supabaseClient.from('carrinhos_abandonados')
+      .select('id, cliente_nome, cliente_whats, itens, total, status, contatado_em, atualizado_em')
+      .eq('loja_id', ADMIN_LOJA_ID).in('status', ['aberto', 'contatado']).lt('atualizado_em', limite)
+      .order('atualizado_em', { ascending: false }).limit(200);
+    if(PEDIDOS_FILTRO !== 'abandonados') return;
+    if(error){ el.innerHTML = '<div class="field-hint">Não consegui carregar os carrinhos.</div>'; return; }
+    ABANDONADOS_CACHE = data || [];
+    renderAbandonados();
+  }
+  function tempoAtras(iso){
+    const min = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    if(min < 60) return `há ${min} min`;
+    const h = Math.round(min / 60);
+    if(h < 24) return `há ${h} h`;
+    const d = Math.round(h / 24);
+    return d === 1 ? 'há 1 dia' : `há ${d} dias`;
+  }
+  function renderAbandonados(){
+    const el = document.getElementById('pdLista');
+    if(!ABANDONADOS_CACHE.length){
+      el.innerHTML = '<div class="empty-state">Nenhum carrinho abandonado.<br>Quando um cliente coloca camisas no carrinho, digita o WhatsApp e não finaliza, ele aparece aqui depois de 30 minutos.</div>';
+      return;
+    }
+    const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+    const link = urlPublicaCatalogo();
+    el.innerHTML = '<div class="field-hint" style="margin-bottom:12px;">Chame no WhatsApp: muita gente só esqueceu ou ficou com dúvida no tamanho.</div>' + ABANDONADOS_CACHE.map(c => {
+      const itens = (c.itens || []).map(i => `${escHtml(i.qty)}x ${escHtml(i.titulo)}${i.tamanho ? ' · ' + escHtml(i.tamanho) : ''}${(i.nome || i.numero) ? ` · ${escHtml(i.nome || '')} ${escHtml(i.numero || '')}` : ''}`).join('<br>');
+      const nome = String(c.cliente_nome || '').split(' ')[0];
+      const lista = (c.itens || []).map(i => `• ${i.qty}x ${i.titulo}${i.tamanho ? ' (' + i.tamanho + ')' : ''}`).join('\n');
+      const msg = `Oi${nome ? ', ' + nome : ''}! Vi que você separou no nosso catálogo:\n${lista}\n\nFicou alguma dúvida de tamanho ou pagamento? Se quiser, finalizo seu pedido por aqui 😊${link ? '\n' + link : ''}`;
+      const zap = pdZapNumero(c.cliente_whats);
+      const contatado = c.status === 'contatado';
+      return `<div class="pd-card">
+        <div class="pd-topo"><div><span class="pd-num">${escHtml(c.cliente_nome || 'Cliente')}</span> <span class="pd-data">${escHtml(tempoAtras(c.atualizado_em))}</span><div class="pd-origem">${escHtml(c.cliente_whats)}</div></div><span class="pd-selo ${contatado ? 'respondido' : 'novo'}">${contatado ? 'Chamado' : 'Abandonado'}</span></div>
+        <div class="pd-itens">${itens}</div>
+        <div class="pd-rodape"><div class="pd-total">${brl(c.total)}</div><div class="pd-acoes">
+          <button type="button" class="btn btn-secondary" onclick="descartarCarrinho('${c.id}')">Descartar</button>
+          ${zap ? `<a class="btn btn-primary" target="_blank" rel="noopener" onclick="marcarCarrinhoContatado('${c.id}')" href="https://wa.me/${zap}?text=${encodeURIComponent(msg)}">${contatado ? 'Chamar de novo' : 'Chamar no WhatsApp'}</a>` : ''}
+        </div></div>
+      </div>`;
+    }).join('');
+  }
+  async function marcarCarrinhoContatado(id){
+    const c = ABANDONADOS_CACHE.find(x => x.id === id);
+    if(!c || c.status === 'contatado') return;
+    const { error } = await supabaseClient.from('carrinhos_abandonados').update({ status: 'contatado', contatado_em: new Date().toISOString() }).eq('id', id);
+    if(!error){ c.status = 'contatado'; renderAbandonados(); }
+  }
+  async function descartarCarrinho(id){
+    const { error } = await supabaseClient.from('carrinhos_abandonados').update({ status: 'descartado' }).eq('id', id);
+    if(error){ showToast('Não consegui descartar.', 'error'); return; }
+    ABANDONADOS_CACHE = ABANDONADOS_CACHE.filter(x => x.id !== id);
+    renderAbandonados();
+    showToast('Carrinho descartado.');
   }
 
   function pdZapNumero(w){

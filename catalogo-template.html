@@ -6032,6 +6032,51 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     msg += `%0A*Total: R$ ${total}*%0A%0AComo fechamos o pagamento?`;
 
     btn.href = `https://wa.me/${STORE_CONFIG.whatsapp}?text=${msg}`;
+    agendarSalvarCarrinho();
+  }
+
+  // ===== Carrinho abandonado =====
+  // Quem já digitou o WhatsApp e tem item no carrinho aparece pro lojista em Pedidos > Abandonados.
+  // Salva 3s depois da última mudança; vira "convertido" quando envia pelo WhatsApp ou gera o pagamento.
+  let carrinhoTimer = null, carrinhoUltimo = '';
+  function carrinhoSessao(){
+    const k = 'khCarrinho_' + (LOJA_SLUG || '');
+    try{
+      let id = localStorage.getItem(k);
+      if(!id || !/^[a-z0-9]{16,40}$/.test(id)){
+        id = (Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/[^a-z0-9]/g, '').slice(0, 32);
+        localStorage.setItem(k, id);
+      }
+      return id;
+    }catch(e){ return null; }
+  }
+  function agendarSalvarCarrinho(){
+    clearTimeout(carrinhoTimer);
+    carrinhoTimer = setTimeout(salvarCarrinhoAbandonado, 3000);
+  }
+  function salvarCarrinhoAbandonado(){
+    try{
+      if(!supabaseClient || !LOJA_SLUG) return;
+      const whats = (document.getElementById('clienteWhats')?.value || '').replace(/\D/g, '');
+      if(whats.length < 10 && order.length) return;
+      const sessao = carrinhoSessao(); if(!sessao) return;
+      const itens = order.map(i => ({ produtoId: i.produtoId || '', titulo: i.titulo || i.clube || '', subtitulo: i.subtitulo || i.modelo || '',
+        tamanho: i.tamanho || '', qty: i.qty, nome: i.nome || '', numero: i.numero || '', preco: i.preco }));
+      const nome = (document.getElementById('clienteNome')?.value || '').trim();
+      const assinatura = JSON.stringify([whats, nome, itens]);
+      if(assinatura === carrinhoUltimo) return;
+      if(!order.length && !carrinhoUltimo) return;
+      carrinhoUltimo = assinatura;
+      supabaseClient.rpc('salvar_carrinho', { p_slug: LOJA_SLUG, p_sessao: sessao, p_nome: nome, p_whats: whats,
+        p_itens: itens, p_total: order.length ? getTotalPedido() : 0 }).then(() => {}, () => {});
+    }catch(e){ /* nunca atrapalha a compra */ }
+  }
+  function carrinhoConvertido(){
+    try{
+      clearTimeout(carrinhoTimer);
+      const sessao = carrinhoSessao();
+      if(supabaseClient && sessao && LOJA_SLUG) supabaseClient.rpc('carrinho_convertido', { p_slug: LOJA_SLUG, p_sessao: sessao }).then(() => {}, () => {});
+    }catch(e){}
   }
 
   // Registra o pedido enviado pelo WhatsApp no painel do lojista (aba Pedidos, status "Novo").
@@ -6054,6 +6099,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
         p_slug: LOJA_SLUG, p_nome: v('clienteNome'), p_whats: v('clienteWhats'), p_endereco: endereco, p_itens: itens,
         p_desconto: calcularDescontos().total, p_frete_nome: nomeFrete, p_frete_valor: order.length ? getFreteValor() : 0,
       }).then(() => {}, () => {});
+      carrinhoConvertido();
     }catch(e){ /* nunca atrapalha o pedido */ }
   }
 
@@ -6370,6 +6416,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
         return;
       }
       trackEvent('checkout_iniciado', { metodo, total: data.total });
+      carrinhoConvertido();
       if(metodo === 'cartao' && data.link){
         try { sessionStorage.setItem('ckPendente', JSON.stringify({ pedido_id: data.pedido_id, token: data.token })); } catch(_){}
         window.location.href = data.link;
