@@ -225,6 +225,8 @@
   /* Preço + preço "De" (promoção) lado a lado */
   .preco-par{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .preco-par small{ display:block; font-size:11px; color:var(--text-dim); margin-bottom:4px; }
+  .preco-par input{ width:100%; min-width:0; background:var(--input-bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px; color:var(--text); outline:none; font-weight:500; }
+  .preco-par input:focus{ border-color:var(--btn-bg); }
   .preco-off{ font-size:11px; font-weight:700; color:var(--green); margin-top:4px; min-height:14px; }
   /* ===== Primeiro acesso: loja pronta em 3 passos ===== */
   .ob-fundo{position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.72); display:flex; align-items:flex-end; justify-content:center;
@@ -1517,6 +1519,7 @@
         <div class="filtro-opcao" data-filter="destaque" onclick="setFilter('destaque')">★ Destaques</div>
         <div class="filtro-opcao" data-filter="lancamento" onclick="setFilter('lancamento')">🆕 Lançamentos</div>
         <div class="filtro-opcao" data-filter="emestoque" id="chipEmEstoque" style="display:none;" onclick="setFilter('emestoque')">📦 Em estoque</div>
+        <div class="filtro-opcao" data-filter="estoquebaixo" id="chipEstoqueBaixo" style="display:none;" onclick="setFilter('estoquebaixo')">⚠️ Estoque baixo</div>
         <div class="chip" data-filter="inativo" onclick="setFilter('inativo')">Inativos</div>
       </div>
     </div>
@@ -1650,6 +1653,34 @@
         <div class="field-hint">Opcional. Nem todo CEP do seu estado é alcance de motoboy — deixe em branco pra usar a regra simples (mesmo estado = motoboy).</div>
       </div>
     </div>
+    <div class="form-section">
+      <h3>Frete grátis, pedido mínimo e pagamento</h3>
+      <div class="field-hint" style="margin-bottom:12px;">Deixe em branco o que não quiser usar. Vale no carrinho, no WhatsApp e no Pix/cartão da loja.</div>
+      <div class="preco-par" style="margin-bottom:10px;">
+        <div><small>Frete grátis acima de (R$)</small><input type="number" id="cfgFreteGratis" min="1" step="0.01" placeholder="Ex.: 399.90" oninput="atualizarResumoRegras()"></div>
+        <div><small>Pedido mínimo (R$)</small><input type="number" id="cfgPedidoMinimo" min="1" step="0.01" placeholder="Ex.: 150" oninput="atualizarResumoRegras()"></div>
+      </div>
+      <div class="preco-par" style="margin-bottom:6px;">
+        <div><small>Desconto no Pix (%)</small><input type="number" id="cfgDescontoPix" min="0.5" max="49" step="0.5" placeholder="Ex.: 5" oninput="atualizarResumoRegras()"></div>
+        <div><small>Acréscimo no cartão (%)</small><input type="number" id="cfgAcrescimoCartao" min="0.5" max="49" step="0.5" placeholder="Ex.: 4.99" oninput="atualizarResumoRegras()"></div>
+      </div>
+      <div class="field-hint">O desconto do Pix vale só sobre as camisas (não sobre o frete). O acréscimo do cartão cobre a taxa do parcelamento.</div>
+      <div class="preco-off" id="resumoRegras" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="form-section">
+      <h3>Acréscimo por tamanho grande</h3>
+      <div class="field-hint" style="margin-bottom:12px;">Valor somado à camisa quando o cliente escolhe esse tamanho. Aparece na página da camisa.</div>
+      <div class="preco-par">
+        <div><small>2XL (+R$)</small><input type="number" id="acrTam2XL" min="0" step="0.01" placeholder="0"></div>
+        <div><small>3XL (+R$)</small><input type="number" id="acrTam3XL" min="0" step="0.01" placeholder="0"></div>
+      </div>
+      <div class="preco-par" style="margin-top:10px;">
+        <div><small>4XL (+R$)</small><input type="number" id="acrTam4XL" min="0" step="0.01" placeholder="0"></div>
+        <div></div>
+      </div>
+    </div>
+
     <div class="form-section">
       <h3>Descontos por quantidade</h3>
       <div class="field-hint" style="margin-bottom:12px;">
@@ -3212,8 +3243,9 @@
   async function carregarConfigEstoque(){
     try {
       const { data } = await supabaseClient.from('store_settings')
-        .select('usa_estoque').eq('loja_id', ADMIN_LOJA_ID).single();
+        .select('usa_estoque, estoque_alerta_limite').eq('loja_id', ADMIN_LOJA_ID).single();
       ADMIN_USA_ESTOQUE = !!(data && data.usa_estoque);
+      ESTOQUE_ALERTA = Number(data && data.estoque_alerta_limite != null ? data.estoque_alerta_limite : 2) || 0;
     } catch(e){
       console.error('Nao consegui ler a configuracao de estoque', e);
       ADMIN_USA_ESTOQUE = false;
@@ -3249,6 +3281,21 @@
     }
   }
   function estoqueTotalDoProduto(id){ const e = ESTOQUE_MAPA.get(String(id)); return e ? e.total : 0; }
+  // Estoque baixo: tamanho controlado com 0 até o limite de "Últimas unidades" (tela Loja).
+  let ESTOQUE_ALERTA = 2;
+  function tamanhosEstoqueBaixo(id){
+    const e = ESTOQUE_MAPA.get(String(id));
+    if(!e || !ESTOQUE_ALERTA) return [];
+    return Object.entries(e.tamanhos).filter(([, q]) => q <= ESTOQUE_ALERTA).map(([t, q]) => ({ t, q }));
+  }
+  function atualizarChipEstoqueBaixo(){
+    const chip = document.getElementById('chipEstoqueBaixo');
+    if(!chip) return;
+    // Só conta produto que ainda tem alguma unidade (esgotado de vez não é "baixo").
+    const n = ADMIN_USA_ESTOQUE && ESTOQUE_ALERTA ? [...ESTOQUE_MAPA.keys()].filter(id => estoqueTotalDoProduto(id) > 0 && tamanhosEstoqueBaixo(id).length).length : 0;
+    chip.style.display = n ? '' : 'none';
+    chip.textContent = `⚠️ Estoque baixo (${n})`;
+  }
 
   // ---- ESTOQUE RÁPIDO: botão 📦 no cartão do produto abre só as quantidades ----
   let erProduto = null;
@@ -4660,6 +4707,7 @@
   }
 
   function renderProductList(){
+    atualizarChipEstoqueBaixo();
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
     let list = PRODUCTS_CACHE.slice();
 
@@ -4667,6 +4715,7 @@
     else if(currentFilter === 'lancamento') list = list.filter(p => p.lancamento);
     else if(currentFilter === 'inativo') list = list.filter(p => !p.disponivel);
     else if(currentFilter === 'emestoque') list = list.filter(p => estoqueTotalDoProduto(p.id) > 0);
+    else if(currentFilter === 'estoquebaixo') list = list.filter(p => estoqueTotalDoProduto(p.id) > 0 && tamanhosEstoqueBaixo(p.id).length);
     else if(currentFilter !== 'todos') list = list.filter(p => p.tipo === currentFilter);
 
     if(currentTeamId) list = list.filter(p => p.teams && String(p.teams.id) === String(currentTeamId));
@@ -4717,6 +4766,8 @@
       if(personalizado) tags.push('<span class="tag-mini custom">Personalizado</span>');
       const qtdEstoque = ADMIN_USA_ESTOQUE ? estoqueTotalDoProduto(p.id) : 0;
       if(qtdEstoque > 0) tags.push(`<span class="tag-mini custom">Em estoque · ${qtdEstoque}</span>`);
+      const baixos = qtdEstoque > 0 ? tamanhosEstoqueBaixo(p.id) : [];
+      if(baixos.length) tags.push(`<span class="tag-mini off">⚠️ ${baixos.map(b => escHtml(b.t) + ' ' + b.q).join(' · ')}</span>`);
       const idCod = encodeURIComponent(p.id).replace(/'/g, '%27');
       const btnEstoque = ADMIN_USA_ESTOQUE
         ? `<div class="icon-btn-mini" onclick="event.stopPropagation(); abrirEstoqueRapido('${idCod}')" aria-label="Estoque" title="Estoque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></div>`
@@ -7804,10 +7855,11 @@
     document.getElementById('precosOverlay').classList.remove('hidden');
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('preco_personalizacao, preco_frete, cep_motoboy_inicio, cep_motoboy_fim, desconto_quantidade, pague_leve')
+      .select('preco_personalizacao, preco_frete, cep_motoboy_inicio, cep_motoboy_fim, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     preencherDescontos(data || {});
+    preencherRegras(data || {});
     if(!error && data){
       document.getElementById('precoPersonalizacaoInput').value = data.preco_personalizacao ?? 60;
       document.getElementById('precoFreteInput').value = data.preco_frete ?? 15;
@@ -7871,6 +7923,43 @@
     const ativo = document.getElementById('pagueLeveAtivo').checked;
     return { faixas: unicas, pagueLeve: (ativo && pague >= 1 && leve > pague) ? { pague, leve } : null, pagueLeveInvalido: ativo && !(pague >= 1 && leve > pague) };
   }
+  // ---- Frete grátis / mínimo / Pix / cartão / acréscimo por tamanho ----
+  const TAMS_ACRESCIMO = ['2XL', '3XL', '4XL'];
+  function preencherRegras(d){
+    const v = x => (x != null && Number(x) > 0) ? x : '';
+    document.getElementById('cfgFreteGratis').value = v(d.frete_gratis_acima);
+    document.getElementById('cfgPedidoMinimo').value = v(d.pedido_minimo);
+    document.getElementById('cfgDescontoPix').value = v(d.desconto_pix_pct);
+    document.getElementById('cfgAcrescimoCartao').value = v(d.acrescimo_cartao_pct);
+    const at = (d.acrescimo_tamanho && typeof d.acrescimo_tamanho === 'object') ? d.acrescimo_tamanho : {};
+    TAMS_ACRESCIMO.forEach(t => document.getElementById('acrTam' + t).value = v(at[t]));
+    atualizarResumoRegras();
+  }
+  function lerRegras(){
+    const num = id => { const n = parseFloat(document.getElementById(id).value); return n > 0 ? Math.round(n * 100) / 100 : null; };
+    const r = {
+      frete_gratis_acima: num('cfgFreteGratis'),
+      pedido_minimo: num('cfgPedidoMinimo'),
+      desconto_pix_pct: num('cfgDescontoPix'),
+      acrescimo_cartao_pct: num('cfgAcrescimoCartao'),
+      acrescimo_tamanho: {},
+    };
+    TAMS_ACRESCIMO.forEach(t => { const n = num('acrTam' + t); if(n) r.acrescimo_tamanho[t] = n; });
+    r.erro = (r.desconto_pix_pct && r.desconto_pix_pct >= 50) || (r.acrescimo_cartao_pct && r.acrescimo_cartao_pct >= 50)
+      ? 'Desconto no Pix e acréscimo no cartão precisam ser menores que 50%.' : '';
+    return r;
+  }
+  function atualizarResumoRegras(){
+    const r = lerRegras(), brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ','), partes = [];
+    if(r.frete_gratis_acima) partes.push('frete grátis acima de ' + brl(r.frete_gratis_acima));
+    if(r.pedido_minimo) partes.push('mínimo ' + brl(r.pedido_minimo));
+    if(r.desconto_pix_pct) partes.push(r.desconto_pix_pct + '% OFF no Pix');
+    if(r.acrescimo_cartao_pct) partes.push('+' + r.acrescimo_cartao_pct + '% no cartão');
+    const el = document.getElementById('resumoRegras');
+    el.textContent = r.erro || (partes.length ? 'Na loja: ' + partes.join(' · ') : '');
+    el.style.color = r.erro ? 'var(--amber)' : 'var(--green)';
+  }
+
   function atualizarResumoDescontos(){
     document.getElementById('pagueLeveCampos').style.opacity = document.getElementById('pagueLeveAtivo').checked ? '1' : '.45';
     const d = lerDescontos(), partes = [];
@@ -8068,7 +8157,7 @@
     window.scrollTo(0,0);
     document.getElementById('pdLista').innerHTML = '<div class="field-hint">Carregando...</div>';
     const { data, error } = await supabaseClient.from('pedidos')
-      .select('id, numero, origem, status, status_entrega, metodo, cliente_nome, cliente_whats, cliente_email, endereco, itens, subtotal, desconto, frete_nome, frete_valor, total, taxa_plataforma, codigo_rastreio, observacao, pago_em, criado_em')
+      .select('id, numero, origem, status, status_entrega, metodo, cliente_nome, cliente_whats, cliente_email, endereco, itens, subtotal, desconto, acrescimo, frete_nome, frete_valor, total, taxa_plataforma, codigo_rastreio, observacao, pago_em, criado_em')
       .eq('loja_id', ADMIN_LOJA_ID).order('criado_em', { ascending: false }).limit(300);
     if(error){ document.getElementById('pdLista').innerHTML = '<div class="field-hint">Não consegui carregar os pedidos.</div>'; return; }
     PEDIDOS_CACHE = data || [];
@@ -8211,6 +8300,7 @@
         <div class="pd-cliente">${escHtml(p.cliente_nome)}${p.cliente_whats ? ' · <span class="pd-data">' + escHtml(p.cliente_whats) + '</span>' : ''}${p.cliente_email ? ' · <span class="pd-data">' + escHtml(p.cliente_email) + '</span>' : ''}</div>
         <div class="pd-itens">${itens}</div>
         ${Number(p.desconto) > 0 ? `<div class="pd-desc">Desconto: − ${brl(p.desconto)}</div>` : ''}
+        ${Number(p.acrescimo) > 0 ? `<div class="pd-end">Acréscimo do cartão: + ${brl(p.acrescimo)}</div>` : ''}
         ${(end || p.frete_nome) ? `<div class="pd-end">${escHtml(p.frete_nome || '')}${Number(p.frete_valor) ? ' (' + brl(p.frete_valor) + ')' : ''}${end ? ' · ' + end : ''}${e.obs ? '<br>Obs.: ' + escHtml(e.obs) : ''}</div>` : ''}
         ${p.observacao ? `<div class="pd-obs">${escHtml(p.observacao)}</div>` : ''}
         ${rastreio}
@@ -8471,6 +8561,8 @@
 
     const descontos = lerDescontos();
     if(descontos.pagueLeveInvalido){ showToast('No "Pague X leve Y", o "Leve" precisa ser maior que o "Pague".', 'error'); return; }
+    const regras = lerRegras();
+    if(regras.erro){ showToast(regras.erro, 'error'); return; }
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>';
@@ -8480,6 +8572,11 @@
       .update({
         desconto_quantidade: descontos.faixas,
         pague_leve: descontos.pagueLeve,
+        frete_gratis_acima: regras.frete_gratis_acima,
+        pedido_minimo: regras.pedido_minimo,
+        desconto_pix_pct: regras.desconto_pix_pct,
+        acrescimo_cartao_pct: regras.acrescimo_cartao_pct,
+        acrescimo_tamanho: regras.acrescimo_tamanho,
         preco_personalizacao: precoPersonalizacao,
         preco_frete: precoFrete,
         cep_motoboy_inicio: cepInicio || null,
@@ -9343,6 +9440,7 @@
     }
 
     ADMIN_USA_ESTOQUE = document.getElementById('lojaUsaEstoque').checked;
+    ESTOQUE_ALERTA = Number(document.getElementById('lojaEstoqueAlerta').value) || 0;
     carregarMapaEstoque().then(() => { try { renderProductList(); } catch(e){} });
 
     // 5. Exibir mensagem com URL personalizada

@@ -91,7 +91,7 @@ async function criar(body: any) {
     db.from('loja_precos_customizados').select('product_id, preco').eq('loja_id', loja.id).in('product_id', ids),
     db.from('loja_precos_por_tipo').select('tipo, preco').eq('loja_id', loja.id),
     db.from('loja_produtos_override').select('product_id, titulo, subtitulo, tamanhos').eq('loja_id', loja.id).in('product_id', ids),
-    db.from('store_settings').select('preco_personalizacao, desconto_quantidade, pague_leve, preco_frete, preco_frete_outros_estados, preco_frete_sedex, usa_estoque').eq('loja_id', loja.id).maybeSingle(),
+    db.from('store_settings').select('preco_personalizacao, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho, preco_frete, preco_frete_outros_estados, preco_frete_sedex, usa_estoque').eq('loja_id', loja.id).maybeSingle(),
   ]);
   const mapaProd = new Map((prods || []).map((p: any) => [p.id, p]));
   const oculto = new Set((ocultos || []).map((o: any) => o.product_id));
@@ -100,6 +100,8 @@ async function criar(body: any) {
   const precoTipo = new Map((precosTipo || []).map((p: any) => [p.tipo, Number(p.preco)]));
   const override = new Map((ovs || []).map((o: any) => [o.product_id, o]));
   const precoPers = typeof cfg?.preco_personalizacao === 'number' ? Number(cfg.preco_personalizacao) : 60;
+  const posNum = (v: unknown) => (v != null && Number(v) > 0 ? Number(v) : 0);
+  const acrTam = (t: string) => posNum(cfg?.acrescimo_tamanho && typeof cfg.acrescimo_tamanho === 'object' ? cfg.acrescimo_tamanho[t] : 0);
 
   let estoque = new Map<string, number>();
   if (cfg?.usa_estoque) {
@@ -126,7 +128,7 @@ async function criar(body: any) {
       : ((p.loja_id !== loja.id || !p.preco_manual) && precoTipo.has(p.tipo))
         ? precoTipo.get(p.tipo)! + (jaPers ? ACRESCIMO_JA_PERSONALIZADA : 0)
       : Number(p.preco);
-    const unit = dinheiro(base + ((nome || numero) ? precoPers : 0));
+    const unit = dinheiro(base + ((nome || numero) ? precoPers : 0) + acrTam(tamanho));
     if (!(unit > 0)) return json({ erro: 'preco_invalido', produto: p.id }, 400);
     if (cfg?.usa_estoque) {
       const k = `${p.id}|${tamanho}`;
@@ -141,7 +143,10 @@ async function criar(body: any) {
   }
   const subtotal = dinheiro(itens.reduce((s, i) => s + i.subtotal, 0));
   const descontos = calcularDescontos(itens, cfg);
-  const desconto = Math.min(descontos.total, subtotal);
+  const descontoQtd = Math.min(descontos.total, subtotal);
+  const valorProdutos = dinheiro(subtotal - descontoQtd);
+  const minimo = posNum(cfg?.pedido_minimo);
+  if (minimo && valorProdutos < minimo) return json({ erro: 'pedido_minimo', minimo }, 400);
 
   // ---- Frete ----
   const freteId = txt(body?.frete?.id, 60) || 'retirar';
@@ -177,14 +182,24 @@ async function criar(body: any) {
     }
   }
   freteValor = dinheiro(freteValor);
-  const total = dinheiro(subtotal - desconto + freteValor);
+  // Frete grátis acima de R$ X (produtos já com desconto), igual ao catálogo.
+  const freteGratis = posNum(cfg?.frete_gratis_acima);
+  if (freteGratis && freteId !== 'retirar' && valorProdutos >= freteGratis) freteValor = 0;
+  // Desconto no Pix (% sobre os produtos) e acréscimo no cartão (% sobre produtos + frete).
+  const pctPix = metodo === 'pix' ? posNum(cfg?.desconto_pix_pct) : 0;
+  const pctCartao = metodo === 'cartao' ? posNum(cfg?.acrescimo_cartao_pct) : 0;
+  const descontoPix = pctPix ? dinheiro(valorProdutos * pctPix / 100) : 0;
+  const acrescimo = pctCartao ? dinheiro((valorProdutos + freteValor) * pctCartao / 100) : 0;
+  const desconto = dinheiro(descontoQtd + descontoPix);
+  const total = dinheiro(valorProdutos - descontoPix + freteValor + acrescimo);
+  const descontoDetalhe = desconto > 0 ? { ...descontos, pix: descontoPix ? { pct: pctPix, valor: descontoPix } : null } : null;
   const taxa = calcularTaxa(total, ck);
 
   // ---- Pedido ----
   const { data: ped, error: errPed } = await db.from('pedidos').insert({
     loja_id: loja.id, metodo, cliente_nome: cliente.nome, cliente_whats: cliente.whats, cliente_email: cliente.email,
     endereco: freteId === 'retirar' ? { obs: endereco.obs } : endereco, itens, subtotal,
-    desconto, desconto_detalhe: desconto > 0 ? descontos : null,
+    desconto, desconto_detalhe: descontoDetalhe, acrescimo,
     frete_nome: freteNome, frete_valor: freteValor, total, taxa_plataforma: taxa,
   }).select('id, numero, token_publico').single();
   if (errPed || !ped) { console.error('Erro ao criar pedido', errPed); return json({ erro: 'falha_pedido' }, 500); }

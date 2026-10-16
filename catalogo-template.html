@@ -1594,6 +1594,12 @@
     font-size:12.5px; color:rgba(var(--muted-rgb),0.85); line-height:1.4;}
   .desconto-dica b{color:#16A34A;}
   .promo-qtd-aviso{margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;}
+  .minimo-aviso{margin:0 0 10px; padding:10px 12px; border-radius:10px; border:1px solid rgba(245,158,11,.5); background:rgba(245,158,11,.1);
+    font-size:13px; line-height:1.4; color:rgba(var(--muted-rgb),0.9);}
+  .minimo-aviso b{color:#D97706;}
+  .pix-row{display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-family:var(--font-mono); font-size:12.5px; color:#16A34A; font-weight:700;}
+  .acrescimo-tam-aviso{margin-top:8px; font-size:12px; color:rgba(var(--muted-rgb),0.6);}
+  .ck-btn .ck-valor-btn{font-family:var(--font-mono); font-size:13px; font-weight:700; opacity:.85; letter-spacing:0;}
   .promo-qtd-aviso span{font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:.02em;
     padding:5px 10px; border-radius:999px; background:rgba(22,163,74,.12); color:#16A34A; border:1px solid rgba(22,163,74,.35);}
   .total-row{display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:14px; border-top:2px solid var(--gold);}
@@ -2194,6 +2200,7 @@
           <div class="total-label">Total</div>
           <div class="total-value" id="totalValue">R$ 0,00</div>
         </div>
+        <div id="pixInfoCarrinho"></div>
       </div>
     </div>
     <div class="cart-footer" id="cartFooter" style="display:none;">
@@ -2215,15 +2222,16 @@
         </div>
         <textarea id="clienteObs" class="checkout-input" placeholder="Observações do pedido (opcional)" rows="2" style="resize:vertical; font-family:'Inter';" oninput="updateWhatsBtn()"></textarea>
       </div>
+      <div class="minimo-aviso" id="minimoAviso" hidden></div>
       <div class="ck-box" id="ckBox" hidden>
         <input type="email" id="clienteEmail" class="checkout-input" placeholder="Seu e-mail (para o comprovante)" autocomplete="email" inputmode="email" style="margin-bottom:12px;">
         <button type="button" class="ck-btn" id="ckPixBtn" onclick="ckPagar('pix')">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5.3 8.6 8.6 5.3a3.6 3.6 0 0 1 5.1 0l1.9 1.9-2.3 2.3a1.9 1.9 0 0 1-2.7 0L8.4 7.3 6.7 9l2.2 2.2a3.5 3.5 0 0 0 5 0L16.2 9l1.9 1.9-2.3 2.3a3.5 3.5 0 0 0 0 5l-1.5 1.5a3.6 3.6 0 0 1-5.1 0l-1.9-1.9 2.3-2.3a1.9 1.9 0 0 1 2.7 0l2.2 2.2L16.2 16 14 13.8a3.5 3.5 0 0 0-5 0L6.7 16l-1.4-1.3a3.6 3.6 0 0 1 0-5.1z"/></svg>
-          Pagar com PIX
+          Pagar com PIX<span class="ck-valor-btn" id="ckPixValor"></span>
         </button>
         <button type="button" class="ck-btn sec" id="ckCartaoBtn" onclick="ckPagar('cartao')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg>
-          Cartão em até 12x
+          Cartão em até 12x<span class="ck-valor-btn" id="ckCartaoValor"></span>
         </button>
         <div class="ck-seguro">Pagamento seguro pelo Mercado Pago · cai direto na loja</div>
         <div class="ck-erro" id="ckErro"></div>
@@ -2477,6 +2485,7 @@
       </div>
     </div>
     <div class="size-grid" id="sizeGrid"></div>
+    <div class="acrescimo-tam-aviso" id="acrescimoTamAviso" hidden></div>
 
     <div class="personalize-box">
       <div class="personalize-title">Personalização da camisa</div>
@@ -3003,6 +3012,12 @@
   // Promoção ("De" riscado), só exibição: o valor cobrado é sempre o preço normal.
   let PRECOS_DE_TIPO = new Map();     // tipo -> preço "De" desta loja
   // Descontos por quantidade (loja toda). Mesmo cálculo da função checkout no servidor.
+  // Regras de preço da loja (store_settings). Mesma conta da Edge Function checkout.
+  let FRETE_GRATIS_ACIMA = null;  // frete grátis quando os produtos (já com desconto) passam deste valor
+  let PEDIDO_MINIMO = null;       // valor mínimo dos produtos (já com desconto)
+  let DESCONTO_PIX = null;        // % de desconto no Pix (sobre os produtos, sem frete)
+  let ACRESCIMO_CARTAO = null;    // % a mais no cartão (sobre produtos + frete)
+  let ACRESCIMO_TAM = {};         // {"2XL": 10, "3XL": 15, ...} somado ao preço da peça
   let DESCONTO_QTD = [];   // [{min:4, pct:10}, ...]
   let PAGUE_LEVE = null;   // {pague:2, leve:3}
   let PRECOS_DE_PRODUTO = new Map();  // product_id -> preço "De" desta loja
@@ -3134,7 +3149,7 @@
     try {
       const { data, error } = await supabaseClient
         .from('store_settings')
-        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, desconto_quantidade, pague_leve, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
+        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
         .eq('loja_id', LOJA_ID)
         .single();
       if(error || !data) return;
@@ -3200,6 +3215,15 @@
         .filter(f => f.min >= 2 && f.pct > 0 && f.pct < 100).sort((a, b) => a.min - b.min) : [];
       PAGUE_LEVE = (data.pague_leve && Number(data.pague_leve.leve) > Number(data.pague_leve.pague) && Number(data.pague_leve.pague) >= 1)
         ? { pague: parseInt(data.pague_leve.pague, 10), leve: parseInt(data.pague_leve.leve, 10) } : null;
+      const posNum = v => (v != null && Number(v) > 0) ? Number(v) : null;
+      FRETE_GRATIS_ACIMA = posNum(data.frete_gratis_acima);
+      PEDIDO_MINIMO = posNum(data.pedido_minimo);
+      DESCONTO_PIX = posNum(data.desconto_pix_pct);
+      ACRESCIMO_CARTAO = posNum(data.acrescimo_cartao_pct);
+      ACRESCIMO_TAM = {};
+      if(data.acrescimo_tamanho && typeof data.acrescimo_tamanho === 'object'){
+        Object.entries(data.acrescimo_tamanho).forEach(([t, v]) => { if(Number(v) > 0) ACRESCIMO_TAM[t] = Number(v); });
+      }
       if(typeof data.preco_personalizacao === 'number'){
         PRECO_PERSONALIZACAO = data.preco_personalizacao;
         STORE_CONFIG.precos.personalizacao = data.preco_personalizacao;
@@ -5132,6 +5156,12 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       b.onclick = () => selectSize(s);
       sizeGrid.appendChild(b);
     });
+    const avisoTam = document.getElementById('acrescimoTamAviso');
+    if(avisoTam){
+      const extras = defaultSizeList.filter(t => acrescimoTamanho(t)).map(t => `${t} +${fmt(acrescimoTamanho(t))}`);
+      avisoTam.hidden = !extras.length;
+      avisoTam.textContent = extras.length ? 'Tamanhos maiores: ' + extras.join(' · ') : '';
+    }
 
     atualizarEstadoEsgotado();
 
@@ -5206,7 +5236,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
   function updatePriceDisplay(){
     if(!currentProduct) return;
-    const extra = hasPersonalization() ? PRECO_PERSONALIZACAO : 0;
+    const extra = (hasPersonalization() ? PRECO_PERSONALIZACAO : 0) + acrescimoTamanho(selectedSize);
     document.getElementById('productPriceLg').textContent = fmt(currentProduct.preco + extra);
     const deEl = document.getElementById('productPriceDe');
     const off = pctOff(currentProduct);
@@ -5491,6 +5521,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   function selectSize(s){
     selectedSize = s;
     document.querySelectorAll('.size-btn').forEach(el => el.classList.toggle('active', el.dataset.size === s));
+    updatePriceDisplay();
     atualizarEstadoEsgotado();
   }
 
@@ -5601,7 +5632,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const jaPers = !!currentProduct.ja_personalizada;
     const nome = jaPers ? '' : document.getElementById('personalizeNome').value.trim().toUpperCase();
     const numero = jaPers ? '' : document.getElementById('personalizeNumero').value.trim();
-    const precoFinal = currentProduct.preco + ((nome || numero) ? PRECO_PERSONALIZACAO : 0);
+    const precoFinal = currentProduct.preco + ((nome || numero) ? PRECO_PERSONALIZACAO : 0) + acrescimoTamanho(selectedSize);
 
     if (nome || numero) {
       trackEvent('personalization_selected', { product_id: currentProduct.id, team: currentTeam.nome, product_type: currentProduct.tipo, has_name: !!nome, has_number: !!numero });
@@ -5748,8 +5779,40 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     return res;
   }
   function getTotalPedido(){
-    const sub = getSubtotal();
-    return Math.max(0, sub - calcularDescontos().total) + (order.length ? getFreteValor() : 0);
+    return valorProdutos() + (order.length ? getFreteValor() : 0);
+  }
+  function acrescimoTamanho(t){ const v = Number(ACRESCIMO_TAM[t]); return v > 0 ? v : 0; }
+  // Produtos já com os descontos por quantidade (base do frete grátis, do mínimo e do Pix).
+  function valorProdutos(){ return Math.max(0, Math.round((getSubtotal() - calcularDescontos().total) * 100) / 100); }
+  function freteGratisAtivo(){
+    return !!(FRETE_GRATIS_ACIMA && order.length && freteEscolhido !== 'retirar' && valorProdutos() >= FRETE_GRATIS_ACIMA);
+  }
+  function faltaPedidoMinimo(){
+    return (PEDIDO_MINIMO && order.length) ? Math.max(0, Math.round((PEDIDO_MINIMO - valorProdutos()) * 100) / 100) : 0;
+  }
+  // Total por forma de pagamento (igual ao servidor): Pix tira % dos produtos; cartão soma % no total.
+  function totalPorMetodo(metodo){
+    const r2 = n => Math.round(n * 100) / 100;
+    const prod = valorProdutos(), frete = order.length ? getFreteValor() : 0;
+    if(metodo === 'pix' && DESCONTO_PIX) return r2(prod - r2(prod * DESCONTO_PIX / 100) + frete);
+    if(metodo === 'cartao' && ACRESCIMO_CARTAO) return r2(prod + frete + r2((prod + frete) * ACRESCIMO_CARTAO / 100));
+    return r2(prod + frete);
+  }
+  // Linha "No Pix: R$ X", valores nos botões de pagamento e aviso de pedido mínimo.
+  function renderInfoPagamento(){
+    const pixEl = document.getElementById('pixInfoCarrinho');
+    if(pixEl) pixEl.innerHTML = (order.length && DESCONTO_PIX)
+      ? `<div class="pix-row"><div>No Pix (${DESCONTO_PIX}% OFF)</div><div>${fmt(totalPorMetodo('pix'))}</div></div>` : '';
+    const vPix = document.getElementById('ckPixValor'), vCartao = document.getElementById('ckCartaoValor');
+    if(vPix) vPix.textContent = order.length ? '· ' + fmt(totalPorMetodo('pix')) : '';
+    if(vCartao) vCartao.textContent = order.length ? '· ' + fmt(totalPorMetodo('cartao')) : '';
+    const minEl = document.getElementById('minimoAviso');
+    const falta = faltaPedidoMinimo();
+    if(minEl){
+      minEl.hidden = !falta;
+      minEl.innerHTML = falta ? `Pedido mínimo de <b>${fmt(PEDIDO_MINIMO)}</b>. Falta <b>${fmt(falta)}</b> em produtos para finalizar.` : '';
+    }
+    ['ckPixBtn', 'ckCartaoBtn'].forEach(id => { const b = document.getElementById(id); if(b) b.disabled = !!falta; });
   }
 
   // Linhas de desconto + dica "falta 1 peça pra ganhar 10%" no carrinho.
@@ -5765,6 +5828,11 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const faltamPL = (PAGUE_LEVE && d.pecas % PAGUE_LEVE.leve) ? PAGUE_LEVE.leve - (d.pecas % PAGUE_LEVE.leve) : 0;
     if(d.proxima && faltam <= 3) html += `<div class="desconto-dica">Falta${faltam > 1 ? 'm' : ''} <b>${faltam} peça${faltam > 1 ? 's' : ''}</b> pra ganhar <b>${d.proxima.pct}% OFF</b> no pedido.</div>`;
     else if(PAGUE_LEVE && faltamPL && faltamPL <= 2) html += `<div class="desconto-dica">Adicione <b>mais ${faltamPL}</b> e a peça mais barata sai <b>grátis</b> (pague ${PAGUE_LEVE.pague} leve ${PAGUE_LEVE.leve}).</div>`;
+    if(FRETE_GRATIS_ACIMA){
+      const faltaFrete = Math.round((FRETE_GRATIS_ACIMA - valorProdutos()) * 100) / 100;
+      if(faltaFrete > 0) html += `<div class="desconto-dica">Falta <b>${fmt(faltaFrete)}</b> pra ganhar <b>frete grátis</b>.</div>`;
+      else if(freteEscolhido !== 'retirar') html += `<div class="desconto-dica">🎉 Você ganhou <b>frete grátis</b>!</div>`;
+    }
     el.innerHTML = html;
   }
 
@@ -5785,6 +5853,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   let TRANSPORTADORAS_DINAMICAS = {};
 
   function getFreteValor(){
+    if(freteGratisAtivo()) return 0;
     if(TRANSPORTADORAS_DINAMICAS[freteEscolhido]) return TRANSPORTADORAS_DINAMICAS[freteEscolhido].preco;
     return STORE_CONFIG.frete[freteEscolhido] ?? 0;
   }
@@ -5794,6 +5863,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const frete = order.length > 0 ? getFreteValor() : 0;
     const total = getTotalPedido();
     renderDescontosCarrinho();
+    renderInfoPagamento();
     document.getElementById('subtotalValue').textContent = fmt(subtotal);
     document.getElementById('freteValue').textContent = frete > 0 ? fmt(frete) : "Grátis";
     document.getElementById('totalValue').textContent = fmt(total);
@@ -5968,9 +6038,10 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
   function updateWhatsBtn(){
     const btn = document.getElementById('whatsBtn');
-    if(order.length === 0){
+    if(order.length === 0 || faltaPedidoMinimo()){
       btn.classList.add('disabled');
       btn.href = "#";
+      if(order.length) agendarSalvarCarrinho();
       return;
     }
     btn.classList.remove('disabled');
@@ -6020,7 +6091,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const freteNomes = { motoboy: "Motoboy", pac: "PAC", sedex: "Sedex" };
     const nomeFrete = TRANSPORTADORAS_DINAMICAS[freteEscolhido]?.nome || freteNomes[freteEscolhido];
     const freteTxt = nomeFrete
-      ? `${nomeFrete} (R$ ${freteValor.toFixed(2).replace(".", ",")})`
+      ? (freteGratisAtivo() ? `${nomeFrete} (frete grátis)` : `${nomeFrete} (R$ ${freteValor.toFixed(2).replace(".", ",")})`)
       : "Retirar no local (grátis)";
     const descontos = calcularDescontos();
     const total = getTotalPedido().toFixed(2).replace(".", ",");
@@ -6029,7 +6100,9 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     if(descontos.gratis) msg += encodeURIComponent(`*Pague ${PAGUE_LEVE.pague} leve ${PAGUE_LEVE.leve}:* − R$ ${descontos.valorGratis.toFixed(2).replace(".", ",")}\n`);
     if(descontos.faixa) msg += encodeURIComponent(`*${descontos.faixa.pct}% OFF (${descontos.faixa.min}+ peças):* − R$ ${descontos.valorFaixa.toFixed(2).replace(".", ",")}\n`);
     msg += `*Entrega:* ${freteTxt}%0A`;
-    msg += `%0A*Total: R$ ${total}*%0A%0AComo fechamos o pagamento?`;
+    msg += `%0A*Total: R$ ${total}*%0A`;
+    if(DESCONTO_PIX) msg += encodeURIComponent(`*No Pix (${DESCONTO_PIX}% OFF): R$ ${totalPorMetodo('pix').toFixed(2).replace(".", ",")}*\n`);
+    msg += `%0AComo fechamos o pagamento?`;
 
     btn.href = `https://wa.me/${STORE_CONFIG.whatsapp}?text=${msg}`;
     agendarSalvarCarrinho();
@@ -6086,7 +6159,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   // Não bloqueia nem atrasa o WhatsApp: se falhar, o cliente nem percebe.
   function registrarPedidoWhats(){
     try{
-      if(!supabaseClient || !order.length || !LOJA_SLUG) return;
+      if(!supabaseClient || !order.length || !LOJA_SLUG || faltaPedidoMinimo()) return;
       const v = id => (document.getElementById(id)?.value || '').trim();
       const freteNomes = { motoboy: 'Motoboy', pac: 'PAC', sedex: 'Sedex', retirar: 'Retirar no local' };
       const nomeFrete = TRANSPORTADORAS_DINAMICAS[freteEscolhido]?.nome || freteNomes[freteEscolhido] || 'Retirar no local';
@@ -6356,6 +6429,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     meio_indisponivel: 'Essa forma de pagamento está indisponível agora.',
     falha_pagamento: 'O Mercado Pago não gerou o pagamento agora. Tente de novo ou feche pelo WhatsApp.',
     carrinho_vazio: 'Seu carrinho está vazio.',
+    pedido_minimo: 'O pedido não atingiu o valor mínimo da loja.',
   };
 
   async function carregarCheckout(){
@@ -6391,6 +6465,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   async function ckPagar(metodo){
     ckMostrarErro('');
     if(!CHECKOUT || !order.length) return;
+    if(faltaPedidoMinimo()) return ckMostrarErro(`Pedido mínimo de ${fmt(PEDIDO_MINIMO)} em produtos.`);
     if(CHECKOUT.demo) return ckDemo(metodo);
     const v = id => (document.getElementById(id)?.value || '').trim();
     const nome = v('clienteNome'), whats = v('clienteWhats'), email = v('clienteEmail').toLowerCase();
@@ -6437,7 +6512,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
   // ---- Modo demonstração (só no catálogo de demonstração) ----
   function ckDemo(metodo){
-    const total = getTotalPedido();
+    const total = totalPorMetodo(metodo);
     ckPedido = { demo: true, pedido_id: 'demo', token: 'demo', numero: 1000 + Math.floor(Math.random() * 9000), total, metodo,
       pix: { copia_cola: '00020126...DEMONSTRACAO...6304ABCD  (código de exemplo, não pague)', qr_base64: null, expira_em: new Date(Date.now() + 30 * 60000).toISOString() } };
     trackEvent('checkout_demo', { metodo });
