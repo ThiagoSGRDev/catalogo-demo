@@ -8100,12 +8100,12 @@
   }
 
   // ---- Carrinhos abandonados ----
-  // Cliente deixou o WhatsApp no carrinho e não enviou o pedido nem pagou há mais de 30 min.
+  // Cliente deixou o WhatsApp no carrinho e não enviou o pedido nem pagou há mais de 15 min.
   let ABANDONADOS_CACHE = [];
   async function carregarAbandonados(){
     const el = document.getElementById('pdLista');
     el.innerHTML = '<div class="field-hint">Carregando...</div>';
-    const limite = new Date(Date.now() - 30 * 60000).toISOString();
+    const limite = new Date(Date.now() - 15 * 60000).toISOString();
     const { data, error } = await supabaseClient.from('carrinhos_abandonados')
       .select('id, cliente_nome, cliente_whats, itens, total, status, contatado_em, atualizado_em')
       .eq('loja_id', ADMIN_LOJA_ID).in('status', ['aberto', 'contatado']).lt('atualizado_em', limite)
@@ -8126,7 +8126,7 @@
   function renderAbandonados(){
     const el = document.getElementById('pdLista');
     if(!ABANDONADOS_CACHE.length){
-      el.innerHTML = '<div class="empty-state">Nenhum carrinho abandonado.<br>Quando um cliente coloca camisas no carrinho, digita o WhatsApp e não finaliza, ele aparece aqui depois de 30 minutos.</div>';
+      el.innerHTML = '<div class="empty-state">Nenhum carrinho abandonado.<br>Quando um cliente coloca camisas no carrinho, digita o WhatsApp e não finaliza, ele aparece aqui depois de 15 minutos.</div>';
       return;
     }
     const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
