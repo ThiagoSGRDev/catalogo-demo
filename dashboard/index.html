@@ -935,6 +935,24 @@
   .pd-acoes{ display:flex; gap:8px; align-items:center; }
   .pd-acoes select{ background:var(--input-bg); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:8px; font-size:13px; }
   .pd-acoes a{ font-size:13px; padding:8px 12px; }
+  .pd-selo.novo{ background:rgba(245,158,11,.12); color:var(--amber); border:1px solid rgba(245,158,11,.4); }
+  .pd-selo.respondido{ background:rgba(59,130,246,.12); color:#60A5FA; border:1px solid rgba(59,130,246,.4); }
+  .pd-origem{ font-size:11px; font-weight:700; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em; }
+  .pd-desc{ font-size:12px; color:var(--green); margin-top:4px; }
+  .pd-obs{ font-size:12px; color:var(--text-dim); margin-top:6px; font-style:italic; }
+  .pd-rastreio{ display:flex; gap:8px; margin-top:10px; align-items:center; flex-wrap:wrap; }
+  .pd-input{ background:var(--input-bg); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:9px 10px; font-size:14px; min-width:0; width:100%; outline:none; }
+  .pd-input:focus{ border-color:var(--btn-bg); }
+  .pd-rastreio .pd-input{ flex:1; text-transform:uppercase; width:auto; }
+  .pd-rastreio button, .pd-rastreio a{ font-size:13px; padding:8px 12px; white-space:nowrap; }
+  .vm-box{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:16px; }
+  .vm-box h3{ margin:0 0 12px; font-size:16px; }
+  .vm-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .vm-grid small, .vm-item small{ display:block; font-size:11px; color:var(--text-dim); margin-bottom:4px; }
+  .vm-item{ display:grid; grid-template-columns:70px 60px 1fr 30px; gap:6px; align-items:end; margin-bottom:12px; padding-bottom:12px; border-bottom:1px dashed var(--line); }
+  .vm-item > div:first-child{ grid-column:1 / -1; }
+  .vm-item button{ background:none; border:none; color:var(--text-faint); font-size:20px; cursor:pointer; padding:6px 0; }
+  .vm-total{ font-size:17px; font-weight:800; margin:10px 0; }
   /* ---- FORM OVERLAYS & MODAIS ---- */
   #formOverlay, #heroOverlay, #teamsOverlay, #ligasOverlay, #importOverlay, #apparenceOverlay, #precosOverlay, #lojaOverlay, #fotoStudioOverlay, #catalogoMestreOverlay, #assinaturaOverlay, #teamPickerOverlay, #loteOverlay, #otimizarOverlay, #atividadeOverlay, #personalizarOverlay, #checkoutOverlay, #pedidosOverlay{
     position: fixed; inset: 0; background: var(--bg); z-index: 150; overflow-y: auto;
@@ -1916,10 +1934,35 @@
       <div><small>7 dias</small><strong id="pdSemana">—</strong></div>
       <div><small>30 dias</small><strong id="pdMes">—</strong></div>
     </div>
+    <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom:14px;" onclick="abrirVendaManual()">+ Registrar venda manual</button>
+    <div class="vm-box" id="vmBox" hidden>
+      <h3>Nova venda manual</h3>
+      <div class="field-hint" style="margin-bottom:12px;">Venda feita fora do catálogo (Instagram, loja física, indicação). Entra como "Vendido" e soma no faturamento.</div>
+      <div class="vm-grid">
+        <div><small>Cliente</small><input class="pd-input" id="vmNome" maxlength="80" placeholder="Nome"></div>
+        <div><small>WhatsApp</small><input class="pd-input" id="vmWhats" maxlength="30" inputmode="tel" placeholder="(11) 99999-9999"></div>
+      </div>
+      <div id="vmItens"></div>
+      <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom:12px;" onclick="vmAddItem()">+ Adicionar item</button>
+      <div class="vm-grid">
+        <div><small>Desconto (R$)</small><input class="pd-input" id="vmDesconto" type="number" min="0" step="0.01" placeholder="0,00" oninput="vmTotal()"></div>
+        <div><small>Frete (R$)</small><input class="pd-input" id="vmFrete" type="number" min="0" step="0.01" placeholder="0,00" oninput="vmTotal()"></div>
+        <div><small>Pagamento</small><select class="pd-input" id="vmMetodo"><option value="pix">PIX</option><option value="dinheiro">Dinheiro</option><option value="cartao">Cartão</option><option value="outro">Outro</option></select></div>
+        <div><small>Data</small><input class="pd-input" id="vmData" type="date"></div>
+      </div>
+      <div><small style="display:block; font-size:11px; color:var(--text-dim); margin-bottom:4px;">Observação (só você vê)</small><input class="pd-input" id="vmObs" maxlength="500" placeholder="Opcional"></div>
+      <div class="vm-total" id="vmTotal">Total: R$ 0,00</div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-secondary" style="flex:1;" onclick="fecharVendaManual()">Cancelar</button>
+        <button type="button" class="btn btn-primary" style="flex:1;" id="vmSalvar" onclick="salvarVendaManual()">Salvar venda</button>
+      </div>
+    </div>
     <div class="pd-filtros" id="pdFiltros">
-      <button type="button" class="ativo" data-f="pago" onclick="filtrarPedidos('pago')">Pagos</button>
-      <button type="button" data-f="aguardando_pagamento" onclick="filtrarPedidos('aguardando_pagamento')">Aguardando</button>
-      <button type="button" data-f="todos" onclick="filtrarPedidos('todos')">Todos</button>
+      <button type="button" class="ativo" data-f="todos" onclick="filtrarPedidos('todos')">Todos</button>
+      <button type="button" data-f="abertos" onclick="filtrarPedidos('abertos')">Novos</button>
+      <button type="button" data-f="vendidos" onclick="filtrarPedidos('vendidos')">Vendidos</button>
+      <button type="button" data-f="aguardando_pagamento" onclick="filtrarPedidos('aguardando_pagamento')">Aguardando Pix</button>
+      <button type="button" data-f="perdidos" onclick="filtrarPedidos('perdidos')">Perdidos</button>
     </div>
     <div id="pdLista"><div class="field-hint">Carregando...</div></div>
   </div>
@@ -7923,7 +7966,13 @@
   // ============================================================
   let CK_CONFIG = null;
   let PEDIDOS_CACHE = [];
-  let PEDIDOS_FILTRO = 'pago';
+  let PEDIDOS_FILTRO = 'todos';
+  const PD_GRUPOS = {
+    abertos: ['novo', 'respondido'],
+    vendidos: ['pago', 'vendido'],
+    aguardando_pagamento: ['aguardando_pagamento'],
+    perdidos: ['perdido', 'expirado', 'cancelado', 'estornado'],
+  };
 
   async function abrirCheckoutConfig(){
     document.getElementById('checkoutOverlay').classList.remove('hidden');
@@ -8018,21 +8067,29 @@
     window.scrollTo(0,0);
     document.getElementById('pdLista').innerHTML = '<div class="field-hint">Carregando...</div>';
     const { data, error } = await supabaseClient.from('pedidos')
-      .select('id, numero, status, status_entrega, metodo, cliente_nome, cliente_whats, cliente_email, endereco, itens, subtotal, frete_nome, frete_valor, total, taxa_plataforma, pago_em, criado_em')
-      .eq('loja_id', ADMIN_LOJA_ID).order('criado_em', { ascending: false }).limit(200);
+      .select('id, numero, origem, status, status_entrega, metodo, cliente_nome, cliente_whats, cliente_email, endereco, itens, subtotal, desconto, frete_nome, frete_valor, total, taxa_plataforma, codigo_rastreio, observacao, pago_em, criado_em')
+      .eq('loja_id', ADMIN_LOJA_ID).order('criado_em', { ascending: false }).limit(300);
     if(error){ document.getElementById('pdLista').innerHTML = '<div class="field-hint">Não consegui carregar os pedidos.</div>'; return; }
     PEDIDOS_CACHE = data || [];
+    atualizarResumoPedidos();
+    renderPedidos();
+  }
+  function fecharPedidos(){ document.getElementById('pedidosOverlay').classList.add('hidden'); }
+
+  // Faturamento = pago no checkout + marcado como vendido (WhatsApp e manual).
+  function atualizarResumoPedidos(){
     const agora = Date.now(), dia = 86400000;
     const ini = new Date(); ini.setHours(0,0,0,0);
-    const pagos = PEDIDOS_CACHE.filter(p => p.status === 'pago');
-    const soma = (desde) => pagos.filter(p => new Date(p.pago_em || p.criado_em).getTime() >= desde).reduce((t, p) => t + Number(p.total), 0);
+    const vendidos = PEDIDOS_CACHE.filter(p => PD_GRUPOS.vendidos.includes(p.status));
+    const soma = (desde) => vendidos.filter(p => new Date(p.pago_em || p.criado_em).getTime() >= desde).reduce((t, p) => t + Number(p.total), 0);
     const brl = v => 'R$ ' + v.toFixed(2).replace('.', ',');
     document.getElementById('pdHoje').textContent = brl(soma(ini.getTime()));
     document.getElementById('pdSemana').textContent = brl(soma(agora - 7 * dia));
     document.getElementById('pdMes').textContent = brl(soma(agora - 30 * dia));
-    renderPedidos();
+    const abertos = PEDIDOS_CACHE.filter(p => PD_GRUPOS.abertos.includes(p.status)).length;
+    const bt = document.querySelector('#pdFiltros [data-f="abertos"]');
+    if(bt) bt.textContent = abertos ? `Novos (${abertos})` : 'Novos';
   }
-  function fecharPedidos(){ document.getElementById('pedidosOverlay').classList.add('hidden'); }
 
   function filtrarPedidos(f){
     PEDIDOS_FILTRO = f;
@@ -8040,42 +8097,151 @@
     renderPedidos();
   }
 
+  function pdZapNumero(w){
+    const zap = String(w || '').replace(/\D/g, '');
+    return zap ? (zap.length <= 11 ? '55' + zap : zap) : '';
+  }
+  function pdMsgZap(p){
+    const nome = String(p.cliente_nome || '').split(' ')[0];
+    if(p.codigo_rastreio) return `Olá, ${nome}! Seu pedido #${p.numero} foi enviado 📦\nCódigo de rastreio: ${p.codigo_rastreio}\nAcompanhe em: https://rastreamento.correios.com.br/app/index.php`;
+    if(p.origem === 'whatsapp' && p.status === 'novo') return `Olá, ${nome}! Recebi seu pedido #${p.numero} pelo catálogo. Vou te passar o pagamento.`;
+    return `Olá, ${nome}! Sobre o seu pedido #${p.numero}.`;
+  }
+
   function renderPedidos(){
     const el = document.getElementById('pdLista');
-    const lista = PEDIDOS_FILTRO === 'todos' ? PEDIDOS_CACHE : PEDIDOS_CACHE.filter(p => p.status === PEDIDOS_FILTRO);
+    const grupo = PD_GRUPOS[PEDIDOS_FILTRO];
+    const lista = grupo ? PEDIDOS_CACHE.filter(p => grupo.includes(p.status)) : PEDIDOS_CACHE;
     if(!lista.length){
-      el.innerHTML = '<div class="empty-state">' + (PEDIDOS_CACHE.length ? 'Nenhum pedido neste filtro.' : 'Nenhum pedido ainda.<br>Quando um cliente pagar pelo checkout próprio, ele aparece aqui.') + '</div>';
+      el.innerHTML = '<div class="empty-state">' + (PEDIDOS_CACHE.length ? 'Nenhum pedido neste filtro.' : 'Nenhum pedido ainda.<br>Quando um cliente enviar o pedido pelo WhatsApp ou pagar no catálogo, ele aparece aqui.') + '</div>';
       return;
     }
     const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
-    const selo = { pago: ['pago','Pago na loja'], aguardando_pagamento: ['aguardando','Aguardando pagamento'],
+    const selo = { pago: ['pago','Pago na loja'], vendido: ['pago','Vendido'], aguardando_pagamento: ['aguardando','Aguardando pagamento'],
+      novo: ['novo','Novo'], respondido: ['respondido','Respondido'], perdido: ['outro','Perdido'],
       expirado: ['outro','Não pago'], cancelado: ['outro','Cancelado'], estornado: ['outro','Estornado'] };
-    const entregas = [['novo','Novo'],['separando','Separando'],['enviado','Enviado'],['entregue','Entregue'],['cancelado','Cancelado']];
+    const origens = { whatsapp: 'WhatsApp', manual: 'Venda manual', checkout: 'Checkout' };
+    const metodos = { pix: 'PIX', cartao: 'Cartão', dinheiro: 'Dinheiro', outro: 'Outro', whatsapp: '' };
+    const entregas = [['novo','Entrega: a separar'],['separando','Separando'],['enviado','Enviado'],['entregue','Entregue'],['cancelado','Cancelado']];
+    const statusVenda = [['novo','Novo'],['respondido','Respondido'],['vendido','Vendido'],['perdido','Perdido']];
     el.innerHTML = lista.map(p => {
       const [cls, rot] = selo[p.status] || ['outro', p.status];
       const data = new Date(p.criado_em).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-      const itens = (p.itens || []).map(i => `${escHtml(i.qty)}x ${escHtml(i.titulo)} · ${escHtml(i.tamanho)}${(i.nome || i.numero) ? ` · ${escHtml(i.nome || '')} ${escHtml(i.numero || '')}` : ''}`).join('<br>');
+      const itens = (p.itens || []).map(i => `${escHtml(i.qty)}x ${escHtml(i.titulo)}${i.tamanho ? ' · ' + escHtml(i.tamanho) : ''}${(i.nome || i.numero) ? ` · ${escHtml(i.nome || '')} ${escHtml(i.numero || '')}` : ''}${Number(i.preco) ? ' · ' + brl(i.preco) : ''}`).join('<br>');
       const e = p.endereco || {};
-      const end = e.rua ? `${escHtml(e.rua)}, ${escHtml(e.numero)}${e.complemento ? ' - ' + escHtml(e.complemento) : ''} · ${escHtml(e.bairro || '')} · ${escHtml(e.cidade || '')}/${escHtml(e.uf || '')} · CEP ${escHtml(e.cep || '')}` : 'Retirar no local';
-      const zap = String(p.cliente_whats || '').replace(/\D/g, '');
-      const zapNum = zap ? (zap.length <= 11 ? '55' + zap : zap) : '';
-      const zapMsg = encodeURIComponent(`Olá, ${p.cliente_nome}! Recebemos seu pedido #${p.numero}.`);
-      const sel = p.status === 'pago' ? `<select onchange="mudarEntregaPedido('${p.id}', this.value)">${entregas.map(([v, r]) => `<option value="${v}" ${p.status_entrega === v ? 'selected' : ''}>${r}</option>`).join('')}</select>` : '';
+      const end = e.rua ? [`${e.rua}, ${e.numero || ''}${e.complemento ? ' - ' + e.complemento : ''}`, e.bairro, [e.cidade, e.uf].filter(Boolean).join('/'), e.cep ? 'CEP ' + e.cep : ''].filter(Boolean).map(escHtml).join(' · ') : (p.origem === 'manual' ? '' : 'Retirar no local');
+      const zapNum = pdZapNumero(p.cliente_whats);
+      const zapLink = zapNum ? `<a class="btn btn-secondary" target="_blank" rel="noopener" onclick="pdAoChamarZap('${p.id}')" href="https://wa.me/${zapNum}?text=${encodeURIComponent(pdMsgZap(p))}">WhatsApp</a>` : '';
+      const controlaStatus = p.origem === 'whatsapp' || p.origem === 'manual';
+      const vendido = PD_GRUPOS.vendidos.includes(p.status);
+      const selStatus = controlaStatus ? `<select onchange="mudarStatusPedido('${p.id}', this.value)">${statusVenda.map(([v, r]) => `<option value="${v}" ${p.status === v ? 'selected' : ''}>${r}</option>`).join('')}</select>` : '';
+      const selEntrega = vendido ? `<select onchange="mudarEntregaPedido('${p.id}', this.value)">${entregas.map(([v, r]) => `<option value="${v}" ${p.status_entrega === v ? 'selected' : ''}>${r}</option>`).join('')}</select>` : '';
+      const rastreio = vendido ? `<div class="pd-rastreio">
+          <input class="pd-input" id="rast_${p.id}" maxlength="40" placeholder="Código de rastreio" value="${escHtml(p.codigo_rastreio || '')}">
+          <button type="button" class="btn btn-secondary" onclick="salvarRastreio('${p.id}')">Salvar</button>
+        </div>` : '';
+      const metodo = metodos[p.metodo] ? ' · ' + metodos[p.metodo] : '';
       return `<div class="pd-card">
-        <div class="pd-topo"><div><span class="pd-num">#${escHtml(p.numero)}</span> <span class="pd-data">${escHtml(data)} · ${p.metodo === 'pix' ? 'PIX' : 'Cartão'}</span></div><span class="pd-selo ${cls}">${escHtml(rot)}</span></div>
-        <div class="pd-cliente">${escHtml(p.cliente_nome)}${p.cliente_email ? ' · <span class="pd-data">' + escHtml(p.cliente_email) + '</span>' : ''}</div>
+        <div class="pd-topo"><div><span class="pd-num">#${escHtml(p.numero)}</span> <span class="pd-data">${escHtml(data)}${metodo}</span><div class="pd-origem">${escHtml(origens[p.origem] || p.origem)}</div></div><span class="pd-selo ${cls}">${escHtml(rot)}</span></div>
+        <div class="pd-cliente">${escHtml(p.cliente_nome)}${p.cliente_whats ? ' · <span class="pd-data">' + escHtml(p.cliente_whats) + '</span>' : ''}${p.cliente_email ? ' · <span class="pd-data">' + escHtml(p.cliente_email) + '</span>' : ''}</div>
         <div class="pd-itens">${itens}</div>
-        <div class="pd-end">${escHtml(p.frete_nome || '')}${Number(p.frete_valor) ? ' (' + brl(p.frete_valor) + ')' : ''} · ${end}${e.obs ? '<br>Obs.: ' + escHtml(e.obs) : ''}</div>
-        <div class="pd-rodape"><div class="pd-total">${brl(p.total)}</div><div class="pd-acoes">${sel}${zapNum ? `<a class="btn btn-secondary" target="_blank" rel="noopener" href="https://wa.me/${zapNum}?text=${zapMsg}">WhatsApp</a>` : ''}</div></div>
+        ${Number(p.desconto) > 0 ? `<div class="pd-desc">Desconto: − ${brl(p.desconto)}</div>` : ''}
+        ${(end || p.frete_nome) ? `<div class="pd-end">${escHtml(p.frete_nome || '')}${Number(p.frete_valor) ? ' (' + brl(p.frete_valor) + ')' : ''}${end ? ' · ' + end : ''}${e.obs ? '<br>Obs.: ' + escHtml(e.obs) : ''}</div>` : ''}
+        ${p.observacao ? `<div class="pd-obs">${escHtml(p.observacao)}</div>` : ''}
+        ${rastreio}
+        <div class="pd-rodape"><div class="pd-total">${brl(p.total)}</div><div class="pd-acoes">${selStatus}${selEntrega}${zapLink}</div></div>
       </div>`;
     }).join('');
   }
 
-  async function mudarEntregaPedido(id, valor){
-    const { error } = await supabaseClient.from('pedidos').update({ status_entrega: valor }).eq('id', id);
-    if(error){ showToast('Não consegui atualizar o pedido.', 'error'); return; }
-    const p = PEDIDOS_CACHE.find(x => x.id === id); if(p) p.status_entrega = valor;
-    showToast('Pedido atualizado.');
+  async function atualizarPedido(id, campos, msg){
+    const { error } = await supabaseClient.from('pedidos').update(campos).eq('id', id);
+    if(error){ showToast('Não consegui atualizar o pedido.', 'error'); return false; }
+    const p = PEDIDOS_CACHE.find(x => x.id === id);
+    if(p){ Object.assign(p, campos); if(campos.status === 'vendido' && !p.pago_em) p.pago_em = new Date().toISOString(); }
+    if(msg) showToast(msg);
+    return true;
+  }
+  async function mudarEntregaPedido(id, valor){ await atualizarPedido(id, { status_entrega: valor }, 'Pedido atualizado.'); }
+  async function mudarStatusPedido(id, valor){
+    if(await atualizarPedido(id, { status: valor }, valor === 'vendido' ? 'Venda registrada! Já soma no faturamento.' : 'Pedido atualizado.')){
+      atualizarResumoPedidos(); renderPedidos();
+    }
+  }
+  // Abriu o WhatsApp de um pedido novo: passa pra "Respondido" sozinho.
+  function pdAoChamarZap(id){
+    const p = PEDIDOS_CACHE.find(x => x.id === id);
+    if(p && p.status === 'novo' && (p.origem === 'whatsapp' || p.origem === 'manual')){
+      atualizarPedido(id, { status: 'respondido' }).then(ok => { if(ok){ atualizarResumoPedidos(); renderPedidos(); } });
+    }
+  }
+  async function salvarRastreio(id){
+    const cod = document.getElementById('rast_' + id).value.trim().toUpperCase().replace(/\s+/g, '');
+    const p = PEDIDOS_CACHE.find(x => x.id === id);
+    const campos = { codigo_rastreio: cod || null };
+    if(cod && p && (p.status_entrega === 'novo' || p.status_entrega === 'separando')) campos.status_entrega = 'enviado';
+    if(await atualizarPedido(id, campos, cod ? 'Rastreio salvo. Toque em WhatsApp pra mandar ao cliente.' : 'Rastreio removido.')) renderPedidos();
+  }
+
+  // ---- Venda manual ----
+  function abrirVendaManual(){
+    const box = document.getElementById('vmBox');
+    box.hidden = false;
+    ['vmNome','vmWhats','vmDesconto','vmFrete','vmObs'].forEach(i => document.getElementById(i).value = '');
+    const hoje = new Date(); hoje.setMinutes(hoje.getMinutes() - hoje.getTimezoneOffset());
+    document.getElementById('vmData').value = hoje.toISOString().slice(0, 10);
+    document.getElementById('vmItens').innerHTML = '';
+    vmAddItem();
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function fecharVendaManual(){ document.getElementById('vmBox').hidden = true; }
+  function vmAddItem(){
+    const div = document.createElement('div');
+    div.className = 'vm-item';
+    div.innerHTML = `<div><small>Produto</small><input class="pd-input vm-titulo" maxlength="120" placeholder="Ex.: Camisa Brasil Home"></div>
+      <div><small>Tam.</small><input class="pd-input vm-tam" maxlength="10" placeholder="G"></div>
+      <div><small>Qtd</small><input class="pd-input vm-qtd" type="number" min="1" max="50" value="1" oninput="vmTotal()"></div>
+      <div><small>Preço un.</small><input class="pd-input vm-preco" type="number" min="0" step="0.01" placeholder="169.90" oninput="vmTotal()"></div>
+      <button type="button" aria-label="Remover" onclick="this.parentElement.remove(); vmTotal();">×</button>`;
+    document.getElementById('vmItens').appendChild(div);
+    vmTotal();
+  }
+  function vmLerItens(){
+    return [...document.querySelectorAll('#vmItens .vm-item')].map(r => ({
+      titulo: r.querySelector('.vm-titulo').value.trim(),
+      tamanho: r.querySelector('.vm-tam').value.trim().toUpperCase(),
+      qty: Math.max(1, Math.min(50, parseInt(r.querySelector('.vm-qtd').value, 10) || 1)),
+      preco: Math.max(0, parseFloat(r.querySelector('.vm-preco').value) || 0),
+    })).filter(i => i.titulo && i.preco > 0);
+  }
+  function vmTotal(){
+    const sub = vmLerItens().reduce((t, i) => t + i.preco * i.qty, 0);
+    const desc = Math.min(sub, Math.max(0, parseFloat(document.getElementById('vmDesconto').value) || 0));
+    const frete = Math.max(0, parseFloat(document.getElementById('vmFrete').value) || 0);
+    document.getElementById('vmTotal').textContent = 'Total: R$ ' + (sub - desc + frete).toFixed(2).replace('.', ',');
+  }
+  async function salvarVendaManual(){
+    const itens = vmLerItens();
+    if(!itens.length){ showToast('Coloque pelo menos 1 item com nome e preço.', 'error'); return; }
+    const btn = document.getElementById('vmSalvar');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+    const dataTxt = document.getElementById('vmData').value;
+    const hojeTxt = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    const { error } = await supabaseClient.rpc('registrar_venda_manual', {
+      p_nome: document.getElementById('vmNome').value,
+      p_whats: document.getElementById('vmWhats').value,
+      p_itens: itens,
+      p_desconto: parseFloat(document.getElementById('vmDesconto').value) || 0,
+      p_frete_valor: parseFloat(document.getElementById('vmFrete').value) || 0,
+      p_metodo: document.getElementById('vmMetodo').value,
+      p_observacao: document.getElementById('vmObs').value,
+      p_data: (dataTxt && dataTxt !== hojeTxt) ? new Date(dataTxt + 'T12:00:00').toISOString() : null,
+    });
+    btn.disabled = false; btn.textContent = 'Salvar venda';
+    if(error){ showToast('Não consegui salvar a venda.', 'error'); return; }
+    fecharVendaManual();
+    showToast('Venda registrada!');
+    abrirPedidos();
   }
 
   async function openAssinaturaOverlay(){
