@@ -18,6 +18,30 @@ const dinheiro = (n: number) => Math.round(n * 100) / 100;
 // Camisa que já vem com nome e número: preço do tipo + este valor (igual ao catalogo-template.html).
 const ACRESCIMO_JA_PERSONALIZADA = 50;
 
+// Descontos por quantidade (mesma conta do catalogo-template.html, calcularDescontos):
+// 1º "Pague X leve Y" (a cada Y peças, as mais baratas saem grátis), depois a faixa de % sobre o resto.
+function calcularDescontos(itens: any[], cfg: any) {
+  const unidades: number[] = [];
+  itens.forEach((i) => { for (let k = 0; k < Math.min(i.qty, 50); k++) unidades.push(Number(i.preco)); });
+  const pecas = unidades.length;
+  const subtotal = unidades.reduce((s, v) => s + v, 0);
+  const pl = cfg?.pague_leve;
+  const pague = parseInt(pl?.pague, 10), leve = parseInt(pl?.leve, 10);
+  let gratis = 0, valorGratis = 0;
+  if (pague >= 1 && leve > pague && pecas >= leve) {
+    gratis = Math.floor(pecas / leve) * (leve - pague);
+    valorGratis = dinheiro(unidades.slice().sort((a, b) => a - b).slice(0, gratis).reduce((s, v) => s + v, 0));
+  }
+  const faixas = (Array.isArray(cfg?.desconto_quantidade) ? cfg.desconto_quantidade : [])
+    .map((f: any) => ({ min: parseInt(f.min, 10), pct: Number(f.pct) }))
+    .filter((f: any) => f.min >= 2 && f.pct > 0 && f.pct < 100).sort((a: any, b: any) => a.min - b.min);
+  let faixa: any = null;
+  faixas.forEach((f: any) => { if (pecas >= f.min) faixa = f; });
+  const valorFaixa = faixa ? dinheiro((subtotal - valorGratis) * faixa.pct / 100) : 0;
+  return { pecas, gratis, valorGratis, faixa, valorFaixa, total: dinheiro(valorGratis + valorFaixa),
+    pague_leve: gratis ? { pague, leve } : null };
+}
+
 function expiracaoPix(minutos: number) {
   // Formato que o Mercado Pago aceita, no fuso de Brasília.
   const d = new Date(Date.now() + minutos * 60000 - 3 * 3600000);
@@ -67,7 +91,7 @@ async function criar(body: any) {
     db.from('loja_precos_customizados').select('product_id, preco').eq('loja_id', loja.id).in('product_id', ids),
     db.from('loja_precos_por_tipo').select('tipo, preco').eq('loja_id', loja.id),
     db.from('loja_produtos_override').select('product_id, titulo, subtitulo, tamanhos').eq('loja_id', loja.id).in('product_id', ids),
-    db.from('store_settings').select('preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, usa_estoque').eq('loja_id', loja.id).maybeSingle(),
+    db.from('store_settings').select('preco_personalizacao, desconto_quantidade, pague_leve, preco_frete, preco_frete_outros_estados, preco_frete_sedex, usa_estoque').eq('loja_id', loja.id).maybeSingle(),
   ]);
   const mapaProd = new Map((prods || []).map((p: any) => [p.id, p]));
   const oculto = new Set((ocultos || []).map((o: any) => o.product_id));
@@ -116,6 +140,8 @@ async function criar(body: any) {
     });
   }
   const subtotal = dinheiro(itens.reduce((s, i) => s + i.subtotal, 0));
+  const descontos = calcularDescontos(itens, cfg);
+  const desconto = Math.min(descontos.total, subtotal);
 
   // ---- Frete ----
   const freteId = txt(body?.frete?.id, 60) || 'retirar';
@@ -151,13 +177,14 @@ async function criar(body: any) {
     }
   }
   freteValor = dinheiro(freteValor);
-  const total = dinheiro(subtotal + freteValor);
+  const total = dinheiro(subtotal - desconto + freteValor);
   const taxa = calcularTaxa(total, ck);
 
   // ---- Pedido ----
   const { data: ped, error: errPed } = await db.from('pedidos').insert({
     loja_id: loja.id, metodo, cliente_nome: cliente.nome, cliente_whats: cliente.whats, cliente_email: cliente.email,
     endereco: freteId === 'retirar' ? { obs: endereco.obs } : endereco, itens, subtotal,
+    desconto, desconto_detalhe: desconto > 0 ? descontos : null,
     frete_nome: freteNome, frete_valor: freteValor, total, taxa_plataforma: taxa,
   }).select('id, numero, token_publico').single();
   if (errPed || !ped) { console.error('Erro ao criar pedido', errPed); return json({ erro: 'falha_pedido' }, 500); }

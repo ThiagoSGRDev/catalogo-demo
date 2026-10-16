@@ -1632,6 +1632,26 @@
         <div class="field-hint">Opcional. Nem todo CEP do seu estado é alcance de motoboy — deixe em branco pra usar a regra simples (mesmo estado = motoboy).</div>
       </div>
     </div>
+    <div class="form-section">
+      <h3>Descontos por quantidade</h3>
+      <div class="field-hint" style="margin-bottom:12px;">
+        Vale pra loja toda e aparece na página da camisa e no carrinho ("falta 1 peça pra ganhar 10%").
+        O desconto é calculado sozinho no carrinho, no WhatsApp e no Pix/cartão.
+      </div>
+      <div class="toggle-row" style="margin-bottom:10px;">
+        <div><div class="label">Pague X, leve Y</div>
+          <div class="field-hint">A cada grupo de peças, a mais barata sai grátis.</div></div>
+        <label class="switch"><input type="checkbox" id="pagueLeveAtivo" onchange="atualizarResumoDescontos()"><span class="track"></span></label>
+      </div>
+      <div class="preco-par" id="pagueLeveCampos" style="margin-bottom:16px;">
+        <div><small>Pague</small><input type="number" id="pagueLevePague" min="1" step="1" value="2" oninput="atualizarResumoDescontos()"></div>
+        <div><small>Leve</small><input type="number" id="pagueLeveLeve" min="2" step="1" value="3" oninput="atualizarResumoDescontos()"></div>
+      </div>
+      <div class="label" style="margin-bottom:6px;">Atacado (% no pedido todo)</div>
+      <div id="faixasDesconto"></div>
+      <div class="preco-off" id="resumoDescontos" style="margin-top:8px;"></div>
+    </div>
+
     <div class="form-section" id="precosPorTipoSection" style="display:none;">
       <h3>Preço padrão por tipo (catálogo mestre)</h3>
       <div class="field-hint" style="margin-bottom:10px;">
@@ -7740,9 +7760,10 @@
     document.getElementById('precosOverlay').classList.remove('hidden');
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('preco_personalizacao, preco_frete, cep_motoboy_inicio, cep_motoboy_fim')
+      .select('preco_personalizacao, preco_frete, cep_motoboy_inicio, cep_motoboy_fim, desconto_quantidade, pague_leve')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
+    preencherDescontos(data || {});
     if(!error && data){
       document.getElementById('precoPersonalizacaoInput').value = data.preco_personalizacao ?? 60;
       document.getElementById('precoFreteInput').value = data.preco_frete ?? 15;
@@ -7780,6 +7801,42 @@
     }
     window.scrollTo(0,0);
   }
+  // ---- Descontos por quantidade (store_settings.desconto_quantidade / pague_leve) ----
+  function preencherDescontos(d){
+    const pl = d.pague_leve;
+    document.getElementById('pagueLeveAtivo').checked = !!pl;
+    document.getElementById('pagueLevePague').value = pl ? pl.pague : 2;
+    document.getElementById('pagueLeveLeve').value = pl ? pl.leve : 3;
+    const faixas = Array.isArray(d.desconto_quantidade) ? d.desconto_quantidade : [];
+    const linhas = [0, 1, 2].map(i => faixas[i] || {});
+    document.getElementById('faixasDesconto').innerHTML = linhas.map((f, i) => `
+      <div class="preco-par" style="margin-bottom:8px;">
+        <div><small>A partir de (peças)</small><input type="number" min="2" step="1" id="faixaMin${i}" placeholder="${[4, 8, 12][i]}" value="${f.min || ''}" oninput="atualizarResumoDescontos()"></div>
+        <div><small>Desconto (%)</small><input type="number" min="1" max="90" step="0.5" id="faixaPct${i}" placeholder="${[10, 15, 20][i]}" value="${f.pct || ''}" oninput="atualizarResumoDescontos()"></div>
+      </div>`).join('');
+    atualizarResumoDescontos();
+  }
+  function lerDescontos(){
+    const faixas = [0, 1, 2].map(i => ({
+      min: parseInt(document.getElementById('faixaMin' + i).value, 10),
+      pct: parseFloat(document.getElementById('faixaPct' + i).value),
+    })).filter(f => f.min >= 2 && f.pct > 0 && f.pct < 100).sort((a, b) => a.min - b.min);
+    const unicas = faixas.filter((f, i) => i === 0 || f.min !== faixas[i - 1].min);
+    const pague = parseInt(document.getElementById('pagueLevePague').value, 10);
+    const leve = parseInt(document.getElementById('pagueLeveLeve').value, 10);
+    const ativo = document.getElementById('pagueLeveAtivo').checked;
+    return { faixas: unicas, pagueLeve: (ativo && pague >= 1 && leve > pague) ? { pague, leve } : null, pagueLeveInvalido: ativo && !(pague >= 1 && leve > pague) };
+  }
+  function atualizarResumoDescontos(){
+    document.getElementById('pagueLeveCampos').style.opacity = document.getElementById('pagueLeveAtivo').checked ? '1' : '.45';
+    const d = lerDescontos(), partes = [];
+    if(d.pagueLeve) partes.push(`Pague ${d.pagueLeve.pague} leve ${d.pagueLeve.leve}`);
+    d.faixas.forEach(f => partes.push(`${f.min}+ peças: ${f.pct}% OFF`));
+    const el = document.getElementById('resumoDescontos');
+    el.textContent = d.pagueLeveInvalido ? '"Leve" precisa ser maior que "Pague".' : (partes.length ? 'Na loja: ' + partes.join(' · ') : 'Nenhum desconto por quantidade ativo.');
+    el.style.color = d.pagueLeveInvalido ? 'var(--amber)' : (partes.length ? 'var(--green)' : 'var(--text-dim)');
+  }
+
   // Mostra "-35% de desconto" (ou o erro) embaixo do par Preço / De.
   function textoOff(preco, de){
     if(!de) return '';
@@ -8181,12 +8238,17 @@
       return;
     }
 
+    const descontos = lerDescontos();
+    if(descontos.pagueLeveInvalido){ showToast('No "Pague X leve Y", o "Leve" precisa ser maior que o "Pague".', 'error'); return; }
+
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>';
 
     const { error } = await supabaseClient
       .from('store_settings')
       .update({
+        desconto_quantidade: descontos.faixas,
+        pague_leve: descontos.pagueLeve,
         preco_personalizacao: precoPersonalizacao,
         preco_frete: precoFrete,
         cep_motoboy_inicio: cepInicio || null,

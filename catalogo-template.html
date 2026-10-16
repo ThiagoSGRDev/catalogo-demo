@@ -1587,6 +1587,15 @@
   .item-remove-btn:active{color:var(--gold-text);}
   .subtotal-row{display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-family:var(--font-mono); font-size:12.5px; color:rgba(var(--muted-rgb),0.55); text-transform:uppercase; letter-spacing:.03em;}
   .subtotal-row .val{color:rgba(var(--muted-rgb),0.8); font-weight:700;}
+  /* Descontos por quantidade no carrinho */
+  .desconto-row{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px;
+    font-family:var(--font-mono); font-size:12.5px; color:#16A34A; font-weight:700;}
+  .desconto-dica{margin-top:10px; padding:9px 12px; border-radius:10px; border:1px dashed #16A34A;
+    font-size:12.5px; color:rgba(var(--muted-rgb),0.85); line-height:1.4;}
+  .desconto-dica b{color:#16A34A;}
+  .promo-qtd-aviso{margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;}
+  .promo-qtd-aviso span{font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:.02em;
+    padding:5px 10px; border-radius:999px; background:rgba(22,163,74,.12); color:#16A34A; border:1px solid rgba(22,163,74,.35);}
   .total-row{display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:14px; border-top:2px solid var(--gold);}
   .total-label{font-family:'Anton', sans-serif; font-size:15px; text-transform:uppercase; color:rgba(var(--muted-rgb),0.75);}
   .total-value{
@@ -2176,6 +2185,7 @@
           <div>Subtotal</div>
           <div class="val" id="subtotalValue">R$ 0,00</div>
         </div>
+        <div id="descontosCarrinho"></div>
         <div class="subtotal-row">
           <div>Frete</div>
           <div class="val" id="freteValue">R$ 15,00</div>
@@ -2219,7 +2229,7 @@
         <div class="ck-erro" id="ckErro"></div>
         <div class="ck-divisor">ou combine pelo WhatsApp</div>
       </div>
-      <a href="#" id="whatsBtn" class="whats-btn disabled" target="_blank" rel="noopener" onclick="trackEvent('click_whatsapp', { context: 'fechar_pedido', items_count: order.length, shipping_method: freteEscolhido, total_price: getSubtotal() + getFreteValor() })">
+      <a href="#" id="whatsBtn" class="whats-btn disabled" target="_blank" rel="noopener" onclick="trackEvent('click_whatsapp', { context: 'fechar_pedido', items_count: order.length, shipping_method: freteEscolhido, total_price: getTotalPedido() })">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.07L2 22l5.07-1.32A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.1-.43-4.4-1.18l-.32-.18-3.1.8.83-3.02-.2-.32A7.94 7.94 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8zm4.4-5.9c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.55.12-.16.24-.63.78-.77.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.04.14-1.15-.06-.1-.22-.16-.46-.28z"/></svg>
         Enviar pedido pelo WhatsApp
       </a>
@@ -2454,6 +2464,7 @@
     <div class="product-subtitle" id="productSubtitleLg"></div>
     <div class="product-price-de" id="productPriceDe" hidden></div>
     <div class="product-price-lg" id="productPriceLg"></div>
+    <div class="promo-qtd-aviso" id="promoQtdAviso" hidden></div>
 
     <div class="size-row-head">
       <div class="size-label" style="margin:0;">Escolha o tamanho</div>
@@ -2991,6 +3002,9 @@
   let PRECOS_POR_TIPO = new Map(); // tipo -> preço padrão desta loja pra esse tipo (fallback entre customizado e o preco base)
   // Promoção ("De" riscado), só exibição: o valor cobrado é sempre o preço normal.
   let PRECOS_DE_TIPO = new Map();     // tipo -> preço "De" desta loja
+  // Descontos por quantidade (loja toda). Mesmo cálculo da função checkout no servidor.
+  let DESCONTO_QTD = [];   // [{min:4, pct:10}, ...]
+  let PAGUE_LEVE = null;   // {pague:2, leve:3}
   let PRECOS_DE_PRODUTO = new Map();  // product_id -> preço "De" desta loja
 
   // Devolve { ok, extras }: "ok" já pode ser checado assim que o essencial
@@ -3120,7 +3134,7 @@
     try {
       const { data, error } = await supabaseClient
         .from('store_settings')
-        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
+        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, desconto_quantidade, pague_leve, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
         .eq('loja_id', LOJA_ID)
         .single();
       if(error || !data) return;
@@ -3181,6 +3195,11 @@
       // mesmo <script>; como isso aqui só roda depois que a rede responde
       // (após o "await" acima), essas variáveis já existem quando chegamos
       // nesta linha — não dá erro de "usado antes de declarado".
+      DESCONTO_QTD = Array.isArray(data.desconto_quantidade) ? data.desconto_quantidade
+        .map(f => ({ min: parseInt(f.min, 10), pct: Number(f.pct) }))
+        .filter(f => f.min >= 2 && f.pct > 0 && f.pct < 100).sort((a, b) => a.min - b.min) : [];
+      PAGUE_LEVE = (data.pague_leve && Number(data.pague_leve.leve) > Number(data.pague_leve.pague) && Number(data.pague_leve.pague) >= 1)
+        ? { pague: parseInt(data.pague_leve.pague, 10), leve: parseInt(data.pague_leve.leve, 10) } : null;
       if(typeof data.preco_personalizacao === 'number'){
         PRECO_PERSONALIZACAO = data.preco_personalizacao;
         STORE_CONFIG.precos.personalizacao = data.preco_personalizacao;
@@ -5084,6 +5103,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
       subEl.style.display = "none";
     }
     updatePriceDisplay();
+    renderAvisoPromoQtd();
 
     const sizeGrid = document.getElementById('sizeGrid');
     sizeGrid.innerHTML = "";
@@ -5709,6 +5729,56 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     return order.reduce((sum, item) => sum + item.preco * item.qty, 0);
   }
 
+  // Descontos por quantidade. 1º "Pague X leve Y" (a cada Y peças, as mais baratas saem grátis),
+  // depois a faixa de % sobre o que sobrou. Mesma conta da função checkout (servidor).
+  function calcularDescontos(){
+    const r2 = n => Math.round(n * 100) / 100;
+    const unidades = [];
+    order.forEach(i => { for(let k = 0; k < Math.min(i.qty, 50); k++) unidades.push(Number(i.preco)); });
+    const pecas = unidades.length;
+    const res = { pecas, gratis: 0, valorGratis: 0, faixa: null, valorFaixa: 0, total: 0, proxima: null };
+    if(PAGUE_LEVE && pecas >= PAGUE_LEVE.leve){
+      res.gratis = Math.floor(pecas / PAGUE_LEVE.leve) * (PAGUE_LEVE.leve - PAGUE_LEVE.pague);
+      res.valorGratis = r2(unidades.slice().sort((a, b) => a - b).slice(0, res.gratis).reduce((s, v) => s + v, 0));
+    }
+    DESCONTO_QTD.forEach(f => { if(pecas >= f.min) res.faixa = f; });
+    if(res.faixa) res.valorFaixa = r2((getSubtotal() - res.valorGratis) * res.faixa.pct / 100);
+    res.total = r2(res.valorGratis + res.valorFaixa);
+    res.proxima = DESCONTO_QTD.find(f => f.min > pecas) || null;
+    return res;
+  }
+  function getTotalPedido(){
+    const sub = getSubtotal();
+    return Math.max(0, sub - calcularDescontos().total) + (order.length ? getFreteValor() : 0);
+  }
+
+  // Linhas de desconto + dica "falta 1 peça pra ganhar 10%" no carrinho.
+  function renderDescontosCarrinho(){
+    const el = document.getElementById('descontosCarrinho');
+    if(!el) return;
+    if(!order.length){ el.innerHTML = ''; return; }
+    const d = calcularDescontos();
+    let html = '';
+    if(d.gratis) html += `<div class="desconto-row"><div>Pague ${PAGUE_LEVE.pague} leve ${PAGUE_LEVE.leve} (${d.gratis} grátis)</div><div>− ${fmt(d.valorGratis)}</div></div>`;
+    if(d.faixa) html += `<div class="desconto-row"><div>${d.faixa.pct}% OFF (${d.faixa.min}+ peças)</div><div>− ${fmt(d.valorFaixa)}</div></div>`;
+    const faltam = d.proxima ? d.proxima.min - d.pecas : 0;
+    const faltamPL = (PAGUE_LEVE && d.pecas % PAGUE_LEVE.leve) ? PAGUE_LEVE.leve - (d.pecas % PAGUE_LEVE.leve) : 0;
+    if(d.proxima && faltam <= 3) html += `<div class="desconto-dica">Falta${faltam > 1 ? 'm' : ''} <b>${faltam} peça${faltam > 1 ? 's' : ''}</b> pra ganhar <b>${d.proxima.pct}% OFF</b> no pedido.</div>`;
+    else if(PAGUE_LEVE && faltamPL && faltamPL <= 2) html += `<div class="desconto-dica">Adicione <b>mais ${faltamPL}</b> e a peça mais barata sai <b>grátis</b> (pague ${PAGUE_LEVE.pague} leve ${PAGUE_LEVE.leve}).</div>`;
+    el.innerHTML = html;
+  }
+
+  // Selos "Pague 2 leve 3" / "4+ peças 10% OFF" na página do produto.
+  function renderAvisoPromoQtd(){
+    const el = document.getElementById('promoQtdAviso');
+    if(!el) return;
+    const itens = [];
+    if(PAGUE_LEVE) itens.push(`Pague ${PAGUE_LEVE.pague} leve ${PAGUE_LEVE.leve}`);
+    DESCONTO_QTD.forEach(f => itens.push(`${f.min}+ peças: ${f.pct}% OFF`));
+    el.hidden = !itens.length;
+    el.innerHTML = itens.map(t => `<span>${esc(t)}</span>`).join('');
+  }
+
   // Preenchido só quando o SuperFrete responde de verdade (buscarFreteReal)
   // — id -> {nome, preco, prazo}. Enquanto vazio, tudo cai nos preços fixos
   // configurados (STORE_CONFIG.frete), sem quebrar o checkout.
@@ -5722,7 +5792,8 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
   function updateTotal(){
     const subtotal = getSubtotal();
     const frete = order.length > 0 ? getFreteValor() : 0;
-    const total = subtotal + frete;
+    const total = getTotalPedido();
+    renderDescontosCarrinho();
     document.getElementById('subtotalValue').textContent = fmt(subtotal);
     document.getElementById('freteValue').textContent = frete > 0 ? fmt(frete) : "Grátis";
     document.getElementById('totalValue').textContent = fmt(total);
@@ -5951,9 +6022,12 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     const freteTxt = nomeFrete
       ? `${nomeFrete} (R$ ${freteValor.toFixed(2).replace(".", ",")})`
       : "Retirar no local (grátis)";
-    const total = (subtotal + freteValor).toFixed(2).replace(".", ",");
+    const descontos = calcularDescontos();
+    const total = getTotalPedido().toFixed(2).replace(".", ",");
 
     msg += `%0A*Subtotal: R$ ${subtotal.toFixed(2).replace(".", ",")}*%0A`;
+    if(descontos.gratis) msg += encodeURIComponent(`*Pague ${PAGUE_LEVE.pague} leve ${PAGUE_LEVE.leve}:* − R$ ${descontos.valorGratis.toFixed(2).replace(".", ",")}\n`);
+    if(descontos.faixa) msg += encodeURIComponent(`*${descontos.faixa.pct}% OFF (${descontos.faixa.min}+ peças):* − R$ ${descontos.valorFaixa.toFixed(2).replace(".", ",")}\n`);
     msg += `*Entrega:* ${freteTxt}%0A`;
     msg += `%0A*Total: R$ ${total}*%0A%0AComo fechamos o pagamento?`;
 
@@ -6290,7 +6364,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
 
   // ---- Modo demonstração (só no catálogo de demonstração) ----
   function ckDemo(metodo){
-    const total = getSubtotal() + getFreteValor();
+    const total = getTotalPedido();
     ckPedido = { demo: true, pedido_id: 'demo', token: 'demo', numero: 1000 + Math.floor(Math.random() * 9000), total, metodo,
       pix: { copia_cola: '00020126...DEMONSTRACAO...6304ABCD  (código de exemplo, não pague)', qr_base64: null, expira_em: new Date(Date.now() + 30 * 60000).toISOString() } };
     trackEvent('checkout_demo', { metodo });
@@ -6473,7 +6547,7 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     abrirDemoPopup();
     document.getElementById('cartOverlay').classList.add('open');
     if (order.length > 0) {
-      trackEvent('start_checkout', { items_count: order.length, shipping_method: freteEscolhido, total_price: getSubtotal() + getFreteValor() });
+      trackEvent('start_checkout', { items_count: order.length, shipping_method: freteEscolhido, total_price: getTotalPedido() });
     }
   }
   function closeCart(){
