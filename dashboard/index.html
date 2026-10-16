@@ -947,6 +947,18 @@
   .pd-input:focus{ border-color:var(--btn-bg); }
   .pd-rastreio .pd-input{ flex:1; text-transform:uppercase; width:auto; }
   .pd-rastreio button, .pd-rastreio a{ font-size:13px; padding:8px 12px; white-space:nowrap; }
+  .lucro-box{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:16px; }
+  .lucro-box h3{ margin:0 0 10px; font-size:15px; }
+  .lucro-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .lucro-grid small{ display:block; font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.03em; }
+  .lucro-grid strong{ display:block; font-size:15px; margin-top:4px; }
+  .ordem-ligas{ display:flex; flex-direction:column; gap:6px; }
+  .ordem-liga{ display:flex; align-items:center; gap:8px; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:14px; }
+  .ordem-liga span{ flex:1; }
+  .ordem-liga button{ background:none; border:1px solid var(--line); color:var(--text); border-radius:8px; width:32px; height:30px; cursor:pointer; font-size:14px; }
+  .ordem-liga button:disabled{ opacity:.3; }
+  .pag-checks label{ display:flex; align-items:center; gap:10px; padding:8px 0; font-size:14px; cursor:pointer; }
+  .pag-checks input{ width:18px; height:18px; }
   .vm-box{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:16px; }
   .vm-box h3{ margin:0 0 12px; font-size:16px; }
   .vm-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
@@ -1669,6 +1681,23 @@
     </div>
 
     <div class="form-section">
+      <h3>Formas de pagamento combinadas no WhatsApp</h3>
+      <div class="field-hint" style="margin-bottom:8px;">O cliente escolhe uma no carrinho e ela vai na mensagem do pedido. Não muda o Pix/cartão do Mercado Pago.</div>
+      <div class="pag-checks" id="pagManuaisChecks">
+        <label><input type="checkbox" value="pix"> Pix</label>
+        <label><input type="checkbox" value="dinheiro"> Dinheiro</label>
+        <label><input type="checkbox" value="cartao_entrega"> Cartão na entrega</label>
+        <label><input type="checkbox" value="link"> Link de pagamento (cartão)</label>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Custo das camisas (só você vê)</h3>
+      <div class="field-hint" style="margin-bottom:12px;">Quanto você paga ao fornecedor por tipo. Serve pra calcular o lucro em Pedidos e quanto você tem investido em estoque. Nunca aparece na loja.</div>
+      <div id="custosTipoCampos"></div>
+    </div>
+
+    <div class="form-section">
       <h3>Acréscimo por tamanho grande</h3>
       <div class="field-hint" style="margin-bottom:12px;">Valor somado à camisa quando o cliente escolhe esse tamanho. Aparece na página da camisa.</div>
       <div class="preco-par">
@@ -1965,6 +1994,7 @@
       <div><small>7 dias</small><strong id="pdSemana">—</strong></div>
       <div><small>30 dias</small><strong id="pdMes">—</strong></div>
     </div>
+    <div class="lucro-box" id="lucroBox"></div>
     <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom:14px;" onclick="abrirVendaManual()">+ Registrar venda manual</button>
     <div class="vm-box" id="vmBox" hidden>
       <h3>Nova venda manual</h3>
@@ -2061,6 +2091,32 @@
           <option value="5">5 unidades</option>
         </select>
         <div class="field-hint">O cliente vê "Últimas 2" embaixo do tamanho. Acima desse número, a quantidade fica escondida.</div>
+      </div>
+      <div class="field">
+        <label for="lojaPrazoEncomenda">Prazo da encomenda</label>
+        <input type="text" id="lojaPrazoEncomenda" maxlength="60" placeholder="Ex.: 15 a 25 dias úteis">
+        <div class="field-hint">Tamanho com unidade aparece como "⚡ Pronta entrega". Sem unidade cadastrada aparece "📦 Sob encomenda · chega em [prazo]".</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <h3>Vitrine (página inicial)</h3>
+      <div class="toggle-row" style="margin-bottom:14px;">
+        <div>
+          <div class="label">Mostrar "Novidades"</div>
+          <div class="desc">Carrossel automático com as camisas cadastradas nos últimos 30 dias.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="lojaMostrarNovidades"><span class="track"></span></label>
+      </div>
+      <div class="label" style="margin-bottom:4px;">Ordem das ligas</div>
+      <div class="field-hint" style="margin-bottom:10px;">A primeira aparece primeiro no carrossel da loja e no menu.</div>
+      <div class="ordem-ligas" id="ordemLigasLista"><div class="field-hint">Carregando...</div></div>
+    </div>
+    <div class="form-section">
+      <h3>Pixel da Meta (anúncios)</h3>
+      <div class="field">
+        <label for="lojaPixelId">ID do pixel</label>
+        <input type="text" id="lojaPixelId" inputmode="numeric" maxlength="20" placeholder="Ex.: 123456789012345">
+        <div class="field-hint">Opcional. Com o ID do seu pixel, o Facebook/Instagram registra visita, camisa vista, carrinho, pedido no WhatsApp e compra no Pix/cartão. Você encontra o ID no Gerenciador de Eventos da Meta.</div>
       </div>
     </div>
     <div class="form-section">
@@ -7849,17 +7905,92 @@
   // mesma tabela store_settings (uma linha por loja). O catálogo público já lê essas
   // colunas em aplicarAparencia() e atualiza o texto na hora.
   // ============================================================
+  // ---- Custos (tabela loja_custos, privada: só o dono lê) ----
+  let CUSTOS = new Map(); // 'tipo:Torcedor' -> 60
+  async function carregarCustos(){
+    const { data } = await supabaseClient.from('loja_custos').select('chave, custo').eq('loja_id', ADMIN_LOJA_ID);
+    CUSTOS = new Map((data || []).map(r => [r.chave, Number(r.custo)]));
+  }
+  async function salvarCustos(){
+    const salvar = [], apagar = [];
+    TIPOS_PRECO.forEach(tipo => {
+      const el = document.getElementById('custoTipo_' + tipo.replace(/\s/g, '_'));
+      if(!el) return;
+      const n = parseFloat(el.value);
+      if(n >= 0 && el.value.trim() !== '') salvar.push({ loja_id: ADMIN_LOJA_ID, chave: 'tipo:' + tipo, custo: Math.round(n * 100) / 100, atualizado_em: new Date().toISOString() });
+      else if(CUSTOS.has('tipo:' + tipo)) apagar.push('tipo:' + tipo);
+    });
+    if(salvar.length) await supabaseClient.from('loja_custos').upsert(salvar, { onConflict: 'loja_id,chave' });
+    if(apagar.length) await supabaseClient.from('loja_custos').delete().eq('loja_id', ADMIN_LOJA_ID).in('chave', apagar);
+    await carregarCustos();
+  }
+  function custoDoTipo(tipo){ const v = CUSTOS.get('tipo:' + tipo); return v != null ? v : null; }
+  // Preço de venda aproximado na loja (mesma regra do catálogo, sem preço próprio por produto).
+  function precoVendaAprox(p){
+    const doMestre = typeof ehProdutoDoMestre === 'function' && ehProdutoDoMestre(p);
+    if((doMestre || !p.preco_manual) && PRECOS_TIPO_ADMIN.has(p.tipo)) return PRECOS_TIPO_ADMIN.get(p.tipo) + (p.ja_personalizada ? 50 : 0);
+    return Number(p.preco) || 0;
+  }
+  function tipoDoItem(i){
+    if(i.tipo) return i.tipo;
+    const p = i.produtoId && PRODUCTS_CACHE.find(x => String(x.id) === String(i.produtoId));
+    if(p) return p.tipo;
+    return TIPOS_PRECO.includes(i.subtitulo) ? i.subtitulo : null;
+  }
+  // Lucro de 30 dias (vendidos) + investido e lucro potencial do estoque.
+  function renderLucro(){
+    const box = document.getElementById('lucroBox');
+    if(!box) return;
+    if(!CUSTOS.size){
+      box.innerHTML = '<h3>💰 Lucro</h3><div class="field-hint">Informe o custo das camisas em <b>Preços → Custo das camisas</b> e o lucro aparece aqui.</div>';
+      return;
+    }
+    const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+    const desde = Date.now() - 30 * 86400000;
+    let lucro = 0, semCusto = 0;
+    PEDIDOS_CACHE.filter(p => PD_GRUPOS.vendidos.includes(p.status) && new Date(p.pago_em || p.criado_em).getTime() >= desde).forEach(p => {
+      let custo = 0, ok = true;
+      (p.itens || []).forEach(i => { const c = custoDoTipo(tipoDoItem(i)); if(c == null) ok = false; else custo += c * (Number(i.qty) || 1); });
+      if(!ok){ semCusto++; return; }
+      lucro += (Number(p.subtotal) - Number(p.desconto || 0)) - custo;
+    });
+    let investido = 0, potencial = 0;
+    if(ADMIN_USA_ESTOQUE){
+      ESTOQUE_MAPA.forEach((e, id) => {
+        const p = PRODUCTS_CACHE.find(x => String(x.id) === String(id));
+        const c = p ? custoDoTipo(p.tipo) : null;
+        if(!p || c == null || !e.total) return;
+        investido += c * e.total;
+        potencial += (precoVendaAprox(p) - c) * e.total;
+      });
+    }
+    box.innerHTML = `<h3>💰 Lucro</h3><div class="lucro-grid">
+        <div><small>Lucro 30 dias</small><strong>${brl(lucro)}</strong></div>
+        <div><small>Investido no estoque</small><strong>${ADMIN_USA_ESTOQUE ? brl(investido) : '—'}</strong></div>
+        <div><small>Lucro se vender o estoque</small><strong>${ADMIN_USA_ESTOQUE ? brl(potencial) : '—'}</strong></div>
+      </div>${semCusto ? `<div class="field-hint" style="margin-top:8px;">${semCusto} venda(s) com item sem custo cadastrado ficaram de fora.</div>` : ''}`;
+  }
+
   const TIPOS_PRECO = ["Torcedor","Jogador","Retrô","Kit Infantil","Feminina","Long Sleeve","Kit Treino","Conjunto de Treino"];
 
   async function openPrecosOverlay(){
     document.getElementById('precosOverlay').classList.remove('hidden');
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('preco_personalizacao, preco_frete, cep_motoboy_inicio, cep_motoboy_fim, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho')
+      .select('preco_personalizacao, preco_frete, cep_motoboy_inicio, cep_motoboy_fim, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho, pagamentos_manuais')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     preencherDescontos(data || {});
     preencherRegras(data || {});
+    const pagSalvos = (data && Array.isArray(data.pagamentos_manuais)) ? data.pagamentos_manuais : [];
+    document.querySelectorAll('#pagManuaisChecks input').forEach(c => c.checked = pagSalvos.includes(c.value));
+    await carregarCustos();
+    document.getElementById('custosTipoCampos').innerHTML = TIPOS_PRECO.map(tipo => {
+      const k = tipo.replace(/\s/g, '_'), v = CUSTOS.get('tipo:' + tipo);
+      return `<div class="preco-par" style="grid-template-columns:1fr 120px; align-items:center; margin-bottom:8px;">
+        <div style="font-size:14px;">${tipo}</div>
+        <div><input type="number" step="0.01" min="0" id="custoTipo_${k}" placeholder="R$" value="${v != null ? v : ''}"></div></div>`;
+    }).join('');
     if(!error && data){
       document.getElementById('precoPersonalizacaoInput').value = data.preco_personalizacao ?? 60;
       document.getElementById('precoFreteInput').value = data.preco_frete ?? 15;
@@ -8162,6 +8293,7 @@
     if(error){ document.getElementById('pdLista').innerHTML = '<div class="field-hint">Não consegui carregar os pedidos.</div>'; return; }
     PEDIDOS_CACHE = data || [];
     atualizarResumoPedidos();
+    carregarCustos().then(renderLucro, renderLucro);
     if(PEDIDOS_FILTRO === 'abandonados') carregarAbandonados(); else renderPedidos();
   }
   function fecharPedidos(){ document.getElementById('pedidosOverlay').classList.add('hidden'); }
@@ -8302,6 +8434,7 @@
         ${Number(p.desconto) > 0 ? `<div class="pd-desc">Desconto: − ${brl(p.desconto)}</div>` : ''}
         ${Number(p.acrescimo) > 0 ? `<div class="pd-end">Acréscimo do cartão: + ${brl(p.acrescimo)}</div>` : ''}
         ${(end || p.frete_nome) ? `<div class="pd-end">${escHtml(p.frete_nome || '')}${Number(p.frete_valor) ? ' (' + brl(p.frete_valor) + ')' : ''}${end ? ' · ' + end : ''}${e.obs ? '<br>Obs.: ' + escHtml(e.obs) : ''}</div>` : ''}
+        ${e.pagamento ? `<div class="pd-end">Pagamento combinado: ${escHtml(e.pagamento)}</div>` : ''}
         ${p.observacao ? `<div class="pd-obs">${escHtml(p.observacao)}</div>` : ''}
         ${rastreio}
         <div class="pd-rodape"><div class="pd-total">${brl(p.total)}</div><div class="pd-acoes">${selStatus}${selEntrega}${zapLink}</div></div>
@@ -8320,7 +8453,7 @@
   async function mudarEntregaPedido(id, valor){ await atualizarPedido(id, { status_entrega: valor }, 'Pedido atualizado.'); }
   async function mudarStatusPedido(id, valor){
     if(await atualizarPedido(id, { status: valor }, valor === 'vendido' ? 'Venda registrada! Já soma no faturamento.' : 'Pedido atualizado.')){
-      atualizarResumoPedidos(); renderPedidos();
+      atualizarResumoPedidos(); renderPedidos(); renderLucro();
     }
   }
   // Abriu o WhatsApp de um pedido novo: passa pra "Respondido" sozinho.
@@ -8570,6 +8703,7 @@
     const { error } = await supabaseClient
       .from('store_settings')
       .update({
+        pagamentos_manuais: [...document.querySelectorAll('#pagManuaisChecks input:checked')].map(c => c.value),
         desconto_quantidade: descontos.faixas,
         pague_leve: descontos.pagueLeve,
         frete_gratis_acima: regras.frete_gratis_acima,
@@ -8584,6 +8718,7 @@
         updated_at: new Date().toISOString()
       })
       .eq('loja_id', ADMIN_LOJA_ID);
+    if(!error) await salvarCustos();
 
     btn.disabled = false;
     btn.textContent = 'Salvar preços';
@@ -8688,12 +8823,16 @@
 
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
+      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, prazo_encomenda, mostrar_novidades, ordem_ligas, meta_pixel_id, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     if(!error && data){
       document.getElementById('lojaUsaEstoque').checked = !!data.usa_estoque;
       document.getElementById('lojaEstoqueAlerta').value = String(data.estoque_alerta_limite ?? 2);
+      document.getElementById('lojaPrazoEncomenda').value = data.prazo_encomenda || '';
+      document.getElementById('lojaMostrarNovidades').checked = data.mostrar_novidades !== false;
+      document.getElementById('lojaPixelId').value = data.meta_pixel_id || '';
+      carregarOrdemLigas(Array.isArray(data.ordem_ligas) ? data.ordem_ligas : []);
       preencherDescricoesTipo(data.descricoes_por_tipo || {});
       lojaLogoUrl = data.logo_url || null;
       lojaPaymentIcons = Array.isArray(data.payment_icons) ? data.payment_icons.slice() : [];
@@ -9338,10 +9477,48 @@
       .replace(/^-+|-+$/g, '');
   }
 
+  // ---- Vitrine: ordem das ligas (store_settings.ordem_ligas) ----
+  let ORDEM_LIGAS_EDIT = null;
+  async function carregarOrdemLigas(salva){
+    ORDEM_LIGAS_EDIT = null;
+    const el = document.getElementById('ordemLigasLista');
+    // A tabela ligas é pública (de todas as lojas): só entram as desta loja e as dos times que ela mostra.
+    const dosTimes = [...new Set(TEAMS_CACHE.map(t => t.liga).filter(Boolean))];
+    const [{ data: proprias }, { data: deTimes }] = await Promise.all([
+      supabaseClient.from('ligas').select('nome, ordem').eq('loja_id', ADMIN_LOJA_ID),
+      dosTimes.length ? supabaseClient.from('ligas').select('nome, ordem').in('nome', dosTimes) : Promise.resolve({ data: [] }),
+    ]);
+    const porOrdem = [...(proprias || []), ...(deTimes || [])].sort((a, b) => (a.ordem ?? 99) - (b.ordem ?? 99)).map(l => l.nome);
+    const todas = [...new Set([...porOrdem, ...dosTimes])].filter(Boolean);
+    ORDEM_LIGAS_EDIT = [...salva.filter(n => todas.includes(n)), ...todas.filter(n => !salva.includes(n))];
+    renderOrdemLigas();
+  }
+  function renderOrdemLigas(){
+    const el = document.getElementById('ordemLigasLista');
+    if(!ORDEM_LIGAS_EDIT || !ORDEM_LIGAS_EDIT.length){ el.innerHTML = '<div class="field-hint">Nenhuma liga cadastrada ainda.</div>'; return; }
+    el.innerHTML = ORDEM_LIGAS_EDIT.map((n, i) => `<div class="ordem-liga"><span>${i + 1}. ${escHtml(n)}</span>
+      <button type="button" aria-label="Subir" ${i === 0 ? 'disabled' : ''} onclick="moverLiga(${i}, -1)">↑</button>
+      <button type="button" aria-label="Descer" ${i === ORDEM_LIGAS_EDIT.length - 1 ? 'disabled' : ''} onclick="moverLiga(${i}, 1)">↓</button></div>`).join('');
+  }
+  function moverLiga(i, d){
+    const j = i + d;
+    if(j < 0 || j >= ORDEM_LIGAS_EDIT.length) return;
+    [ORDEM_LIGAS_EDIT[i], ORDEM_LIGAS_EDIT[j]] = [ORDEM_LIGAS_EDIT[j], ORDEM_LIGAS_EDIT[i]];
+    renderOrdemLigas();
+  }
+  function lerPixelId(){
+    const v = document.getElementById('lojaPixelId').value.replace(/\D/g, '');
+    return /^[0-9]{8,20}$/.test(v) ? v : null;
+  }
+
   async function salvarLoja(){
     const nomeLoja = sanitizeText(document.getElementById('lojaNomeInput').value.trim());
     if(!nomeLoja){
       showToast('Preencha o nome da loja.', 'error');
+      return;
+    }
+    if(document.getElementById('lojaPixelId').value.trim() && !lerPixelId()){
+      showToast('O ID do pixel tem só números (8 a 20 dígitos).', 'error');
       return;
     }
 
@@ -9426,6 +9603,10 @@
         texto_entrega: document.getElementById('lojaTextoEntregaInput').value.trim() || null,
         usa_estoque: document.getElementById('lojaUsaEstoque').checked,
         estoque_alerta_limite: Number(document.getElementById('lojaEstoqueAlerta').value) || 0,
+        prazo_encomenda: document.getElementById('lojaPrazoEncomenda').value.trim().slice(0, 60) || null,
+        mostrar_novidades: document.getElementById('lojaMostrarNovidades').checked,
+        ...(ORDEM_LIGAS_EDIT ? { ordem_ligas: ORDEM_LIGAS_EDIT } : {}),
+        meta_pixel_id: lerPixelId(),
         ...(lerDescricoesTipo() ? { descricoes_por_tipo: lerDescricoesTipo() } : {}),
         updated_at: new Date().toISOString()
       })
