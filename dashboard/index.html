@@ -947,6 +947,10 @@
   .pd-input:focus{ border-color:var(--btn-bg); }
   .pd-rastreio .pd-input{ flex:1; text-transform:uppercase; width:auto; }
   .pd-rastreio button, .pd-rastreio a{ font-size:13px; padding:8px 12px; white-space:nowrap; }
+  .bandeiras-lista{ display:flex; flex-direction:column; gap:8px; }
+  .bandeira-op{ display:flex; align-items:center; gap:12px; padding:8px 10px; border:1px solid var(--line); border-radius:12px; cursor:pointer; }
+  .bandeira-op img{ height:28px; width:72px; object-fit:contain; background:#fff; border-radius:6px; padding:3px 6px; box-sizing:border-box; }
+  .bandeira-op > span:nth-of-type(1){ flex:1; font-size:14px; }
   .lucro-box{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:16px; }
   .lucro-box h3{ margin:0 0 10px; font-size:15px; }
   .lucro-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
@@ -2199,10 +2203,16 @@
     </div>
     <div class="form-section">
       <h3>Formas de pagamento (rodapé)</h3>
-      <div class="field-hint" style="margin-bottom:12px;">
-        Suba a imagem oficial de cada bandeira que você aceita (baixe do site de
-        imprensa/marca de cada uma, ex.: Pix, Visa, Mastercard). Sem nenhuma
-        cadastrada, essa seção fica escondida no catálogo.
+      <div class="field-hint" style="margin-bottom:10px;">Ligue as bandeiras que a sua loja aceita. Elas aparecem pequenas no rodapé do catálogo.</div>
+      <div class="bandeiras-lista" id="bandeirasLista">
+        <label class="bandeira-op"><img src="/assets/pagamento/mercadopago.webp" alt="Mercado Pago"><span>Mercado Pago</span><span class="switch"><input type="checkbox" value="mercadopago"><span class="track"></span></span></label>
+        <label class="bandeira-op"><img src="/assets/pagamento/pix.webp" alt="Pix"><span>Pix</span><span class="switch"><input type="checkbox" value="pix"><span class="track"></span></span></label>
+        <label class="bandeira-op"><img src="/assets/pagamento/elo.webp" alt="Elo"><span>Elo</span><span class="switch"><input type="checkbox" value="elo"><span class="track"></span></span></label>
+        <label class="bandeira-op"><img src="/assets/pagamento/mastercard.webp" alt="Mastercard"><span>Mastercard</span><span class="switch"><input type="checkbox" value="mastercard"><span class="track"></span></span></label>
+        <label class="bandeira-op"><img src="/assets/pagamento/infinitepay.webp" alt="InfinitePay"><span>InfinitePay</span><span class="switch"><input type="checkbox" value="infinitepay"><span class="track"></span></span></label>
+      </div>
+      <div class="field-hint" style="margin:14px 0 12px;">
+        Aceita outra bandeira (Visa, Amex, Hipercard...)? Suba a imagem dela aqui.
       </div>
       <div class="image-grid" id="lojaPaymentGrid"></div>
       <input type="file" id="lojaPaymentFileInput" accept="image/*" multiple class="hidden" onchange="handleLojaPaymentSelected(event)">
@@ -8896,7 +8906,7 @@
 
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, prazo_encomenda, mostrar_novidades, ordem_ligas, meta_pixel_id, selos_confianca, mostrar_vendo_agora, idioma, moeda, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
+      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, prazo_encomenda, mostrar_novidades, ordem_ligas, meta_pixel_id, selos_confianca, mostrar_vendo_agora, idioma, moeda, bandeiras_padrao, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     if(!error && data){
@@ -8914,6 +8924,8 @@
       preencherDescricoesTipo(data.descricoes_por_tipo || {});
       lojaLogoUrl = data.logo_url || null;
       lojaPaymentIcons = Array.isArray(data.payment_icons) ? data.payment_icons.slice() : [];
+      const bandeiras = Array.isArray(data.bandeiras_padrao) ? data.bandeiras_padrao : ['mercadopago', 'pix', 'elo', 'mastercard', 'infinitepay'];
+      document.querySelectorAll('#bandeirasLista input').forEach(c => c.checked = bandeiras.includes(c.value));
       document.getElementById('lojaHorarioInput').value = data.horario_atendimento || '';
       document.getElementById('lojaTelefoneInput').value = data.telefone_contato || '';
       document.getElementById('lojaEmailInput').value = data.email_contato || '';
@@ -9665,6 +9677,7 @@
         email_contato: document.getElementById('lojaEmailInput').value.trim() || null,
         instagram: extrairUsuarioInstagram(document.getElementById('lojaInstagramInput').value) || null,
         payment_icons: lojaPaymentIcons,
+        bandeiras_padrao: [...document.querySelectorAll('#bandeirasLista input:checked')].map(c => c.value),
         // Faixas (marquee): só vão no salvar se esta loja pode editar (Katalogo Hub ou liberada).
         ...(ADMIN_MARQUEE_LIBERADO ? {
           texto_barra_superior: document.getElementById('lojaTextoBarraInput').value.trim() || null,

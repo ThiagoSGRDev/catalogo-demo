@@ -1931,6 +1931,8 @@
   }
   .footer-payment-row{ display:flex; flex-wrap:wrap; justify-content:flex-start; align-items:center; gap:10px; }
   .footer-payment-row img{ height:22px; width:auto; display:block; }
+  /* Bandeiras padrão: logo oficial num selinho branco (fica legível no tema escuro e no claro) */
+  .footer-payment-row img.bandeira{ height:26px; padding:4px 8px; background:#fff; border-radius:6px; box-sizing:border-box; }
   /* Selo "feito com Katalogo Hub": divulgação discreta em toda loja */
   .selo-kh{display:block; padding:16px 20px 0; text-align:center; font-family:var(--font-mono); font-size:11px;
     letter-spacing:.03em; color:rgba(var(--muted-rgb),0.55); text-decoration:none;}
@@ -3224,7 +3226,7 @@
     try {
       const { data, error } = await supabaseClient
         .from('store_settings')
-        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho, prazo_encomenda, pagamentos_manuais, ordem_ligas, mostrar_novidades, meta_pixel_id, selos_confianca, mostrar_vendo_agora, idioma, moeda, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
+        .select('modo, cor_primaria, cor_primaria_clara, preco_personalizacao, desconto_quantidade, pague_leve, frete_gratis_acima, pedido_minimo, desconto_pix_pct, acrescimo_cartao_pct, acrescimo_tamanho, prazo_encomenda, pagamentos_manuais, ordem_ligas, mostrar_novidades, meta_pixel_id, selos_confianca, mostrar_vendo_agora, idioma, moeda, bandeiras_padrao, preco_frete, preco_frete_outros_estados, preco_frete_sedex, uf_local, frete_motoboy_descricao, cep_motoboy_inicio, cep_motoboy_fim, logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
         .eq('loja_id', LOJA_ID)
         .single();
       if(error || !data) return;
@@ -3447,10 +3449,14 @@
       // inteira fica escondida em vez de aparecer vazia.
       const paymentSection = document.getElementById('footerPayment');
       const paymentRow = document.getElementById('footerPaymentRow');
-      if(paymentSection && paymentRow && Array.isArray(data.payment_icons) && data.payment_icons.length > 0){
-        paymentRow.innerHTML = data.payment_icons
-          .map(p => `<img loading="lazy" src="${safeUrl(p.url)}" alt="${esc(p.nome || '')}">`)
-          .join('');
+      // Bandeiras padrão (logos do Katalogo Hub, liga/desliga no painel) + as que o lojista subiu.
+      const BANDEIRAS = { mercadopago: 'Mercado Pago', pix: 'Pix', elo: 'Elo', mastercard: 'Mastercard', infinitepay: 'InfinitePay' };
+      const padrao = (Array.isArray(data.bandeiras_padrao) ? data.bandeiras_padrao : Object.keys(BANDEIRAS)).filter(k => BANDEIRAS[k]);
+      const proprias = Array.isArray(data.payment_icons) ? data.payment_icons : [];
+      if(paymentSection && paymentRow && (padrao.length || proprias.length)){
+        paymentRow.innerHTML =
+          padrao.map(k => `<img class="bandeira" loading="lazy" src="/assets/pagamento/${k}.webp" alt="${BANDEIRAS[k]}">`).join('') +
+          proprias.map(p => `<img loading="lazy" src="${safeUrl(p.url)}" alt="${esc(p.nome || '')}">`).join('');
         paymentSection.style.display = 'block';
       }
     } catch (e) {
