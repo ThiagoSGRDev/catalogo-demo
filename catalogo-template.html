@@ -1608,6 +1608,7 @@
   /* Novidades na home */
   .novidades-section{padding:22px 0 6px;}
   .novidades-section .liga-head{margin-bottom:12px;}
+  .home-product-carousel.auto-desliza{scroll-snap-type:none;}
   /* Forma de pagamento combinada no WhatsApp */
   .pag-manual{margin:4px 0 12px;}
   .pag-manual-titulo{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:rgba(var(--muted-rgb),0.6); margin-bottom:8px;}
@@ -2418,8 +2419,8 @@
     </div>
 
     <div class="novidades-section" id="novidadesSection" hidden>
-      <div class="liga-head"><div class="liga-head-label">NOVIDADES.</div></div>
-      <div class="home-product-carousel-wrap"><div class="home-product-carousel" id="novidadesGrid"></div></div>
+      <div class="liga-head"><div class="liga-head-label" id="novidadesTitulo">LANÇAMENTOS.</div></div>
+      <div class="home-product-carousel-wrap"><div class="home-product-carousel auto-desliza" id="novidadesGrid"></div></div>
     </div>
 
   </div>
@@ -4407,37 +4408,77 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     if(arrow) arrow.style.display = 'none';
   }
 
-  // Novidades: camisas cadastradas nos últimos 30 dias (montado sozinho).
+  // Vitrine "Lançamentos": camisas da temporada atual (ex.: 26/27) + as marcadas como
+  // lançamento. A temporada vira sozinha em julho (jul/2027 -> 27/28).
+  function temporadaAtual(){
+    const d = new Date(), a = d.getFullYear() % 100, ini = d.getMonth() >= 6 ? a : a - 1;
+    const dois = n => String((n + 100) % 100).padStart(2, '0');
+    return { curta: `${dois(ini)}/${dois(ini + 1)}`, longa: `20${dois(ini)}/20${dois(ini + 1)}` };
+  }
   async function loadNovidades(){
     const section = document.getElementById('novidadesSection');
     const grid = document.getElementById('novidadesGrid');
     if(!section || !grid) return;
     if(!supabaseReady || !MOSTRAR_NOVIDADES){ section.hidden = true; return; }
     try {
-      const desde = new Date(Date.now() - 30 * 86400000).toISOString();
+      const t = temporadaAtual();
       const { data, error } = await supabaseClient
         .from('products')
         .select('*, product_images(url, ordem), teams!inner(nome, cor, sigla)')
         .eq('disponivel', true)
         .in('loja_id', LOJAS_VISIVEIS)
         .not('id', 'in', OCULTOS_FILTRO)
-        .gte('created_at', desde)
+        .or(`lancamento.eq.true,titulo.ilike.%${t.curta}%,titulo.ilike.%${t.longa}%`)
         .order('created_at', { ascending: false })
-        .limit(40);
+        .limit(120);
       if(error) throw error;
-      const linhas = (data || []).filter(r => (r.product_images || []).length).slice(0, 16);
+      const comFoto = (data || []).filter(r => (r.product_images || []).length && passaEstoque(r.id));
+      // Marcados como lançamento primeiro; o resto embaralhado pra vitrine variar a cada visita.
+      const marcados = comFoto.filter(r => r.lancamento);
+      const resto = comFoto.filter(r => !r.lancamento).sort(() => Math.random() - 0.5);
+      const linhas = [...marcados, ...resto].slice(0, 20);
       if(!linhas.length){ section.hidden = true; return; }
+      document.getElementById('novidadesTitulo').textContent = `LANÇAMENTOS ${t.curta}.`;
       grid.innerHTML = '';
       linhas.forEach(row => {
         const p = mapDbProduct(row);
-        const team = TEAMS.find(t => t.nome === row.teams.nome) || row.teams;
+        const team = TEAMS.find(x => x.nome === row.teams.nome) || row.teams;
         grid.appendChild(buildHomeProductCard(p, team));
       });
       section.hidden = false;
+      iniciarAutoDeslize(grid);
     } catch(e){
-      console.error('Novidades indisponíveis', e);
+      console.error('Lançamentos indisponíveis', e);
       section.hidden = true;
     }
+  }
+
+  // Carrossel deslizando devagar sozinho, em loop. Para quando o cliente toca/arrasta
+  // e volta 4s depois. Desligado pra quem pede menos movimento no aparelho.
+  let autoDeslizeRaf = null;
+  function iniciarAutoDeslize(el){
+    cancelAnimationFrame(autoDeslizeRaf);
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Duplica os cards pra emendar o fim no começo sem "pulo".
+    [...el.children].forEach(c => { const k = c.cloneNode(true); k.onclick = c.onclick; k.querySelectorAll('button').forEach((b, i) => { b.onclick = c.querySelectorAll('button')[i].onclick; }); k.setAttribute('aria-hidden', 'true'); el.appendChild(k); });
+    let pausadoAte = 0, pos = el.scrollLeft;
+    const pausar = () => { pausadoAte = Date.now() + 4000; };
+    ['touchstart', 'pointerdown', 'wheel'].forEach(ev => el.addEventListener(ev, pausar, { passive: true }));
+    el.addEventListener('scroll', () => { if(Date.now() < pausadoAte) pos = el.scrollLeft; }, { passive: true });
+    const passo = () => {
+      const visivel = document.body.getAttribute('data-view') !== 'product' && !document.hidden && el.offsetParent !== null;
+      if(visivel && Date.now() >= pausadoAte){
+        const metade = el.scrollWidth / 2;
+        pos += 0.35;
+        if(pos >= metade) pos -= metade;
+        el.scrollLeft = pos;
+      } else {
+        pos = el.scrollLeft;
+        if(pos >= el.scrollWidth / 2) { pos -= el.scrollWidth / 2; el.scrollLeft = pos; }
+      }
+      autoDeslizeRaf = requestAnimationFrame(passo);
+    };
+    autoDeslizeRaf = requestAnimationFrame(passo);
   }
 
   function loadDestaques(){ return loadHomeProductSection('destaque', 'destaquesSection', 'destaquesGrid'); }
