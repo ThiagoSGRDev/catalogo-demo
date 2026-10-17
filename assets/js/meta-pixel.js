@@ -13,7 +13,7 @@
  *   Purchase             -> Pix da assinatura confirmado (valor do plano)
  */
 (function () {
-  var PIXEL_ID = '';
+  var PIXEL_ID = '1851397046180782';
 
   window.khTrack = function (evento, dados) {
     try { if (window.fbq) window.fbq('track', evento, dados || {}); } catch (e) { /* nunca quebra a página */ }
