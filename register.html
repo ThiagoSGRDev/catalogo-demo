@@ -205,7 +205,7 @@
       <img src="logo.svg" alt="Katalogo Hub" class="logo-img">
       <span class="badge">Teste grátis · 3 dias</span>
       <h1>Sua Loja Digital</h1>
-      <p>Crie seu catálogo em minutos.</p>
+      <p id="subtituloCadastro">Crie seu catálogo em minutos.</p>
     </div>
 
     <div id="alertBox" class="alert"></div>
@@ -340,6 +340,17 @@
   const storeNameInput = document.getElementById('storeName');
   const cpfInput = document.getElementById('cpf');
   let cadastroEmAndamento = false; // evita redirecionar antes da loja ser criada
+  // Cadastro pelo link de um fornecedor (?fornecedor=mic): a loja já nasce presa ao
+  // catálogo dele e não pode trocar depois (a troca é bloqueada no banco).
+  const FORNECEDORES = { mic: 'Mic Camisas de Time' };
+  const FORNECEDOR = (() => {
+    const f = (new URLSearchParams(location.search).get('fornecedor') || '').trim().toLowerCase();
+    return Object.prototype.hasOwnProperty.call(FORNECEDORES, f) ? f : null;
+  })();
+  if (FORNECEDOR) {
+    const sub = document.getElementById('subtituloCadastro');
+    if (sub) sub.textContent = 'Catálogo de revendedor ' + FORNECEDORES[FORNECEDOR] + ', pronto com fotos e produtos.';
+  }
   const submitBtn = document.getElementById('submitBtn');
   const alertBox = document.getElementById('alertBox');
   const passwordToggle = document.getElementById('passwordToggle');
@@ -570,7 +581,9 @@
       }
 
       // 3. Criar loja + vínculo + configurações de uma vez, no servidor (trial de 3 dias é definido lá)
-      const { error: lojaError } = await supabaseClient.rpc('criar_minha_loja', { p_nome: storeName, p_cpf: cpf });
+      const { error: lojaError } = FORNECEDOR
+        ? await supabaseClient.rpc('criar_minha_loja_fornecedor', { p_nome: storeName, p_cpf: cpf, p_fornecedor: FORNECEDOR })
+        : await supabaseClient.rpc('criar_minha_loja', { p_nome: storeName, p_cpf: cpf });
       if (lojaError) {
         await supabaseClient.auth.signOut();
         mostrarErroCadastro(lojaError.message);
