@@ -6,6 +6,7 @@
 <title>Ativar assinatura — Katalogo Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/js/meta-pixel.js"></script>
 <style>
   :root{
     --bg:#07090C; --panel:#161B26; --line:rgba(255,255,255,.14);
@@ -122,6 +123,13 @@
     { id:'anual',      nome:'Plano anual',      preco:'R$ 297,00', desc:'cobrança 1x por ano (metade do preço do mensal)' },
   ];
 
+  // Valor de cada plano em reais, para os eventos do Pixel (mesmos preços da lista acima).
+  const PLANOS_VALOR = { mensal: 49.90, trimestral: 134.90, anual: 297.00 };
+  function dadosEvento(){
+    const p = PLANOS.find(x => x.id === planoSel) || PLANOS[0];
+    return { value: PLANOS_VALOR[p.id], currency: 'BRL', content_name: p.nome };
+  }
+
   let planoSel = 'mensal';
   let lojaId = null;
   let pollTimer = null, cronTimer = null;
@@ -177,6 +185,7 @@
       const { data } = await sb.from('lojas').select('status').eq('id', lojaId).maybeSingle();
       if (data && data.status === 'ativo'){
         clearInterval(pollTimer); clearInterval(cronTimer);
+        if (window.khTrack) khTrack('Purchase', dadosEvento());
         mostrar('passoPago');
         setTimeout(irPainel, 2000);
       }
@@ -206,6 +215,7 @@
       $('qrImg').src = 'data:image/png;base64,' + data.qrCodeBase64;
       $('pixCodigo').value = data.pixCopiaECola || '';
       mostrar('passoPix');
+      if (window.khTrack) khTrack('InitiateCheckout', dadosEvento());
       iniciarCronometro(data.expiracao);
       esperarPagamento();
     } catch(e){
