@@ -3274,6 +3274,11 @@
   let ADMIN_EH_MESTRE = false; // loja mestre (Katalogo Hub): recorte com modelo pesado
   let ADMIN_MARQUEE_LIBERADO = false; // false = faixas (marquee) travadas para esta loja
   let ADMIN_LOJA_SLUG = null;
+  // Catálogo mestre que ESTA loja usa (Katalogo Hub ou outro, ex.: fornecedor)
+  // e as lojas cujos times/ligas/produtos aparecem neste painel: a própria + esse mestre.
+  let ADMIN_MESTRE_ID = null;
+  let ADMIN_LOJAS_VISIVEIS = [];
+  function lojasVisiveisAdmin(){ return ADMIN_LOJAS_VISIVEIS.length ? ADMIN_LOJAS_VISIVEIS : [ADMIN_LOJA_ID]; }
 
   async function enterApp(){
     document.getElementById('loginView').classList.add('hidden');
@@ -3298,7 +3303,14 @@
       TrialSystem.mostrarBannerTrial(statusTrial.diasRestantes);
     }
 
-    const { data: lojaInfo } = await supabaseClient.from('lojas').select('usa_catalogo_mestre, eh_catalogo_mestre, marquee_liberado, slug').eq('id', ADMIN_LOJA_ID).single();
+    const { data: lojaInfo } = await supabaseClient.from('lojas').select('usa_catalogo_mestre, eh_catalogo_mestre, marquee_liberado, slug, catalogo_mestre_id').eq('id', ADMIN_LOJA_ID).single();
+    ADMIN_MESTRE_ID = (lojaInfo && lojaInfo.catalogo_mestre_id) || null;
+    if(!ADMIN_MESTRE_ID){
+      const { data: m } = await supabaseClient.from('lojas').select('id').eq('eh_catalogo_mestre', true).limit(1).maybeSingle();
+      ADMIN_MESTRE_ID = m ? m.id : null;
+    }
+    ADMIN_LOJAS_VISIVEIS = [ADMIN_LOJA_ID];
+    if(ADMIN_MESTRE_ID && ADMIN_MESTRE_ID !== ADMIN_LOJA_ID) ADMIN_LOJAS_VISIVEIS.push(ADMIN_MESTRE_ID);
     ADMIN_USA_MESTRE = !!(lojaInfo && lojaInfo.usa_catalogo_mestre);
     ADMIN_EH_MESTRE  = !!(lojaInfo && lojaInfo.eh_catalogo_mestre);
     // Faixas (marquee): só o mestre (Katalogo Hub) edita, ou loja que ele liberou. Na dúvida, travado.
@@ -4022,9 +4034,9 @@
     const naPasta = (url, bucket) => String(url || '').includes(`/${bucket}/${ADMIN_LOJA_ID}/`);
 
     const [times, ligas, subligas, banners, settings] = await Promise.all([
-      buscarTodas(() => supabaseClient.from('teams').select('id, nome, escudo_url, imagem_url')),
-      supabaseClient.from('ligas').select('id, nome, icone_url, foto_atleta_url'),
-      supabaseClient.from('subligas').select('id, nome, icone_url'),
+      buscarTodas(() => supabaseClient.from('teams').select('id, nome, escudo_url, imagem_url').eq('loja_id', ADMIN_LOJA_ID)),
+      supabaseClient.from('ligas').select('id, nome, icone_url, foto_atleta_url').eq('loja_id', ADMIN_LOJA_ID),
+      supabaseClient.from('subligas').select('id, nome, icone_url').eq('loja_id', ADMIN_LOJA_ID),
       supabaseClient.from('hero_banners').select('id, url').eq('loja_id', ADMIN_LOJA_ID),
       supabaseClient.from('store_settings').select('loja_id, logo_url').eq('loja_id', ADMIN_LOJA_ID),
     ]);
@@ -4825,6 +4837,7 @@
     const { data, error } = await buscarTodas(() => supabaseClient
       .from('teams')
       .select('id, nome, liga, subliga, continente, escudo_url')
+      .in('loja_id', lojasVisiveisAdmin())
       .order('nome', { ascending: true }));
     if(error){ showToast('Erro ao carregar times: ' + error.message, 'error'); return; }
     TEAMS_CACHE = data || [];
@@ -4847,6 +4860,7 @@
     const { data, error } = await buscarTodas(() => supabaseClient
       .from('products')
       .select('*, teams(id, nome), product_images(id, url, ordem)')
+      .in('loja_id', lojasVisiveisAdmin())
       .order('created_at', { ascending: false }));
     if(error){ showToast('Erro ao carregar produtos: ' + error.message, 'error'); return; }
     PRODUCTS_CACHE = data || [];
@@ -5522,6 +5536,7 @@
     const { data, error } = await buscarTodas(() => supabaseClient
       .from('teams')
       .select('*')
+      .in('loja_id', lojasVisiveisAdmin())
       .order('nome', { ascending: true }));
     if(error){ showToast('Erro ao carregar times: ' + error.message, 'error'); return; }
     TEAMS_LIST_CACHE = data || [];
@@ -5531,8 +5546,8 @@
   async function loadLigasESubligas(){
     try {
       const [ligasRes, subligasRes] = await Promise.all([
-        supabaseClient.from('ligas').select('*').order('nome', { ascending: true }),
-        supabaseClient.from('subligas').select('*').order('nome', { ascending: true })
+        supabaseClient.from('ligas').select('*').in('loja_id', lojasVisiveisAdmin()).order('nome', { ascending: true }),
+        supabaseClient.from('subligas').select('*').in('loja_id', lojasVisiveisAdmin()).order('nome', { ascending: true })
       ]);
       LIGAS_CACHE = (ligasRes && ligasRes.data) ? ligasRes.data : [];
       SUBLIGAS_CACHE = (subligasRes && subligasRes.data) ? subligasRes.data : [];
@@ -8244,9 +8259,8 @@
     document.getElementById('catalogoMestreLista').innerHTML = '<div class="empty-state">Carregando...</div>';
     window.scrollTo(0,0);
 
-    const { data: mestre, error: mestreError } = await supabaseClient
-      .from('lojas').select('id').eq('eh_catalogo_mestre', true).single();
-    if(mestreError || !mestre){
+    const mestre = ADMIN_MESTRE_ID ? { id: ADMIN_MESTRE_ID } : null;
+    if(!mestre){
       document.getElementById('catalogoMestreLista').innerHTML = '<div class="empty-state">Não consegui encontrar o catálogo mestre agora.</div>';
       return;
     }
@@ -8971,7 +8985,7 @@
     // 2) Depois, o texto do mestre como dica dentro dos campos vazios.
     if(!ADMIN_USA_MESTRE || ADMIN_EH_MESTRE) return;
     try {
-      const { data: mestre } = await supabaseClient.from('lojas').select('id').eq('eh_catalogo_mestre', true).single();
+      const mestre = ADMIN_MESTRE_ID ? { id: ADMIN_MESTRE_ID } : null;
       if(!mestre) return;
       const { data } = await supabaseClient.from('store_settings')
         .select('descricoes_por_tipo').eq('loja_id', mestre.id).maybeSingle();
@@ -9674,7 +9688,7 @@
     const dosTimes = [...new Set(TEAMS_CACHE.map(t => t.liga).filter(Boolean))];
     const [{ data: proprias }, { data: deTimes }] = await Promise.all([
       supabaseClient.from('ligas').select('nome, ordem').eq('loja_id', ADMIN_LOJA_ID),
-      dosTimes.length ? supabaseClient.from('ligas').select('nome, ordem').in('nome', dosTimes) : Promise.resolve({ data: [] }),
+      dosTimes.length ? supabaseClient.from('ligas').select('nome, ordem').in('loja_id', lojasVisiveisAdmin()).in('nome', dosTimes) : Promise.resolve({ data: [] }),
     ]);
     const porOrdem = [...(proprias || []), ...(deTimes || [])].sort((a, b) => (a.ordem ?? 99) - (b.ordem ?? 99)).map(l => l.nome);
     const todas = [...new Set([...porOrdem, ...dosTimes])].filter(Boolean);

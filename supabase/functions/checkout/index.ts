@@ -56,7 +56,7 @@ async function criar(body: any) {
   const slug = txt(body.loja_slug, 80).toLowerCase();
   const metodo = body.metodo === 'cartao' ? 'cartao' : body.metodo === 'infinitepay' ? 'infinitepay' : 'pix';
 
-  const { data: loja } = await db.from('lojas').select('id, nome, slug, ativa, status, trial_expira_em, usa_catalogo_mestre')
+  const { data: loja } = await db.from('lojas').select('id, nome, slug, ativa, status, trial_expira_em, usa_catalogo_mestre, catalogo_mestre_id')
     .eq('slug', slug).maybeSingle();
   const lojaNoAr = loja && loja.ativa && (loja.status === 'ativo' || (loja.status === 'trial' && new Date(loja.trial_expira_em) > new Date()));
   if (!lojaNoAr) return json({ erro: 'loja_indisponivel' }, 404);
@@ -91,8 +91,13 @@ async function criar(body: any) {
 
   const lojasVisiveis = [loja.id];
   if (loja.usa_catalogo_mestre) {
-    const { data: m } = await db.from('lojas').select('id').eq('eh_catalogo_mestre', true).limit(1).maybeSingle();
-    if (m && m.id !== loja.id) lojasVisiveis.push(m.id);
+    // Vínculo a um catálogo específico (ex.: fornecedor) tem prioridade sobre o mestre padrão.
+    let mestreId: string | null = loja.catalogo_mestre_id || null;
+    if (!mestreId) {
+      const { data: m } = await db.from('lojas').select('id').eq('eh_catalogo_mestre', true).limit(1).maybeSingle();
+      mestreId = m ? m.id : null;
+    }
+    if (mestreId && mestreId !== loja.id) lojasVisiveis.push(mestreId);
   }
   const ids = [...new Set(itensIn.map((i: any) => txt(i.produtoId, 120)).filter(Boolean))];
   const [{ data: prods }, { data: ocultos }, { data: precos }, { data: precosTipo }, { data: ovs }, { data: cfg }] = await Promise.all([

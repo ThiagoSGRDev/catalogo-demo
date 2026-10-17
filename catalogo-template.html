@@ -3109,7 +3109,7 @@
     try {
       const { data, error } = await supabaseClient
         .from('lojas')
-        .select('id, nome, ativa, usa_catalogo_mestre')
+        .select('id, nome, ativa, usa_catalogo_mestre, catalogo_mestre_id')
         .eq('slug', LOJA_SLUG)
         .single();
       if(error || !data || !data.ativa){
@@ -3134,11 +3134,15 @@
       // é cópia, é a mesma linha sendo lida por todo mundo que optou nisso.
       let descricoesPromise;
       if(data.usa_catalogo_mestre){
-        const mestrePromise = supabaseClient
-          .from('lojas')
-          .select('id')
-          .eq('eh_catalogo_mestre', true)
-          .single();
+        // Loja vinculada a um catálogo específico (ex.: fornecedor) lê só dele;
+        // sem vínculo, segue o mestre padrão (Katalogo Hub), como sempre foi.
+        const mestrePromise = data.catalogo_mestre_id
+          ? Promise.resolve({ data: { id: data.catalogo_mestre_id } })
+          : supabaseClient
+              .from('lojas')
+              .select('id')
+              .eq('eh_catalogo_mestre', true)
+              .single();
 
         // Preço customizado/por tipo, por outro lado, vale mesmo pra
         // própria mestre — é só "essa loja tem um preço específico pra
@@ -3204,13 +3208,15 @@
   async function herdarMarqueeDoMestre(data){
     try {
       const { data: lj } = await supabaseClient.from('lojas')
-        .select('eh_catalogo_mestre, marquee_liberado').eq('id', LOJA_ID).single();
+        .select('eh_catalogo_mestre, marquee_liberado, catalogo_mestre_id').eq('id', LOJA_ID).single();
       if(!lj || lj.eh_catalogo_mestre || lj.marquee_liberado) return;
       const temPropria = !!((data.texto_barra_superior || '').trim() || data.imagem_barra_superior
         || data.imagem_texto_barra_superior || data.imagem_barra_rodape || (data.texto_rodape_loop || '').trim());
       if(temPropria) return;
-      const { data: mestre } = await supabaseClient.from('lojas')
-        .select('id').eq('eh_catalogo_mestre', true).limit(1).maybeSingle();
+      const { data: mestre } = lj.catalogo_mestre_id
+        ? { data: { id: lj.catalogo_mestre_id } }
+        : await supabaseClient.from('lojas')
+            .select('id').eq('eh_catalogo_mestre', true).limit(1).maybeSingle();
       if(!mestre) return;
       const { data: ms } = await supabaseClient.from('store_settings')
         .select(CAMPOS_MARQUEE.join(',')).eq('loja_id', mestre.id).maybeSingle();

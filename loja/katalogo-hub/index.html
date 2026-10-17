@@ -2450,7 +2450,7 @@
 
       const { data, error } = await supabaseClient
         .from('lojas')
-        .select('id, nome, ativa, usa_catalogo_mestre')
+        .select('id, nome, ativa, usa_catalogo_mestre, catalogo_mestre_id')
         .eq(lojaIdADefinir ? 'id' : 'slug', lojaIdADefinir || LOJA_SLUG)
         .single();
       if(error || !data || !data.ativa){
@@ -2475,11 +2475,13 @@
       // é cópia, é a mesma linha sendo lida por todo mundo que optou nisso.
       let descricoesPromise;
       if(data.usa_catalogo_mestre){
-        const mestrePromise = supabaseClient
-          .from('lojas')
-          .select('id')
-          .eq('eh_catalogo_mestre', true)
-          .single();
+        const mestrePromise = data.catalogo_mestre_id
+          ? Promise.resolve({ data: { id: data.catalogo_mestre_id } })
+          : supabaseClient
+              .from('lojas')
+              .select('id')
+              .eq('eh_catalogo_mestre', true)
+              .single();
 
         // Preço customizado/por tipo, por outro lado, vale mesmo pra
         // própria mestre — é só "essa loja tem um preço específico pra
