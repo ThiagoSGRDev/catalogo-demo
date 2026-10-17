@@ -972,13 +972,26 @@
   .vm-item button{ background:none; border:none; color:var(--text-faint); font-size:20px; cursor:pointer; padding:6px 0; }
   .vm-total{ font-size:17px; font-weight:800; margin:10px 0; }
   /* ---- FORM OVERLAYS & MODAIS ---- */
-  #formOverlay, #heroOverlay, #teamsOverlay, #ligasOverlay, #importOverlay, #apparenceOverlay, #precosOverlay, #lojaOverlay, #fotoStudioOverlay, #catalogoMestreOverlay, #assinaturaOverlay, #teamPickerOverlay, #loteOverlay, #otimizarOverlay, #atividadeOverlay, #personalizarOverlay, #checkoutOverlay, #pedidosOverlay{
+  #formOverlay, #heroOverlay, #teamsOverlay, #ligasOverlay, #importOverlay, #apparenceOverlay, #precosOverlay, #lojaOverlay, #fotoStudioOverlay, #catalogoMestreOverlay, #assinaturaOverlay, #teamPickerOverlay, #loteOverlay, #otimizarOverlay, #atividadeOverlay, #personalizarOverlay, #checkoutOverlay, #pedidosOverlay, #resultadosOverlay{
     position: fixed; inset: 0; background: var(--bg); z-index: 150; overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     animation: fadeInModal .3s ease;
   }
   /* O estúdio de foto abre POR CIMA dos cadastros de time e de liga. */
   #fotoStudioOverlay{ z-index: 160; }
+
+
+  /* ---- Resultados das lojas (só loja mestre) ---- */
+  .res-resumo{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0; }
+  .res-card{ background:var(--surface,rgba(255,255,255,.04)); border:1px solid var(--border,rgba(255,255,255,.1)); border-radius:14px; padding:12px; }
+  .res-card small{ display:block; opacity:.7; font-size:12px; }
+  .res-card b{ display:block; font-size:20px; margin-top:4px; }
+  .res-loja{ background:var(--surface,rgba(255,255,255,.04)); border:1px solid var(--border,rgba(255,255,255,.1)); border-radius:14px; padding:12px; margin-bottom:10px; }
+  .res-loja h4{ margin:0 0 2px; font-size:15px; display:flex; justify-content:space-between; gap:8px; align-items:center; }
+  .res-loja .res-st{ font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--border,rgba(255,255,255,.2)); opacity:.85; white-space:nowrap; }
+  .res-linhas{ display:grid; grid-template-columns:1fr auto; gap:4px 12px; font-size:13px; margin-top:8px; }
+  .res-linhas span:nth-child(odd){ opacity:.7; }
+  .res-linhas span:nth-child(even){ text-align:right; font-weight:600; }
 
   /* ---- Envio em lote (fotos/escudos) ---- */
   .lote-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0 90px; }
@@ -1415,6 +1428,7 @@
       <button type="button" class="rail-item primario" data-sem-ativo onclick="if(railTap(event)) openForm(null)"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="rail-label">Novo produto</span></button>
       <button class="rail-item" id="railProdutos" type="button" onclick="if(railTap(event)) mostrarSecao('produtos')"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 5 2 9l3 2 1-1v11h12V10l1 1 3-2-2-4-4-2c0 2-1.8 3-4 3S8 5 8 3Z"/></svg></span><span class="rail-label">Produtos</span></button>
       <button type="button" class="rail-item" onclick="if(railTap(event)) abrirAtividade()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 5-6"/></svg></span><span class="rail-label">Atividade</span></button>
+      <button type="button" class="rail-item" id="railResultados" style="display:none" onclick="if(railTap(event)) abrirResultados()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span class="rail-label">Resultados das lojas</span></button>
       <button type="button" class="rail-item" onclick="if(railTap(event)) abrirPedidos()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span><span class="rail-label">Pedidos</span></button>
       <button type="button" class="rail-item" onclick="if(railTap(event)) abrirCheckoutConfig()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span><span class="rail-label">Pagamentos</span></button>
       <a class="rail-item" id="btnVerCatalogo" data-sem-ativo href="#" target="_blank" rel="noopener" onclick="return railTap(event)"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2zM22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/></svg></span><span class="rail-label">Ver catálogo</span></a>
@@ -1935,6 +1949,33 @@
 <!-- ASSINATURA — plano atual + trocar de plano (mensal/trimestral/ -->
 <!-- anual), sem precisar falar com o suporte.                     -->
 <!-- ============================================================ -->
+<!-- ============================================================ -->
+<!-- RESULTADOS DAS LOJAS — só a loja mestre. Números somados por   -->
+<!-- loja; nenhum dado pessoal de cliente final sai do banco.        -->
+<!-- ============================================================ -->
+<div id="resultadosOverlay" class="hidden">
+  <div class="form-header">
+    <button class="icon-btn" onclick="fecharResultados()" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2>Resultados das lojas</h2>
+  </div>
+  <div class="form-body">
+    <div class="form-section">
+      <label for="resDias">Período</label>
+      <select id="resDias" onchange="carregarResultados()">
+        <option value="7">Últimos 7 dias</option>
+        <option value="30" selected>Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+        <option value="365">Último ano</option>
+      </select>
+      <div class="field-hint" style="margin-top:8px;"><b>Faturamento confirmado</b> = pedidos pagos pelo checkout + pedidos do WhatsApp que o lojista marcou como <b>Vendido</b>. Pedido do WhatsApp ainda não marcado aparece só em <b>pedidos em aberto</b>. Aqui não aparece nome, telefone ou endereço de cliente.</div>
+    </div>
+    <div id="resResumo" class="res-resumo"></div>
+    <div id="resLista"><div class="field-hint">Carregando…</div></div>
+  </div>
+</div>
+
 <!-- ============================================================ -->
 <!-- CHECKOUT PRÓPRIO — conectar Mercado Pago e ligar o pagamento   -->
 <!-- dentro do catálogo (PIX na hora e cartão parcelado).           -->
@@ -3263,6 +3304,7 @@
     // Faixas (marquee): só o mestre (Katalogo Hub) edita, ou loja que ele liberou. Na dúvida, travado.
     ADMIN_MARQUEE_LIBERADO = ADMIN_EH_MESTRE || !!(lojaInfo && lojaInfo.marquee_liberado);
     ADMIN_LOJA_SLUG = lojaInfo ? lojaInfo.slug : null;
+    const railRes = document.getElementById('railResultados'); if(railRes) railRes.style.display = ADMIN_EH_MESTRE ? '' : 'none';
     setTimeout(verificarPrimeiroAcesso, 800);   // loja nova: abre o "loja pronta em 3 passos"
     await carregarPrecosTipoAdmin();
     const btnMestre = document.getElementById('btnCatalogoMestre');
@@ -8260,6 +8302,52 @@
     aguardando_pagamento: ['aguardando_pagamento'],
     perdidos: ['perdido', 'expirado', 'cancelado', 'estornado'],
   };
+
+  // ---- Resultados das lojas (só mestre) ----
+  function resEsc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  async function abrirResultados(){
+    if(!ADMIN_EH_MESTRE){ showToast('Disponível só no painel do Katalogo Hub.', 'error'); return; }
+    document.getElementById('resultadosOverlay').classList.remove('hidden');
+    window.scrollTo(0,0);
+    await carregarResultados();
+  }
+  function fecharResultados(){ document.getElementById('resultadosOverlay').classList.add('hidden'); }
+  async function carregarResultados(){
+    const dias = parseInt(document.getElementById('resDias').value, 10) || 30;
+    const lista = document.getElementById('resLista');
+    const resumo = document.getElementById('resResumo');
+    lista.innerHTML = '<div class="field-hint">Carregando…</div>';
+    const { data, error } = await supabaseClient.rpc('resultados_lojas', { p_dias: dias });
+    if(error || !data){ lista.innerHTML = '<div class="field-hint">Não consegui carregar os resultados.</div>'; resumo.innerHTML = ''; return; }
+    const brl = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const lojas = data.lojas || [];
+    const soma = k => lojas.reduce((t, l) => t + Number(l[k] || 0), 0);
+    const ativas = lojas.filter(l => Number(l.pedidos) > 0).length;
+    resumo.innerHTML =
+      '<div class="res-card"><small>Faturamento confirmado</small><b>' + brl(soma('faturamento')) + '</b></div>' +
+      '<div class="res-card"><small>Vendas confirmadas</small><b>' + soma('vendas') + '</b></div>' +
+      '<div class="res-card"><small>Pedidos feitos</small><b>' + soma('pedidos') + '</b></div>' +
+      '<div class="res-card"><small>Lojas com pedido</small><b>' + ativas + ' de ' + lojas.length + '</b></div>';
+    if(!lojas.length){ lista.innerHTML = '<div class="field-hint">Nenhuma loja ainda.</div>'; return; }
+    lista.innerHTML = lojas.map(l => {
+      const ped = Number(l.pedidos || 0), vis = Number(l.visitas || 0);
+      const conv = vis > 0 ? (ped / vis * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%' : '—';
+      const emAberto = Math.max(0, Number(l.valor_pedidos_feitos || 0) - Number(l.faturamento || 0));
+      const ult = l.ultimo_pedido ? new Date(l.ultimo_pedido).toLocaleDateString('pt-BR') : 'nenhum';
+      return '<div class="res-loja"><h4><span>' + resEsc(l.nome) + '</span><span class="res-st">' + resEsc(l.status || '') + '</span></h4>' +
+        '<div class="field-hint">/' + resEsc(l.slug) + '</div>' +
+        '<div class="res-linhas">' +
+          '<span>Faturamento confirmado</span><span>' + brl(l.faturamento) + '</span>' +
+          '<span>· pelo checkout</span><span>' + brl(l.faturamento_checkout) + '</span>' +
+          '<span>· pelo WhatsApp (marcado Vendido)</span><span>' + brl(l.faturamento_whatsapp) + '</span>' +
+          '<span>Pedidos em aberto (valor)</span><span>' + brl(emAberto) + '</span>' +
+          '<span>Pedidos (checkout / WhatsApp)</span><span>' + ped + ' (' + l.pedidos_checkout + ' / ' + l.pedidos_whatsapp + ')</span>' +
+          '<span>Visitas</span><span>' + vis + '</span>' +
+          '<span>Visitas que viraram pedido</span><span>' + conv + '</span>' +
+          '<span>Último pedido</span><span>' + ult + '</span>' +
+        '</div></div>';
+    }).join('');
+  }
 
   async function abrirCheckoutConfig(){
     document.getElementById('checkoutOverlay').classList.remove('hidden');
