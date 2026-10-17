@@ -32,6 +32,8 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 //                           > conjunto de dados > Configuracoes). Sem ele, nao envia nada a Meta.
 //   META_PIXEL_ID        -> opcional; padrao 1851397046180782 (conjunto de dados Katalogo Hub)
 //   META_TEST_EVENT_CODE -> opcional; so para testar na aba "Eventos de teste". Remova depois.
+//   ASAAS_API_KEY / ASAAS_AMBIENTE -> ja existem; usados para ler o WhatsApp e o nome do cliente
+//                           no Asaas (o WhatsApp so fica guardado la).
 // ============================================================
 
 function resposta(corpo: unknown, status = 200) {
@@ -52,6 +54,26 @@ function normalizarTelefone(bruto: unknown): string | null {
   return d.startsWith('55') && d.length >= 12 ? d : '55' + d;
 }
 
+// Le o cadastro do cliente no Asaas (WhatsApp e nome so ficam guardados la). Nunca lanca erro.
+async function clienteAsaas(customerId: string | undefined): Promise<any | null> {
+  const chave = Deno.env.get('ASAAS_API_KEY');
+  if (!chave || !customerId) return null;
+  try {
+    const base = Deno.env.get('ASAAS_AMBIENTE') === 'producao'
+      ? 'https://api.asaas.com/v3' : 'https://sandbox.asaas.com/api/v3';
+    const r = await fetch(`${base}/customers/${encodeURIComponent(customerId)}`, {
+      headers: { 'access_token': chave }, signal: AbortSignal.timeout(4000),
+    });
+    return r.ok ? await r.json() : null;
+  } catch (_) { return null; }
+}
+
+function normalizarNome(s: unknown): string | null {
+  const t = String(s ?? '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
+  return t || null;
+}
+
 // Nunca lanca erro: qualquer falha aqui so vira log.
 async function enviarPurchaseParaMeta(supabaseAdmin: any, lojaId: string, payment: any) {
   const token = Deno.env.get('META_CAPI_TOKEN');
@@ -67,9 +89,12 @@ async function enviarPurchaseParaMeta(supabaseAdmin: any, lojaId: string, paymen
 
     const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
     const user = u?.user;
-    const email = user?.email?.trim().toLowerCase();
-    const meta = user?.user_metadata ?? {};
-    const telefone = normalizarTelefone(meta.whatsapp ?? meta.telefone ?? meta.phone ?? user?.phone);
+    const cliente = await clienteAsaas(payment?.customer);
+    const email = (user?.email || cliente?.email || '').trim().toLowerCase() || null;
+    const telefone = normalizarTelefone(cliente?.mobilePhone || cliente?.phone || user?.phone);
+    const partesNome = String(cliente?.name ?? '').trim().split(/\s+/).filter(Boolean);
+    const primeiroNome = normalizarNome(partesNome[0]);
+    const sobrenome = partesNome.length > 1 ? normalizarNome(partesNome[partesNome.length - 1]) : null;
 
     // Dados pessoais vao SEMPRE em hash SHA-256 (padrao da Meta); nada em texto puro.
     const userData: Record<string, unknown> = {
@@ -78,6 +103,8 @@ async function enviarPurchaseParaMeta(supabaseAdmin: any, lojaId: string, paymen
     };
     if (email) userData.em = [await sha256(email)];
     if (telefone) userData.ph = [await sha256(telefone)];
+    if (primeiroNome) userData.fn = [await sha256(primeiroNome)];
+    if (sobrenome) userData.ln = [await sha256(sobrenome)];
 
     const valor = Number(payment?.value);
     const corpo: Record<string, unknown> = {
