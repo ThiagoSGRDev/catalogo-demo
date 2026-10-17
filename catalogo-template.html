@@ -3450,8 +3450,9 @@
       const paymentSection = document.getElementById('footerPayment');
       const paymentRow = document.getElementById('footerPaymentRow');
       // Bandeiras padrão (logos do Katalogo Hub, liga/desliga no painel) + as que o lojista subiu.
-      const BANDEIRAS = { mercadopago: 'Mercado Pago', pix: 'Pix', elo: 'Elo', mastercard: 'Mastercard', infinitepay: 'InfinitePay' };
-      const padrao = (Array.isArray(data.bandeiras_padrao) ? data.bandeiras_padrao : Object.keys(BANDEIRAS)).filter(k => BANDEIRAS[k]);
+      const BANDEIRAS = { mercadopago: 'Mercado Pago', pix: 'Pix', visa: 'Visa', mastercard: 'Mastercard', elo: 'Elo', infinitepay: 'InfinitePay' };
+      const ligadas = Array.isArray(data.bandeiras_padrao) ? data.bandeiras_padrao : Object.keys(BANDEIRAS);
+      const padrao = Object.keys(BANDEIRAS).filter(k => ligadas.includes(k));
       const proprias = Array.isArray(data.payment_icons) ? data.payment_icons : [];
       if(paymentSection && paymentRow && (padrao.length || proprias.length)){
         paymentRow.innerHTML =
