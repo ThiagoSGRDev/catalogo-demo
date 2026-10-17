@@ -1416,7 +1416,7 @@
       <button class="rail-item" id="railProdutos" type="button" onclick="if(railTap(event)) mostrarSecao('produtos')"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 5 2 9l3 2 1-1v11h12V10l1 1 3-2-2-4-4-2c0 2-1.8 3-4 3S8 5 8 3Z"/></svg></span><span class="rail-label">Produtos</span></button>
       <button type="button" class="rail-item" onclick="if(railTap(event)) abrirAtividade()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 5-6"/></svg></span><span class="rail-label">Atividade</span></button>
       <button type="button" class="rail-item" onclick="if(railTap(event)) abrirPedidos()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span><span class="rail-label">Pedidos</span></button>
-      <button type="button" class="rail-item" onclick="if(railTap(event)) abrirCheckoutConfig()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span><span class="rail-label">Checkout próprio</span></button>
+      <button type="button" class="rail-item" onclick="if(railTap(event)) abrirCheckoutConfig()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span><span class="rail-label">Pagamentos</span></button>
       <a class="rail-item" id="btnVerCatalogo" data-sem-ativo href="#" target="_blank" rel="noopener" onclick="return railTap(event)"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2zM22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/></svg></span><span class="rail-label">Ver catálogo</span></a>
       <button class="rail-item" type="button"  onclick="if(railTap(event)) openHeroOverlay()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg></span><span class="rail-label">Banner hero</span></button>
       <button class="rail-item" type="button"  onclick="if(railTap(event)) openTeamsOverlay()"><span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg></span><span class="rail-label">Times</span></button>
@@ -1493,7 +1493,7 @@
         <button type="button" onclick="mostrarSecao('produtos')"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0Z"/></svg></span>Produtos</button>
         <button type="button" onclick="openApparenceOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.5-2-.3-1 .3-2 1.4-2H17a4 4 0 0 0 4-4c0-5-4-10-9-10Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg></span>Aparência</button>
         <button type="button" onclick="abrirPedidos()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span>Pedidos</button>
-        <button type="button" onclick="abrirCheckoutConfig()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span>Checkout próprio</button>
+        <button type="button" onclick="abrirCheckoutConfig()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span>Pagamentos</button>
         <button type="button" onclick="openLojaOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1-5h14l1 5"/><path d="M4 9a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 6 0 2.5 2.5 0 0 0 5 0"/><path d="M5 12v8h14v-8"/></svg></span>Minha loja</button>
         <button type="button" class="mais" onclick="openHeroOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 16-5-5-9 9"/></svg></span>Banner hero</button>
         <button type="button" class="mais" onclick="openTeamsOverlay()"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/></svg></span>Times</button>
@@ -1944,11 +1944,12 @@
     <button class="icon-btn" onclick="fecharCheckoutConfig()" aria-label="Fechar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
-    <h2>Checkout próprio</h2>
+    <h2>Pagamentos</h2>
   </div>
   <div class="form-body">
     <div class="form-section">
       <h3>Seu cliente paga dentro da loja</h3>
+      <div class="field-hint" style="margin-bottom:8px;">Use o <b>Mercado Pago</b>, a <b>InfinitePay</b> ou os dois juntos (o cliente escolhe no carrinho). Os dois marcam o pedido como <b>pago</b> sozinhos.</div>
       <ul class="ck-lista">
         <li>PIX na hora ou cartão em até 12x, na mesma tela do carrinho.</li>
         <li>O dinheiro cai <b>direto na sua conta do Mercado Pago</b>. Não passa pela gente.</li>
@@ -1981,7 +1982,8 @@
       </div>
     </div>
     <div class="form-section">
-      <h3>InfinitePay (opcional)</h3>
+      <h3>InfinitePay</h3>
+      <div class="ck-status-box" id="ipStatusBox"><span class="ck-dot"></span><div><strong id="ipStatusTitulo">Carregando...</strong><small id="ipStatusSub"></small></div></div>
       <div class="field-hint" style="margin-bottom:12px;">Alternativa ou complemento ao Mercado Pago. O cliente toca em "Pix ou cartão (InfinitePay)", paga na página da InfinitePay e o pedido vira "Pago" sozinho. O dinheiro cai na sua conta InfinitePay. Não tem comissão do Katalogo Hub.</div>
       <div class="field">
         <label for="ipHandle">Sua InfiniteTag</label>
@@ -8269,6 +8271,13 @@
     const { data } = await supabaseClient.from('loja_infinitepay').select('handle, ativo').eq('loja_id', ADMIN_LOJA_ID).maybeSingle();
     document.getElementById('ipHandle').value = data ? data.handle : '';
     document.getElementById('ipAtivo').checked = data ? !!data.ativo : false;
+    mostrarStatusInfinitePay(data);
+  }
+  function mostrarStatusInfinitePay(d){
+    const on = !!(d && d.ativo && d.handle);
+    document.getElementById('ipStatusBox').classList.toggle('on', on);
+    document.getElementById('ipStatusTitulo').textContent = on ? 'InfinitePay ligada' : (d && d.handle ? 'InfinitePay desligada' : 'InfinitePay não configurada');
+    document.getElementById('ipStatusSub').textContent = d && d.handle ? '$' + d.handle : 'Coloque sua InfiniteTag abaixo e ligue.';
   }
   async function salvarInfinitePay(){
     const handle = document.getElementById('ipHandle').value.trim().replace(/^\$/, '').toLowerCase();
@@ -8276,11 +8285,11 @@
     let error = null;
     if(!handle){
       ({ error } = await supabaseClient.from('loja_infinitepay').delete().eq('loja_id', ADMIN_LOJA_ID));
-      if(!error) showToast('InfinitePay removida da loja.');
+      if(!error){ showToast('InfinitePay removida da loja.'); mostrarStatusInfinitePay(null); }
     } else {
       if(!/^[a-z0-9_.-]{2,40}$/.test(handle)){ showToast('InfiniteTag inválida: use só letras, números, ponto, traço ou _.', 'error'); return; }
       ({ error } = await supabaseClient.from('loja_infinitepay').upsert({ loja_id: ADMIN_LOJA_ID, handle, ativo, atualizado_em: new Date().toISOString() }, { onConflict: 'loja_id' }));
-      if(!error) showToast(ativo ? 'InfinitePay ligada na loja!' : 'InfinitePay salva (desligada).');
+      if(!error){ showToast(ativo ? 'InfinitePay ligada na loja!' : 'InfinitePay salva (desligada).'); mostrarStatusInfinitePay({ handle, ativo }); }
     }
     if(error) showToast('Não consegui salvar a InfinitePay.', 'error');
   }
