@@ -79,6 +79,17 @@
       "source": "/admin/",
       "destination": "/dashboard/",
       "permanent": true
+    },
+    {
+      "source": "/mic{/}?",
+      "has": [
+        {
+          "type": "host",
+          "value": "(www\\.)?katalogohub\\.com"
+        }
+      ],
+      "destination": "/register.html?fornecedor=mic",
+      "permanent": false
     }
   ]
 }
