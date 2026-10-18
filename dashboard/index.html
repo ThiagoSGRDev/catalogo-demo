@@ -8742,6 +8742,14 @@
       return;
     }
 
+    // Preço desta loja: revendedor de fornecedor parceiro (ex.: Mic) tem preço especial.
+    try {
+      const { data: precos } = await supabaseClient.rpc('meus_planos');
+      if(precos) PLANOS_ASSINATURA.forEach(p => { if(precos[p.id] != null) p.valor = Number(precos[p.id]); });
+      const tri = PLANOS_ASSINATURA.find(p => p.id === 'trimestral');
+      if(tri) tri.descricao = 'Cobrado a cada 3 meses (R$ ' + (tri.valor / 3).toFixed(2).replace('.', ',') + '/mês)';
+    } catch(e){ console.error('Não consegui carregar o preço da loja', e); }
+
     const statusTexto = { active: 'Ativa', pending: 'Aguardando primeiro pagamento', overdue: 'Em atraso', cancelled: 'Cancelada' }[assinatura.status] || assinatura.status;
     const planoAtualId = PLANOS_ASSINATURA.find(p => Math.abs(p.valor - Number(assinatura.valor)) < 0.01)?.id || null;
     const vencimentoTexto = assinatura.proximo_vencimento ? new Date(assinatura.proximo_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '—';

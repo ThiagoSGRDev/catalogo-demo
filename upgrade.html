@@ -117,7 +117,7 @@
   const sb = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
 
   // Precisa bater com renovar-assinatura / criar-assinatura / mudar-plano.
-  const PLANOS = [
+  let PLANOS = [
     { id:'mensal',     nome:'Plano mensal',     preco:'R$ 49,90',  desc:'cobrança todo mês' },
     { id:'trimestral', nome:'Plano trimestral', preco:'R$ 134,90', desc:'cobrança a cada 3 meses' },
     { id:'anual',      nome:'Plano anual',      preco:'R$ 297,00', desc:'cobrança 1x por ano (metade do preço do mensal)' },
@@ -266,6 +266,18 @@
     } else {
       aviso.classList.add('hidden');
     }
+
+    // Preço desta loja: revendedor de fornecedor parceiro (ex.: Mic) tem preço especial.
+    try {
+      const { data: precos } = await sb.rpc('meus_planos');
+      if (precos){
+        const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+        PLANOS.forEach(p => {
+          if (precos[p.id] != null){ PLANOS_VALOR[p.id] = Number(precos[p.id]); p.preco = brl(precos[p.id]); }
+          if (precos.fornecedor && p.id !== 'anual') p.desc += ' · preço especial ' + precos.fornecedor;
+        });
+      }
+    } catch(e){ console.error('Não consegui carregar o preço da loja', e); }
 
     renderPlanos();
     mostrar('passoForm');
