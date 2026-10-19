@@ -784,6 +784,29 @@
   const supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
 
   // ============================================================
+  // VISITAS DO SITE — gravadas em "eventos" na loja Katalogo Hub, com
+  // origem: ?ref=nome (quem recebeu o link) ou "interno" (aparelho do dono,
+  // marcado ao entrar no painel ou ao abrir com ?eu=1).
+  // ============================================================
+  const KH_LOJA_ID = '6313e64a-b638-4619-b36d-e02ac3cdffa2';
+  function khOrigem(){
+    try {
+      const q = new URLSearchParams(location.search);
+      if(q.get('eu') === '1') localStorage.setItem('kh_interno', '1');
+      if(localStorage.getItem('kh_interno') === '1') return 'interno';
+      const ref = String(q.get('ref') || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
+      if(ref) sessionStorage.setItem('kh_ref', ref);
+      return sessionStorage.getItem('kh_ref') || null;
+    } catch(e){ return null; }
+  }
+  function khRegistrar(tipo){
+    try { supabaseClient.from('eventos').insert({ loja_id: KH_LOJA_ID, tipo, origem: khOrigem() }).then(() => {}, () => {}); } catch(e){}
+  }
+  try {
+    if(sessionStorage.getItem('kh_site_visita') !== '1'){ sessionStorage.setItem('kh_site_visita', '1'); khRegistrar('site_visita'); }
+  } catch(e){ khRegistrar('site_visita'); }
+
+  // ============================================================
   // SELO "PREÇO DE FUNDADOR" — vagas reais, não texto fixo.
   // Busca no banco (via função pública vagas_fundador_restantes(),
   // que só conta assinaturas com status='active') quantas das 20
@@ -835,10 +858,10 @@
   // Pixel: clique no WhatsApp = Contact; clique em "Teste grátis" = Lead.
   document.addEventListener('click', function(ev){
     const a = ev.target.closest && ev.target.closest('a[href]');
-    if(!a || !window.khTrack) return;
+    if(!a) return;
     const href = a.getAttribute('href') || '';
-    if(href.indexOf('wa.me/') !== -1) khTrack('Contact');
-    else if(href.indexOf('register.html') !== -1) khTrack('Lead', { content_name: 'Teste grátis 3 dias' });
+    if(href.indexOf('wa.me/') !== -1){ khRegistrar('site_whatsapp'); if(window.khTrack) khTrack('Contact'); }
+    else if(href.indexOf('register.html') !== -1){ khRegistrar('site_teste'); if(window.khTrack) khTrack('Lead', { content_name: 'Teste grátis 3 dias' }); }
   });
 
   // planoAtual vem do seletor de planos (bloco anterior).
@@ -857,6 +880,7 @@
     document.getElementById('checkoutPassoPix').style.display = 'none';
     document.getElementById('checkoutOverlay').classList.add('aberto');
     document.body.style.overflow = 'hidden';
+    khRegistrar('site_checkout');
     if(window.khTrack) khTrack('InitiateCheckout', { value: PLANOS_VALOR[planoAtual] || 49.90, currency: 'BRL', content_name: resumo.nome });
   }
 
