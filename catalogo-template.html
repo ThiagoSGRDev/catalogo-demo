@@ -4355,6 +4355,8 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     return { data: tudo, error: null };
   }
 
+  const MAX_DESTAQUES = 20; // mesmo limite do painel (MAX_DESTAQUES em dashboard/index.html)
+
   async function loadHomeProductSection(campo, sectionId, gridId){
     const section = document.getElementById(sectionId);
     const grid = document.getElementById(gridId);
@@ -4394,10 +4396,22 @@ const PRODUCT_DATA = {};  // preenchido do Supabase (products + product_images)
     // Junta as duas listas sem repetir, e tira quem esta loja desmarcou.
     const porId = new Map();
     respostas.forEach(r => (r.data || []).forEach(row => porId.set(row.id, row)));
-    const linhas = [...porId.values()].filter(row => {
+    let linhas = [...porId.values()].filter(row => {
       const ov = OVERRIDES.get(row.id);
       return !(ov && ov[campo] === false);
     });
+
+    // Destaques: no máximo 20. Se ESTA loja escolheu os dela (produto próprio
+    // marcado ou personalização "Sim"), mostra só a escolha dela; senão herda
+    // a seleção do catálogo mestre.
+    if(campo === 'destaque'){
+      const escolhaPropria = linhas.filter(row => {
+        const ov = OVERRIDES.get(row.id);
+        return (ov && ov.destaque === true) || (row.loja_id === LOJA_ID && row.destaque);
+      });
+      if(escolhaPropria.length) linhas = escolhaPropria;
+      linhas = linhas.slice(0, MAX_DESTAQUES);
+    }
 
     if(linhas.length === 0){
       section.style.display = "none";

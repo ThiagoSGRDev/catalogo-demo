@@ -3923,6 +3923,8 @@
     const nadaPersonalizado = ['titulo','subtitulo','descricao','tags','ordem_exibicao','tamanhos','destaque','lancamento']
       .every(c => linha[c] === null) && !linha.ocultar_fotos_mestre;
 
+    if(linha.destaque === true && !(await cabeMaisUmDestaque(p.id))) return;
+
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>';
 
@@ -5182,7 +5184,32 @@
       ? (FORM_PRECO_MANUAL_ORIG || precoMudou)
       : (FORM_ORIGEM_IMPORT ? precoMudou : true);
 
+    if(destaque && !(await cabeMaisUmDestaque(id))) return;
+
     await commitSaveProduct(id, team, tipo, titulo, subtitulo, descricao, preco, tamanhos, tags, disponivel, destaque, lancamento, estoque, precoManual);
+  }
+
+  // Vitrine "Destaques" da home: no máximo 20 por loja (mesmo limite do catálogo).
+  // Conta os produtos próprios marcados + os do mestre marcados "Sim" na personalização,
+  // sem contar o produto que está sendo salvo (editar um que já é destaque não bloqueia).
+  const MAX_DESTAQUES = 20;
+  async function cabeMaisUmDestaque(productId){
+    const [proprios, personalizados] = await Promise.all([
+      supabaseClient.from('products').select('id', { count: 'exact', head: true })
+        .eq('loja_id', ADMIN_LOJA_ID).eq('destaque', true).neq('id', productId),
+      supabaseClient.from('loja_produtos_override').select('product_id', { count: 'exact', head: true })
+        .eq('loja_id', ADMIN_LOJA_ID).eq('destaque', true).neq('product_id', productId)
+    ]);
+    if(proprios.error || personalizados.error){
+      showToast('Não consegui conferir quantos destaques você já tem. Tente de novo.', 'error');
+      return false;
+    }
+    const total = (proprios.count || 0) + (personalizados.count || 0);
+    if(total >= MAX_DESTAQUES){
+      showToast(`Limite de ${MAX_DESTAQUES} destaques atingido. Desmarque um antes de marcar outro.`, 'error');
+      return false;
+    }
+    return true;
   }
 
   async function commitSaveProduct(id, team, tipo, titulo, subtitulo, descricao, preco, tamanhos, tags, disponivel, destaque, lancamento, estoque, precoManual){
