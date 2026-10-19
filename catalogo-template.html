@@ -3621,6 +3621,13 @@
     if (found) {
       try { sessionStorage.setItem('utm_params', JSON.stringify(utm)); } catch(e){}
     }
+    // Link rastreável por pessoa: katalogohub.com/loja/x?ref=cheng
+    // (só letras minúsculas, números, - e _; até 40). Vale pra aba inteira.
+    const ref = String(params.get('ref') || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
+    if (ref) { try { sessionStorage.setItem('kh_ref', ref); } catch(e){} }
+  }
+  function getRef(){
+    try { return sessionStorage.getItem('kh_ref') || null; } catch(e){ return null; }
   }
   function getUTM(){
     try { return JSON.parse(sessionStorage.getItem('utm_params') || "{}"); }
@@ -3698,7 +3705,8 @@
       await supabaseClient.from('eventos').insert({
         loja_id: LOJA_ID,
         tipo,
-        produto_id: (eventData && eventData.product_id) ? String(eventData.product_id) : null
+        produto_id: (eventData && eventData.product_id) ? String(eventData.product_id) : null,
+        origem: getRef()
       });
     } catch(e){
       // Registro de atividade nunca pode atrapalhar a navegacao do cliente.
@@ -3714,7 +3722,7 @@
       sessionStorage.setItem('mh_visita_registrada', '1');
     } catch(_){ /* navegador sem sessionStorage: registra mesmo assim */ }
     try {
-      await supabaseClient.from('eventos').insert({ loja_id: LOJA_ID, tipo: 'visita' });
+      await supabaseClient.from('eventos').insert({ loja_id: LOJA_ID, tipo: 'visita', origem: getRef() });
     } catch(e){
       if(DEBUG_ANALYTICS) console.error('[eventos] visita', e);
     }
