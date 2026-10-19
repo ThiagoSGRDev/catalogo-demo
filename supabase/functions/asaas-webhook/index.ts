@@ -75,6 +75,42 @@ function normalizarNome(s: unknown): string | null {
 }
 
 // Nunca lanca erro: qualquer falha aqui so vira log.
+// Aviso por email para o dono do Katalogo Hub (ALERTA_EMAIL, padrao contato@katalogohub.com).
+// Melhor esforco: nunca derruba o webhook.
+async function avisarDonoAssinatura(supabaseAdmin: any, lojaId: string, payment: any, primeira: boolean) {
+  const resendKey = Deno.env.get('RESEND_API_KEY');
+  if (!resendKey) return;
+  try {
+    const { data: loja } = await supabaseAdmin.from('lojas').select('nome, slug, user_id').eq('id', lojaId).maybeSingle();
+    let email = '';
+    if (loja?.user_id) {
+      const { data: u } = await supabaseAdmin.auth.admin.getUserById(loja.user_id);
+      email = u?.user?.email || '';
+    }
+    const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+    const valor = Number(payment?.value || 0).toFixed(2).replace('.', ',');
+    const titulo = primeira ? `Nova assinatura: ${loja?.nome || 'loja'} (R$ ${valor})` : `Pagamento recebido: ${loja?.nome || 'loja'} (R$ ${valor})`;
+    const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5">
+      <h2 style="margin:0 0 12px">${primeira ? '🎉 Nova assinatura' : '💰 Pagamento recebido'}</h2>
+      <p><b>Loja:</b> ${esc(loja?.nome)} (${esc(loja?.slug)})<br>
+      <b>Email:</b> ${esc(email)}<br>
+      <b>Valor:</b> R$ ${valor}<br>
+      <b>Catálogo:</b> <a href="https://katalogohub.com/loja/${esc(loja?.slug)}">katalogohub.com/loja/${esc(loja?.slug)}</a></p></div>`;
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `alerta-pag-${payment?.id || lojaId}` },
+      body: JSON.stringify({
+        from: Deno.env.get('EMAIL_FROM') ?? 'Katalogo Hub <onboarding@resend.dev>',
+        to: [Deno.env.get('ALERTA_EMAIL') || 'contato@katalogohub.com'],
+        subject: titulo, html,
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (e) {
+    console.error('Falha ao avisar o dono por email (ignorada):', e);
+  }
+}
+
 async function enviarPurchaseParaMeta(supabaseAdmin: any, lojaId: string, payment: any) {
   const token = Deno.env.get('META_CAPI_TOKEN');
   if (!token) {
@@ -213,6 +249,7 @@ Deno.serve(async (req: Request) => {
       }).eq('id', assinatura.id);
 
       if (virouAtiva) await enviarPurchaseParaMeta(supabaseAdmin, assinatura.loja_id, payment);
+      await avisarDonoAssinatura(supabaseAdmin, assinatura.loja_id, payment, assinatura.status === 'pending');
     } else if (eventosBloqueiam.includes(evento)) {
       await supabaseAdmin.from('lojas').update({
         ativa: false,
