@@ -7289,7 +7289,12 @@
         await loteProcessarItem(it);
       }
       st.textContent = 'Pronto. Confira, ajuste o que precisar e toque em Salvar.';
-    } finally { loteRodando = false; }
+    } finally {
+      loteRodando = false;
+      // Redesenha pra destravar o botão "Salvar aprovados" (ele foi desenhado
+      // desativado enquanto o processamento ainda estava rodando).
+      loteRender();
+    }
   }
 
   // ---- Interação ----
