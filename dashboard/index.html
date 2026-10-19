@@ -7425,15 +7425,18 @@
       const { error: upErr } = await loteComRetry(() => supabaseClient.storage.from(TEAMS_BUCKET).upload(path, it.blob, { contentType: 'image/webp', cacheControl: CACHE_CONTROL_LONGO, upsert: true }));
       if(upErr){ it.aviso = 'Erro ao enviar: ' + upErr.message; falhas++; continue; }
       const url = supabaseClient.storage.from(TEAMS_BUCKET).getPublicUrl(path).data.publicUrl;
-      const { error: dbErr } = await loteComRetry(() => supabaseClient.from('teams').update({ [campo]: url }).eq('id', it.team.id));
+      const { data: gravados, error: dbErr } = await loteComRetry(() => supabaseClient.from('teams').update({ [campo]: url }).eq('id', it.team.id).select('id'));
       if(dbErr){ it.aviso = 'Erro ao gravar no time: ' + dbErr.message; falhas++; continue; }
+      // Sem linha alterada = o time é de outro catálogo (ex.: do catálogo mestre) e este login não pode editar.
+      if(!gravados || !gravados.length){ it.aviso = 'Este time é do catálogo mestre: entre com o login dele para trocar a imagem.'; falhas++; continue; }
       it.team[campo] = url;
       it.salvo = true; ok++;
       if(it.thumb){ /* mantém a miniatura no cartão salvo */ }
     }
     loteRodando = false;
     st.textContent = `${ok} salvo(s)` + (falhas ? `, ${falhas} com erro` : '') + (dup ? `, ${dup} duplicado(s) ignorado(s)` : '') + '.';
-    showToast(`${ok} imagem(ns) salva(s).`, ok ? 'success' : 'error');
+    const primeiroErro = (lista.find(i => i.aviso && !i.salvo) || {}).aviso;
+    showToast(ok ? `${ok} imagem(ns) salva(s).` + (falhas ? ` ${falhas} com erro.` : '') : ('Nada foi salvo. ' + (primeiroErro || 'Tente de novo.')), ok && !falhas ? 'success' : 'error');
     loteRender();
     renderTeamsList();
   }
