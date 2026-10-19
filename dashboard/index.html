@@ -2166,6 +2166,13 @@
       <h3>Vitrine (página inicial)</h3>
       <div class="toggle-row" style="margin-bottom:14px;">
         <div>
+          <div class="label">Mostrar vitrine "Destaques"</div>
+          <div class="desc">Carrossel na página inicial, acima de "Lançamentos", com os produtos marcados como destaque (até 20).</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="lojaMostrarDestaques"><span class="track"></span></label>
+      </div>
+      <div class="toggle-row" style="margin-bottom:14px;">
+        <div>
           <div class="label">Mostrar vitrine "Lançamentos"</div>
           <div class="desc">Carrossel deslizando sozinho na página inicial com as camisas da temporada atual (ex.: 26/27) e as que você marcar como lançamento. A temporada vira sozinha todo julho.</div>
         </div>
@@ -9120,7 +9127,7 @@
 
     const { data, error } = await supabaseClient
       .from('store_settings')
-      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, prazo_encomenda, mostrar_novidades, ordem_ligas, meta_pixel_id, selos_confianca, mostrar_vendo_agora, idioma, moeda, bandeiras_padrao, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
+      .select('logo_url, horario_atendimento, telefone_contato, email_contato, instagram, payment_icons, texto_barra_superior, texto_rodape_loop, texto_entrega, usa_estoque, estoque_alerta_limite, prazo_encomenda, mostrar_novidades, mostrar_destaques, ordem_ligas, meta_pixel_id, selos_confianca, mostrar_vendo_agora, idioma, moeda, bandeiras_padrao, descricoes_por_tipo, imagem_barra_superior, imagem_barra_rodape, posicao_texto_barra_superior, alinhamento_texto_barra_superior, imagem_texto_barra_superior, texto_barra_x, texto_barra_y, texto_barra_escala')
       .eq('loja_id', ADMIN_LOJA_ID)
       .single();
     if(!error && data){
@@ -9128,6 +9135,7 @@
       document.getElementById('lojaEstoqueAlerta').value = String(data.estoque_alerta_limite ?? 2);
       document.getElementById('lojaPrazoEncomenda').value = data.prazo_encomenda || '';
       document.getElementById('lojaMostrarNovidades').checked = data.mostrar_novidades !== false;
+      document.getElementById('lojaMostrarDestaques').checked = data.mostrar_destaques !== false;
       document.getElementById('lojaPixelId').value = data.meta_pixel_id || '';
       const selos = Array.isArray(data.selos_confianca) ? data.selos_confianca : [];
       document.querySelectorAll('#selosChecks input').forEach(c => c.checked = selos.includes(c.value));
@@ -9910,6 +9918,7 @@
         estoque_alerta_limite: Number(document.getElementById('lojaEstoqueAlerta').value) || 0,
         prazo_encomenda: document.getElementById('lojaPrazoEncomenda').value.trim().slice(0, 60) || null,
         mostrar_novidades: document.getElementById('lojaMostrarNovidades').checked,
+        mostrar_destaques: document.getElementById('lojaMostrarDestaques').checked,
         ...(ORDEM_LIGAS_EDIT ? { ordem_ligas: ORDEM_LIGAS_EDIT } : {}),
         meta_pixel_id: lerPixelId(),
         selos_confianca: [...document.querySelectorAll('#selosChecks input:checked')].map(c => c.value),
