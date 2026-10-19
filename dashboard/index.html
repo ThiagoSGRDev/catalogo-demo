@@ -2107,6 +2107,7 @@
     <div class="field-hint" style="margin-top:16px;">
       Mudar de plano vale a partir da próxima cobrança — não cobra nada na hora nem retroage o período já pago.
     </div>
+    <div id="assinaturaCancelBox" style="margin-top:28px; padding-top:18px; border-top:1px solid var(--border, rgba(255,255,255,.12));"></div>
   </div>
 </div>
 
@@ -3296,7 +3297,7 @@
     // Verificar trial
     const statusTrial = await TrialSystem.verificarTrial(supabaseClient, ADMIN_LOJA_ID);
     if (statusTrial.bloqueado) {
-      TrialSystem.bloquearAcesso(ADMIN_LOJA_ID);
+      TrialSystem.bloquearAcesso(ADMIN_LOJA_ID, statusTrial.status);
       return;
     }
     if (statusTrial.status === 'trial' && statusTrial.diasRestantes <= 3) {
@@ -8734,7 +8735,7 @@
     window.scrollTo(0,0);
 
     const { data: assinatura, error } = await supabaseClient
-      .from('assinaturas').select('status, valor, proximo_vencimento').eq('loja_id', ADMIN_LOJA_ID).maybeSingle();
+      .from('assinaturas').select('status, valor, proximo_vencimento, acesso_ate').eq('loja_id', ADMIN_LOJA_ID).maybeSingle();
 
     if(error || !assinatura){
       document.getElementById('assinaturaAtualBox').textContent = 'Não encontrei sua assinatura agora.';
@@ -8750,17 +8751,83 @@
       if(tri) tri.descricao = 'Cobrado a cada 3 meses (R$ ' + (tri.valor / 3).toFixed(2).replace('.', ',') + '/mês)';
     } catch(e){ console.error('Não consegui carregar o preço da loja', e); }
 
-    const statusTexto = { active: 'Ativa', pending: 'Aguardando primeiro pagamento', overdue: 'Em atraso', cancelled: 'Cancelada' }[assinatura.status] || assinatura.status;
+    const statusTexto = { active: 'Ativa', pending: 'Aguardando primeiro pagamento', overdue: 'Em atraso', cancelling: 'Cancelada (acesso até o fim do período pago)', cancelled: 'Cancelada' }[assinatura.status] || assinatura.status;
+    const fmtData = d => d ? new Date(String(d).slice(0,10) + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
     const planoAtualId = PLANOS_ASSINATURA.find(p => Math.abs(p.valor - Number(assinatura.valor)) < 0.01)?.id || null;
     const vencimentoTexto = assinatura.proximo_vencimento ? new Date(assinatura.proximo_vencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
 
     document.getElementById('assinaturaAtualBox').innerHTML = `
       <strong style="color:var(--text);">Status:</strong> ${statusTexto}<br>
       <strong style="color:var(--text);">Valor atual:</strong> R$ ${Number(assinatura.valor).toFixed(2).replace('.', ',')}<br>
-      <strong style="color:var(--text);">Próximo vencimento:</strong> ${vencimentoTexto}
+      ${assinatura.status === 'cancelling'
+        ? `<strong style="color:var(--text);">Acesso até:</strong> ${fmtData(assinatura.acesso_ate)}`
+        : `<strong style="color:var(--text);">Próximo vencimento:</strong> ${vencimentoTexto}`}
     `;
 
+    const cancelBox = document.getElementById('assinaturaCancelBox');
+    if(assinatura.status === 'active'){
+      cancelBox.innerHTML = `
+        <div class="field-hint" style="margin-bottom:12px;">
+          Cancelamento: até 7 dias após o primeiro pagamento você recebe o valor de volta. Depois disso, o cancelamento não gera reembolso e o acesso segue até o fim do período já pago.
+        </div>
+        <button class="btn btn-danger" id="btnCancelarAssinatura" onclick="abrirCancelarAssinatura()">Cancelar assinatura</button>`;
+    } else if(assinatura.status === 'cancelling'){
+      cancelBox.innerHTML = `<div class="field-hint">Sua assinatura está cancelada e não será mais cobrada. Painel e catálogo continuam liberados até ${fmtData(assinatura.acesso_ate)}.</div>`;
+    } else {
+      cancelBox.innerHTML = '';
+    }
+
+    if(assinatura.status === 'cancelling' || assinatura.status === 'cancelled'){
+      document.getElementById('assinaturaPlanos').innerHTML = '';
+      return;
+    }
     renderAssinaturaPlanos(planoAtualId);
+  }
+
+  async function abrirCancelarAssinatura(){
+    const errBox = document.getElementById('assinaturaErro');
+    errBox.style.display = 'none';
+    const btn = document.getElementById('btnCancelarAssinatura');
+    if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
+
+    const { data, error } = await supabaseClient.functions.invoke('cancelar-assinatura', { body: { simular: true } });
+    if(btn){ btn.disabled = false; btn.textContent = 'Cancelar assinatura'; }
+    if(error || !data || data.erro || !data.sucesso){
+      errBox.textContent = (data && data.erro) || 'Não consegui verificar seu cancelamento agora. Tenta de novo em instantes.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    const fim = data.acessoAte ? new Date(data.acessoAte + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    document.getElementById('confirmTitle').textContent = 'Cancelar assinatura?';
+    document.getElementById('confirmText').textContent = data.reembolso
+      ? 'Você está dentro dos 7 dias de garantia: o valor pago será estornado integralmente e seu painel e catálogo saem do ar agora. Essa ação não pode ser desfeita.'
+      : `O prazo de reembolso (7 dias após o primeiro pagamento) já passou, então não há estorno. Você não será mais cobrado e painel e catálogo continuam liberados até ${fim}.`;
+    const act = document.getElementById('confirmActionBtn');
+    act.textContent = data.reembolso ? 'Cancelar e pedir reembolso' : 'Cancelar assinatura';
+    act.onclick = confirmarCancelarAssinatura;
+    document.getElementById('confirmOverlay').classList.remove('hidden');
+  }
+
+  async function confirmarCancelarAssinatura(){
+    const act = document.getElementById('confirmActionBtn');
+    act.disabled = true; act.innerHTML = '<span class="spinner"></span>';
+    const { data, error } = await supabaseClient.functions.invoke('cancelar-assinatura', { body: {} });
+    act.disabled = false;
+    closeConfirm();
+    if(error || !data || data.erro || !data.sucesso){
+      const errBox = document.getElementById('assinaturaErro');
+      errBox.textContent = (data && data.erro) || 'Não consegui cancelar agora. Tenta de novo em instantes ou fale com o suporte.';
+      errBox.style.display = 'block';
+      return;
+    }
+    if(data.reembolso){
+      showToast('Assinatura cancelada. O reembolso foi solicitado e cai na sua forma de pagamento.', 'success');
+      setTimeout(() => location.reload(), 2500);
+    } else {
+      showToast('Assinatura cancelada. Você não será mais cobrado.', 'success');
+      await openAssinaturaOverlay();
+    }
   }
 
   function closeAssinaturaOverlay(){

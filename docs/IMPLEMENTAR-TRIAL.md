@@ -49,7 +49,7 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
 
 ## Passo 4: Auto-Criar Trial ao Registrar
 
-Quando um novo usuário se registra, a coluna `trial_expira_em` já vem preenchida com hoje + 7 dias.
+Quando um novo usuário se registra, a coluna `trial_expira_em` já vem preenchida com hoje + 3 dias.
 
 ## Passo 5: Criar Página de Upgrade
 

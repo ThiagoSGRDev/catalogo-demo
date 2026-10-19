@@ -255,7 +255,9 @@
     if (loja && loja.status === 'ativo'){ irPainel(); return; }
 
     const aviso = $('avisoTrial');
-    if (loja && loja.trial_expira_em){
+    if (loja && loja.status === 'cancelado'){
+      aviso.textContent = 'Sua assinatura foi cancelada. Assine de novo para reativar painel e catálogo.';
+    } else if (loja && loja.trial_expira_em){
       const exp = new Date(loja.trial_expira_em);
       const dataTxt = exp.toLocaleDateString('pt-BR');
       if (exp.getTime() < Date.now() || loja.status === 'bloqueado'){
