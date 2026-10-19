@@ -3289,6 +3289,8 @@
   function lojasVisiveisAdmin(){ return ADMIN_LOJAS_VISIVEIS.length ? ADMIN_LOJAS_VISIVEIS : [ADMIN_LOJA_ID]; }
 
   async function enterApp(){
+    // Marca este navegador como do dono: visitas dele no catálogo saem como "interno".
+    try { localStorage.setItem('kh_interno', '1'); } catch(e){}
     document.getElementById('loginView').classList.add('hidden');
     document.getElementById('appView').classList.remove('hidden');
     document.getElementById('userEmailLabel').textContent = currentUser.email;

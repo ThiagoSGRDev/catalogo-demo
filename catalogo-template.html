@@ -3626,7 +3626,17 @@
     const ref = String(params.get('ref') || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
     if (ref) { try { sessionStorage.setItem('kh_ref', ref); } catch(e){} }
   }
+  // Visita do próprio dono: este aparelho fica marcado como "interno" (quem
+  // entra no painel neste navegador, ou abre qualquer catálogo com ?eu=1).
+  // Assim dá pra separar visita própria de visita de cliente.
+  function ehInterno(){
+    try {
+      if(new URLSearchParams(location.search).get('eu') === '1') localStorage.setItem('kh_interno', '1');
+      return localStorage.getItem('kh_interno') === '1';
+    } catch(e){ return false; }
+  }
   function getRef(){
+    if(ehInterno()) return 'interno';
     try { return sessionStorage.getItem('kh_ref') || null; } catch(e){ return null; }
   }
   function getUTM(){
