@@ -27,7 +27,7 @@ CREATE INDEX idx_lojas_trial_expira ON lojas(trial_expira_em) WHERE status = 'tr
 - Se cancelado → bloqueia com opção de reativar
 
 **Ao criar loja:**
-- Define `trial_expira_em` = hoje + 7 dias
+- Define `trial_expira_em` = hoje + 3 dias
 - Status = 'trial'
 
 ### 3. Verificação de Trial
@@ -59,8 +59,8 @@ async function verificarStatusLoja(supabaseClient, lojaId) {
 ### Cliente novo
 1. Acessa katalogohub.com/admin.html
 2. Faz login com email
-3. Sistema cria loja com trial de 7 dias automaticamente
-4. Mostra banner: "Trial grátis: 7 dias restantes"
+3. Sistema cria loja com trial de 3 dias automaticamente
+4. Mostra banner: "Trial grátis: 3 dias restantes"
 
 ### Após trial expirar
 1. Sistema bloqueia acesso

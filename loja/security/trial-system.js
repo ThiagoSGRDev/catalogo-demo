@@ -47,6 +47,17 @@ const TrialSystem = (() => {
         };
       }
 
+      // Assinatura cancelada (com reembolso ou depois do periodo pago): acesso negado ate assinar de novo
+      if (loja.status === 'cancelado') {
+        return {
+          status: 'cancelado',
+          bloqueado: true,
+          diasRestantes: 0,
+          mensagem: 'Assinatura cancelada. Assine de novo para voltar',
+          urlUpgrade: 'upgrade.html'
+        };
+      }
+
       // Trial ainda ativo
       if (loja.status === 'trial') {
         const agora = new Date();
@@ -123,7 +134,16 @@ const TrialSystem = (() => {
   /**
    * Bloqueia acesso ao painel se trial expirou
    */
-  function bloquearAcesso(lojaId) {
+  function bloquearAcesso(lojaId, status) {
+    const cancelado = status === 'cancelado';
+    const titulo = cancelado ? 'Assinatura cancelada' : 'Teste grátis encerrado';
+    const linha1 = cancelado
+      ? 'Sua assinatura foi cancelada e o acesso ao painel e ao catálogo está bloqueado.'
+      : 'Seus 3 dias de teste grátis terminaram. Painel e catálogo ficam bloqueados até você assinar.';
+    const linha2 = cancelado
+      ? 'Seus produtos e dados ficam guardados. Assine de novo para reativar tudo.'
+      : 'Seus produtos e dados ficam guardados. Assine para liberar tudo de volta.';
+    const botao = cancelado ? 'Assinar de novo' : 'Assinar agora';
     document.body.innerHTML = `
       <div style="
         display: flex;
@@ -138,12 +158,12 @@ const TrialSystem = (() => {
       ">
         <div style="text-align: center; max-width: 500px;">
           <div style="font-size: 64px; margin-bottom: 20px;">🔒</div>
-          <h1 style="font-size: 28px; margin-bottom: 16px;">Trial Expirado</h1>
+          <h1 style="font-size: 28px; margin-bottom: 16px;">${titulo}</h1>
           <p style="font-size: 18px; color: #94A3B8; margin-bottom: 32px;">
-            Seu período de teste grátis terminou.
+            ${linha1}
           </p>
           <p style="font-size: 16px; color: #64748B; margin-bottom: 32px;">
-            Faça upgrade do seu plano para continuar usando Katalogo Hub.
+            ${linha2}
           </p>
           <a href="upgrade.html" style="
             display: inline-block;
@@ -157,7 +177,7 @@ const TrialSystem = (() => {
             margin-bottom: 16px;
             transition: background 0.3s;
           " onmouseover="this.style.background='#22D3A8'" onmouseout="this.style.background='#35FFC0'">
-            Fazer Upgrade
+            ${botao}
           </a>
           <p style="font-size: 14px; color: #64748B;">
             Precisa de ajuda? <a href="mailto:support@katalogohub.com" style="color: #35FFC0; text-decoration: none;">Contate o suporte</a>

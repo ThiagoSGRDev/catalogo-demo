@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/register",
+      "destination": "/register.html"
+    },
+    {
       "source": "/",
       "missing": [
         {

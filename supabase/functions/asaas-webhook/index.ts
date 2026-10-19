@@ -171,7 +171,7 @@ Deno.serve(async (req: Request) => {
 
     // Acha a assinatura correspondente no nosso banco (por subscription,
     // com fallback pra customer se por algum motivo subscription vier vazio).
-    let query = supabaseAdmin.from('assinaturas').select('id, loja_id, status');
+    let query = supabaseAdmin.from('assinaturas').select('id, loja_id, status, primeiro_pagamento_em');
     query = subscriptionId ? query.eq('asaas_subscription_id', subscriptionId) : query.eq('asaas_customer_id', customerId);
     const { data: assinatura } = await query.maybeSingle();
 
@@ -183,15 +183,33 @@ Deno.serve(async (req: Request) => {
     const eventosAtivam = ['PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED'];
     const eventosBloqueiam = ['PAYMENT_OVERDUE', 'PAYMENT_DELETED', 'SUBSCRIPTION_DELETED', 'PAYMENT_REFUNDED'];
 
+    // (alteracao 19/10/2026: cancelamento pelo painel -- ver cancelar-assinatura)
+    // 'cancelling' = lojista cancelou e ainda tem acesso ate assinaturas.acesso_ate. Apagar a
+    // assinatura no Asaas dispara PAYMENT_DELETED das cobrancas futuras: isso NAO pode bloquear
+    // a loja. O encerramento do acesso e feito pelo job expirar_acessos_cancelados() (pg_cron).
+    if (assinatura.status === 'cancelling' &&
+        ['PAYMENT_DELETED', 'SUBSCRIPTION_DELETED', 'PAYMENT_OVERDUE', ...eventosAtivam].includes(evento)) {
+      return resposta({ ok: true });
+    }
+
     if (eventosAtivam.includes(evento)) {
       // So conta como venda quando a assinatura ESTAVA fora de 'active' (primeira ativacao ou
       // reativacao). Renovacao mensal e o 2o aviso do mesmo pagamento (CONFIRMED + RECEIVED) nao reenviam.
       const virouAtiva = assinatura.status !== 'active';
+      // A janela de reembolso de 7 dias conta do PRIMEIRO pagamento (status anterior 'pending').
+      // Um 'overdue' que volta a pagar nao reinicia a janela.
+      const primeiroPagamento = assinatura.status === 'pending' || !assinatura.primeiro_pagamento_em;
 
       await supabaseAdmin.from('lojas').update({ ativa: true, status: 'ativo' }).eq('id', assinatura.loja_id);
       await supabaseAdmin.from('assinaturas').update({
         status: 'active', updated_at: new Date().toISOString(),
         ...(payment.dueDate ? { proximo_vencimento: payment.dueDate } : {}),
+        ...(primeiroPagamento && assinatura.status === 'pending'
+          ? { primeiro_pagamento_em: new Date().toISOString(), asaas_payment_id: payment.id ?? null, acesso_ate: null, cancelamento_em: null }
+          : {}),
+        ...(primeiroPagamento && assinatura.status !== 'pending' && !assinatura.primeiro_pagamento_em
+          ? { primeiro_pagamento_em: new Date().toISOString(), asaas_payment_id: payment.id ?? null }
+          : {}),
       }).eq('id', assinatura.id);
 
       if (virouAtiva) await enviarPurchaseParaMeta(supabaseAdmin, assinatura.loja_id, payment);
@@ -203,6 +221,7 @@ Deno.serve(async (req: Request) => {
       await supabaseAdmin.from('assinaturas').update({
         status: evento === 'PAYMENT_OVERDUE' ? 'overdue' : 'cancelled',
         updated_at: new Date().toISOString(),
+        ...(evento === 'PAYMENT_REFUNDED' ? { reembolsada_em: new Date().toISOString(), acesso_ate: null } : {}),
       }).eq('id', assinatura.id);
     }
     // Outros eventos (ex.: PAYMENT_CREATED, PAYMENT_UPDATED) sao ignorados de
