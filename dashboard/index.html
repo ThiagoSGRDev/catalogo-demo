@@ -7489,7 +7489,16 @@
     document.getElementById('confirmOverlay').classList.remove('hidden');
     document.getElementById('confirmActionBtn').onclick = async () => {
       const { error } = await supabaseClient.from('teams').delete().eq('id', teamId);
-      if(error){ showToast('Erro ao excluir: ' + error.message, 'error'); }
+      if(error){
+        if(error.code === '23503'){
+          const { count } = await supabaseClient.from('products').select('id', { count: 'exact', head: true }).eq('team_id', teamId);
+          const n = count || 0;
+          const nomeTime = team ? team.nome : 'esse time';
+          showToast(`Não dá pra excluir "${nomeTime}": ${n} produto${n === 1 ? '' : 's'} ainda ${n === 1 ? 'está cadastrado' : 'estão cadastrados'} com ele. Exclua ou mude o time desse${n === 1 ? '' : 's'} produto${n === 1 ? '' : 's'} antes.`, 'error');
+        } else {
+          showToast('Erro ao excluir: ' + error.message, 'error');
+        }
+      }
       else {
         showToast('Time excluído.', 'success');
         await loadTeamsList();
