@@ -1954,6 +1954,20 @@
   /* Cobre a página até a cor/logo real da loja carregar — ver esconderLoadingGate() */
   #loadingGate{ position:fixed; inset:0; background:#0A0D10; z-index:99999; }
   #loadingGate.oculto{ display:none; }
+  /* ============================================================
+     FUNDO BRANCO PADRÃO NAS FOTOS DE PRODUTO (todos os temas)
+     Foto com fundo transparente, ou que não ocupa o quadro inteiro,
+     fica sempre sobre branco — independente do tema da loja.
+     Mesmo tratamento que o tema clean-light já usava. O skeleton
+     (carregando) continua cinza pulsando.
+     ============================================================ */
+  html[data-theme] .product-card:not(.skeleton) .photo,
+  html[data-theme] .product-photo-lg,
+  html[data-theme] .product-thumb,
+  html[data-theme] .order-thumb{ background:#FFFFFF; }
+  html[data-theme] .product-photo-lg::after{ display:none; }
+  html[data-theme] .product-photo-lg > .tag,
+  html[data-theme] .product-photo-lg .type-badge{ background:#12161C; color:#fff; }
 </style>
 </head>
 <body>
