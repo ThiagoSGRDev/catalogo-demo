@@ -1170,6 +1170,39 @@
   .team-row-name{ font-weight:600; color:var(--text); }
   .team-row-tag{ font-size:12px; color:var(--text-faint); }
 
+  /* ---- SELEÇÃO EM MASSA (produtos e times) ---- */
+  .product-card{ position:relative; }
+  .sel-check{
+    position:absolute; top:10px; right:10px; z-index:3; width:30px; height:30px; border-radius:9px;
+    border:2px solid #fff; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center;
+    pointer-events:none;
+  }
+  .sel-check svg{ width:18px; height:18px; color:#04120d; opacity:0; }
+  .product-card.sel .sel-check{ background:var(--neon-green); border-color:var(--neon-green); }
+  .product-card.sel .sel-check svg{ opacity:1; }
+  .product-card.sel{ outline:3px solid var(--neon-green); outline-offset:-3px; }
+  .product-card.nao-sel{ opacity:.35; cursor:not-allowed; }
+  .massa-bar{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:16px; z-index:140;
+    width:calc(100% - 32px); max-width:640px; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:16px; padding:10px 12px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.5); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  }
+  .massa-bar.fixa-painel{ position:sticky; left:auto; transform:none; width:100%; bottom:12px; margin-top:12px; }
+  .massa-bar .massa-info{ flex:1 1 100%; font-weight:700; font-size:14px; color:var(--text); }
+  .massa-bar .btn{ flex:1 1 auto; padding:10px 12px; font-size:13px; }
+  body.modo-sel-produtos .fab{ display:none; }
+  .team-check{ width:22px; height:22px; accent-color:var(--neon-green); flex-shrink:0; cursor:pointer; }
+  .team-row.sel{ background:rgba(53,255,192,.08); }
+  .team-row.modo-sel{ cursor:pointer; }
+  .team-qtd{
+    background:none; border:none; padding:0; margin-left:6px; color:var(--neon-green); font-size:12px;
+    font-weight:600; cursor:pointer; text-decoration:underline; text-underline-offset:2px;
+  }
+  .team-qtd.zero{ color:var(--text-faint); text-decoration:none; cursor:default; }
+  .confirm-check{ display:flex; gap:10px; align-items:flex-start; margin-top:12px; color:var(--text); font-size:14px; cursor:pointer; }
+  .confirm-check input{ width:20px; height:20px; accent-color:#ef4444; flex-shrink:0; margin-top:1px; }
+
   .form-footer{
     position:sticky; bottom:0; background:var(--bg); border-top:1px solid var(--line);
     padding:14px 16px; display:flex; gap:10px;
@@ -1535,6 +1568,10 @@
           <span id="filtroBotaoTexto">Filtros</span>
         </button>
         <span class="filtro-ativo" id="filtroAtivoLabel"></span>
+        <button type="button" class="btn btn-secondary filtro-botao" id="selProdBtn" onclick="alternarSelecaoProdutos()" style="margin-left:auto;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12l3 3 5-6"/></svg>
+          <span id="selProdBtnTxt">Selecionar</span>
+        </button>
       </div>
       <div class="filtro-lista" id="filterChips">
         <div class="filtro-opcao ativa" data-filter="todos" onclick="setFilter('todos')">Todos</div>
@@ -1559,6 +1596,12 @@
     <div class="product-count" id="productCount"></div>
     <div class="product-list" id="productList"></div>
     <nav class="pager" id="pager" aria-label="Páginas de produtos"></nav>
+    <div id="massaProdutosBar" class="massa-bar hidden">
+      <div class="massa-info" id="massaProdutosInfo">0 selecionados</div>
+      <button type="button" class="btn btn-secondary" id="massaProdutosTodos" onclick="selecionarTodosProdutos()">Selecionar todos</button>
+      <button type="button" class="btn btn-secondary" onclick="limparSelecaoProdutos()">Limpar</button>
+      <button type="button" class="btn btn-danger" id="massaProdutosExcluir" onclick="confirmarExcluirProdutosSel()">Excluir</button>
+    </div>
     </div>
   </main>
 
@@ -2521,7 +2564,8 @@
     <!-- LISTA DE TIMES -->
     <div id="teamsListView">
       <button class="btn btn-primary" style="width:100%;margin-bottom:10px;" onclick="openTeamForm(null)">+ Novo time</button>
-      <button class="btn btn-ghost" style="width:100%;margin-bottom:14px;" onclick="openLote()">Envio em lote (fotos e escudos)</button>
+      <button class="btn btn-ghost" style="width:100%;margin-bottom:10px;" onclick="openLote()">Envio em lote (fotos e escudos)</button>
+      <button class="btn btn-secondary" style="width:100%;margin-bottom:14px;" id="selTimesBtn" onclick="alternarSelecaoTimes()">Selecionar vários para excluir</button>
       <div class="field-hint" style="margin-bottom:12px;">Times cadastrados aqui aparecem automaticamente na navegação por escudos do catálogo e na lista de times ao cadastrar um produto — sem precisar mexer em código.</div>
       <div class="teams-filtros">
         <div class="teams-busca">
@@ -2537,6 +2581,12 @@
         <div class="field-hint" id="teamsContagem" style="margin:8px 0 4px;"></div>
       </div>
       <div id="teamsList"></div>
+      <div id="massaTimesBar" class="massa-bar fixa-painel hidden">
+        <div class="massa-info" id="massaTimesInfo">0 selecionados</div>
+        <button type="button" class="btn btn-secondary" id="massaTimesTodos" onclick="selecionarTodosTimes()">Selecionar todos</button>
+        <button type="button" class="btn btn-secondary" onclick="limparSelecaoTimes()">Limpar</button>
+        <button type="button" class="btn btn-danger" id="massaTimesExcluir" onclick="confirmarExcluirTimesSel()">Excluir</button>
+      </div>
     </div>
 
     <!-- FORMULÁRIO DE TIME (criar/editar) -->
@@ -4894,8 +4944,7 @@
     renderProductList();
   }
 
-  function renderProductList(){
-    atualizarChipEstoqueBaixo();
+  function listaProdutosFiltrada(){
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
     let list = PRODUCTS_CACHE.slice();
 
@@ -4914,6 +4963,13 @@
         (p.teams && p.teams.nome.toLowerCase().includes(query))
       );
     }
+    return list;
+  }
+
+  function renderProductList(){
+    atualizarChipEstoqueBaixo();
+    const list = listaProdutosFiltrada();
+    atualizarBarraProdutos(list);
 
     const totalPaginas = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
     if(currentPage > totalPaginas) currentPage = totalPaginas;
@@ -4976,16 +5032,21 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/></svg>
               </div>`;
 
+      const emSel = !!SEL_PRODUTOS;
+      const marcado = emSel && SEL_PRODUTOS.has(String(p.id));
+      const classeSel = emSel ? (doMestre ? 'nao-sel' : (marcado ? 'sel' : '')) : '';
+      const topoDireita = emSel
+        ? (doMestre ? '' : '<div class="sel-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></div>')
+        : `<div class="product-card-actions">${btnEstoque}${acoes}</div>`;
+
       return `
-        <div class="product-card ${!p.disponivel || (doMestre && oculto) ? 'unavailable' : ''}">
-          <div class="product-card-photo" onclick="openForm('${p.id}')">
+        <div class="product-card ${!p.disponivel || (doMestre && oculto) ? 'unavailable' : ''} ${classeSel}">
+          <div class="product-card-photo" onclick="cliqueProduto(decodeURIComponent('${idCod}'))">
             ${thumb}
             <div class="product-card-tags">${tags.join('')}</div>
-            <div class="product-card-actions">
-              ${btnEstoque}${acoes}
-            </div>
+            ${topoDireita}
           </div>
-          <div class="product-card-body" onclick="openForm('${p.id}')">
+          <div class="product-card-body" onclick="cliqueProduto(decodeURIComponent('${idCod}'))">
             <div class="product-card-title">${tituloExibido}</div>
             <div class="product-card-meta">
               <span>${p.teams ? p.teams.nome : '—'}</span>
@@ -5362,6 +5423,8 @@
     // A tela de personalizar reaproveita este modal com o botão "Restaurar";
     // aqui ele volta ao texto padrão para os outros usos (excluir).
     document.getElementById('confirmActionBtn').textContent = 'Excluir';
+    document.getElementById('confirmActionBtn').disabled = false;
+    document.getElementById('confirmText').style.whiteSpace = '';
   }
   async function deleteProduct(id){
     // As linhas de product_images somem em cascata, mas os ARQUIVOS no
@@ -5388,6 +5451,242 @@
     await loadProducts();
     renderProductList();
     loadMiniHero();
+  }
+
+  // ============================================================
+  // SELEÇÃO EM MASSA — PRODUTOS
+  // Clique em "Selecionar", marque os cards (ou "Selecionar todos" = todos
+  // os produtos do filtro atual, em todas as páginas) e exclua de uma vez.
+  // Produto do catálogo mestre não é selecionável (o banco recusa).
+  // ============================================================
+  let SEL_PRODUTOS = null; // Set de ids quando o modo seleção está ligado
+
+  function cliqueProduto(id){
+    if(!SEL_PRODUTOS){ openForm(id); return; }
+    const p = PRODUCTS_CACHE.find(x => String(x.id) === String(id));
+    if(!p || ehProdutoDoMestre(p)) return;
+    const k = String(id);
+    if(SEL_PRODUTOS.has(k)) SEL_PRODUTOS.delete(k); else SEL_PRODUTOS.add(k);
+    renderProductList();
+  }
+
+  function alternarSelecaoProdutos(){
+    SEL_PRODUTOS = SEL_PRODUTOS ? null : new Set();
+    document.body.classList.toggle('modo-sel-produtos', !!SEL_PRODUTOS);
+    document.getElementById('selProdBtnTxt').textContent = SEL_PRODUTOS ? 'Cancelar seleção' : 'Selecionar';
+    document.getElementById('massaProdutosBar').classList.toggle('hidden', !SEL_PRODUTOS);
+    renderProductList();
+  }
+
+  function produtosSelecionaveis(lista){ return lista.filter(p => !ehProdutoDoMestre(p)); }
+
+  function atualizarBarraProdutos(listaFiltrada){
+    if(!SEL_PRODUTOS) return;
+    const n = SEL_PRODUTOS.size;
+    const disponiveis = produtosSelecionaveis(listaFiltrada || listaProdutosFiltrada());
+    document.getElementById('massaProdutosInfo').textContent =
+      n === 0 ? 'Toque nos produtos para selecionar' : `${n} produto${n === 1 ? '' : 's'} selecionado${n === 1 ? '' : 's'}`;
+    document.getElementById('massaProdutosTodos').textContent = `Selecionar todos do filtro (${disponiveis.length})`;
+    const btn = document.getElementById('massaProdutosExcluir');
+    btn.disabled = n === 0;
+    btn.textContent = n ? `Excluir ${n}` : 'Excluir';
+  }
+
+  function selecionarTodosProdutos(){
+    if(!SEL_PRODUTOS) return;
+    produtosSelecionaveis(listaProdutosFiltrada()).forEach(p => SEL_PRODUTOS.add(String(p.id)));
+    renderProductList();
+  }
+
+  function limparSelecaoProdutos(){
+    if(!SEL_PRODUTOS) return;
+    SEL_PRODUTOS.clear();
+    renderProductList();
+  }
+
+  function caminhosStorageDoProduto(p){
+    const marca = '/object/public/produtos/';
+    return (p && p.product_images || []).map(img => {
+      const u = String(img.url || '');
+      const i = u.indexOf(marca);
+      return i === -1 ? null : decodeURIComponent(u.slice(i + marca.length));
+    }).filter(Boolean);
+  }
+
+  // Exclui produtos em lotes. Devolve quantos o banco realmente apagou
+  // (count exato: se alguma regra de segurança barrar, não conta como apagado).
+  async function excluirProdutosPorId(produtos, aoProgredir){
+    const caminhos = produtos.flatMap(caminhosStorageDoProduto);
+    for(let i = 0; i < caminhos.length; i += 500){
+      try { await supabaseClient.storage.from('produtos').remove(caminhos.slice(i, i + 500)); }
+      catch(e){ console.error('Nao consegui remover fotos do Storage', e); }
+    }
+    let apagados = 0; const erros = [];
+    const ids = produtos.map(p => p.id);
+    for(let i = 0; i < ids.length; i += 100){
+      const lote = ids.slice(i, i + 100);
+      const { error, count } = await supabaseClient.from('products').delete({ count: 'exact' }).in('id', lote);
+      if(error) erros.push(error.message); else apagados += (count || 0);
+      if(aoProgredir) aoProgredir(Math.min(i + 100, ids.length), ids.length);
+    }
+    return { apagados, erros };
+  }
+
+  function confirmarExcluirProdutosSel(){
+    if(!SEL_PRODUTOS || !SEL_PRODUTOS.size) return;
+    const produtos = PRODUCTS_CACHE.filter(p => SEL_PRODUTOS.has(String(p.id)) && !ehProdutoDoMestre(p));
+    const n = produtos.length;
+    document.getElementById('confirmTitle').textContent = `Excluir ${n} produto${n === 1 ? '' : 's'}?`;
+    const exemplos = produtos.slice(0, 5).map(p => '• ' + p.titulo).join('\n');
+    document.getElementById('confirmText').textContent =
+      `Eles serão excluídos permanentemente, junto com as fotos. Essa ação não pode ser desfeita.\n\n${exemplos}${n > 5 ? `\n…e mais ${n - 5}` : ''}`;
+    document.getElementById('confirmText').style.whiteSpace = 'pre-line';
+    const btn = document.getElementById('confirmActionBtn');
+    btn.textContent = `Excluir ${n}`;
+    btn.onclick = async () => {
+      btn.disabled = true;
+      const { apagados, erros } = await excluirProdutosPorId(produtos, (f, t) => { btn.textContent = `Excluindo ${f}/${t}…`; });
+      btn.disabled = false;
+      document.getElementById('confirmText').style.whiteSpace = '';
+      closeConfirm();
+      if(erros.length) showToast(`${apagados} excluído(s). Erro em parte: ${erros[0]}`, 'error');
+      else if(apagados < n) showToast(`${apagados} de ${n} excluídos. Os outros não puderam ser apagados (sem permissão).`, 'error');
+      else showToast(`${apagados} produto${apagados === 1 ? '' : 's'} excluído${apagados === 1 ? '' : 's'}.`, 'success');
+      SEL_PRODUTOS.clear();
+      await loadProducts();
+      renderProductList();
+      loadMiniHero();
+    };
+    document.getElementById('confirmOverlay').classList.remove('hidden');
+  }
+
+  // ============================================================
+  // SELEÇÃO EM MASSA — TIMES
+  // Time com produto não pode ser apagado sozinho (o banco bloqueia).
+  // Na confirmação dá pra marcar "excluir também os produtos desses times";
+  // sem marcar, só os times sem produtos são excluídos.
+  // ============================================================
+  let SEL_TIMES = null;
+
+  function contarProdutosPorTime(){
+    const m = new Map();
+    (PRODUCTS_CACHE || []).forEach(p => {
+      const id = p.team_id || (p.teams && p.teams.id);
+      if(id) m.set(String(id), (m.get(String(id)) || 0) + 1);
+    });
+    return m;
+  }
+
+  function verProdutosDoTime(teamId){
+    if(SEL_TIMES) alternarSelecaoTimes();
+    closeTeamsOverlay();
+    mostrarSecao('produtos');
+    if(SEL_PRODUTOS) alternarSelecaoProdutos();
+    document.getElementById('searchInput').value = '';
+    setFilter('todos');
+    selectTeamFilter(teamId);
+  }
+
+  function alternarSelecaoTimes(){
+    SEL_TIMES = SEL_TIMES ? null : new Set();
+    document.getElementById('selTimesBtn').textContent = SEL_TIMES ? 'Cancelar seleção' : 'Selecionar vários para excluir';
+    document.getElementById('massaTimesBar').classList.toggle('hidden', !SEL_TIMES);
+    renderTeamsList();
+  }
+
+  function alternarTimeSel(teamId){
+    if(!SEL_TIMES) return;
+    const k = String(teamId);
+    if(SEL_TIMES.has(k)) SEL_TIMES.delete(k); else SEL_TIMES.add(k);
+    renderTeamsList();
+  }
+
+  function atualizarBarraTimes(listaFiltrada){
+    if(!SEL_TIMES) return;
+    const n = SEL_TIMES.size;
+    document.getElementById('massaTimesInfo').textContent =
+      n === 0 ? 'Toque nos times para selecionar' : `${n} time${n === 1 ? '' : 's'} selecionado${n === 1 ? '' : 's'}`;
+    document.getElementById('massaTimesTodos').textContent = `Selecionar todos do filtro (${listaFiltrada.length})`;
+    const btn = document.getElementById('massaTimesExcluir');
+    btn.disabled = n === 0;
+    btn.textContent = n ? `Excluir ${n}` : 'Excluir';
+  }
+
+  function selecionarTodosTimes(){
+    if(!SEL_TIMES) return;
+    TEAMS_LIST_CACHE.filter(t => teamsPassaFiltro(t, false)).forEach(t => SEL_TIMES.add(String(t.id)));
+    renderTeamsList();
+  }
+
+  function limparSelecaoTimes(){
+    if(!SEL_TIMES) return;
+    SEL_TIMES.clear();
+    renderTeamsList();
+  }
+
+  async function confirmarExcluirTimesSel(){
+    if(!SEL_TIMES || !SEL_TIMES.size) return;
+    const ids = [...SEL_TIMES];
+    const times = TEAMS_LIST_CACHE.filter(t => SEL_TIMES.has(String(t.id)));
+    const btn = document.getElementById('massaTimesExcluir');
+    btn.disabled = true; btn.textContent = 'Verificando…';
+    // Busca no banco (não só no cache) os produtos ligados a esses times.
+    let produtos = [];
+    for(let i = 0; i < ids.length; i += 100){
+      const { data, error } = await buscarTodas(() => supabaseClient.from('products')
+        .select('id, team_id, loja_id, titulo, product_images(url)').in('team_id', ids.slice(i, i + 100)));
+      if(error){ showToast('Erro ao verificar produtos: ' + error.message, 'error'); atualizarBarraTimes(TEAMS_LIST_CACHE.filter(t => teamsPassaFiltro(t, false))); return; }
+      produtos = produtos.concat(data || []);
+    }
+    atualizarBarraTimes(TEAMS_LIST_CACHE.filter(t => teamsPassaFiltro(t, false)));
+    const comProduto = new Set(produtos.map(p => String(p.team_id)));
+    const nT = times.length, nP = produtos.length, nTcom = times.filter(t => comProduto.has(String(t.id))).length;
+
+    document.getElementById('confirmTitle').textContent = `Excluir ${nT} time${nT === 1 ? '' : 's'}?`;
+    const nomes = times.slice(0, 8).map(t => escHtml(t.nome)).join(', ') + (nT > 8 ? ` e mais ${nT - 8}` : '');
+    const txt = document.getElementById('confirmText');
+    txt.innerHTML = `<span>${nomes}.</span>` + (nP
+      ? `<br><br>${nTcom} desses times ${nTcom === 1 ? 'tem' : 'têm'} <b>${nP} produto${nP === 1 ? '' : 's'}</b> cadastrado${nP === 1 ? '' : 's'}. Sem excluir os produtos, esses times ficam de fora.
+         <label class="confirm-check"><input type="checkbox" id="confirmApagarProdutos"> Excluir também os ${nP} produto${nP === 1 ? '' : 's'} desses times (com as fotos)</label>`
+      : '<br><br>Nenhum deles tem produtos cadastrados.') + '<br>Essa ação não pode ser desfeita.';
+    const acao = document.getElementById('confirmActionBtn');
+    acao.textContent = 'Excluir';
+    acao.onclick = async () => {
+      const apagarProdutos = !!(document.getElementById('confirmApagarProdutos') || {}).checked;
+      acao.disabled = true;
+      let msgProdutos = '';
+      if(apagarProdutos && nP){
+        const { apagados, erros } = await excluirProdutosPorId(produtos, (f, t) => { acao.textContent = `Produtos ${f}/${t}…`; });
+        msgProdutos = ` ${apagados} produto${apagados === 1 ? '' : 's'} excluído${apagados === 1 ? '' : 's'}.` + (erros.length ? ` Erro: ${erros[0]}` : '');
+      }
+      // Times que ainda têm produto (não marcou a opção, ou algum produto não pôde ser apagado) ficam de fora.
+      let alvo = ids;
+      if(!apagarProdutos) alvo = ids.filter(id => !comProduto.has(id));
+      acao.textContent = 'Excluindo times…';
+      let apagadosT = 0; const errosT = [];
+      for(let i = 0; i < alvo.length; i += 100){
+        const lote = alvo.slice(i, i + 100);
+        const { error, count } = await supabaseClient.from('teams').delete({ count: 'exact' }).in('id', lote);
+        if(error){
+          // Algum time do lote ainda tem produto: tenta um por um para salvar os demais.
+          for(const id of lote){
+            const r = await supabaseClient.from('teams').delete({ count: 'exact' }).eq('id', id);
+            if(r.error) errosT.push(id); else apagadosT += (r.count || 0);
+          }
+        } else apagadosT += (count || 0);
+      }
+      acao.disabled = false;
+      closeConfirm();
+      const pulados = nT - apagadosT;
+      const msg = `${apagadosT} time${apagadosT === 1 ? '' : 's'} excluído${apagadosT === 1 ? '' : 's'}.` + msgProdutos +
+        (pulados > 0 ? ` ${pulados} ficou${pulados === 1 ? '' : 'aram'} (tem produtos ou sem permissão).` : '');
+      showToast(msg, pulados > 0 || errosT.length ? 'error' : 'success');
+      SEL_TIMES.clear();
+      if(apagarProdutos && nP){ await loadProducts(); renderProductList(); loadMiniHero(); }
+      await loadTeamsList();
+      await loadTeams();
+    };
+    document.getElementById('confirmOverlay').classList.remove('hidden');
   }
 
   // ============================================================
@@ -5567,6 +5866,7 @@
   }
   function closeTeamsOverlay(){
     document.getElementById('teamsOverlay').classList.add('hidden');
+    if(SEL_TIMES) alternarSelecaoTimes();
   }
 
   async function loadTeamsList(){
@@ -5690,17 +5990,35 @@
       el.innerHTML = '<div class="field-hint">Nenhum time com esse filtro.</div>';
       return;
     }
+    const qtdPorTime = contarProdutosPorTime();
+    atualizarBarraTimes(lista);
     el.innerHTML = lista.map(t => {
       const tags = [t.liga || 'Sem categoria', t.subliga, t.continente].filter(Boolean).join(' · ');
       const badge = t.escudo_url
         ? `<img src="${t.escudo_url}" alt="">`
         : (t.sigla || (t.nome || '?').slice(0,3).toUpperCase());
+      const qtd = qtdPorTime.get(String(t.id)) || 0;
+      const qtdHtml = qtd
+        ? `<button type="button" class="team-qtd" onclick="event.stopPropagation(); verProdutosDoTime('${t.id}')">${qtd} produto${qtd === 1 ? '' : 's'} · ver</button>`
+        : '<span class="team-qtd zero">sem produtos</span>';
+      if(SEL_TIMES){
+        const marcado = SEL_TIMES.has(String(t.id));
+        return `
+        <div class="team-row modo-sel ${marcado ? 'sel' : ''}" onclick="alternarTimeSel('${t.id}')">
+          <input type="checkbox" class="team-check" ${marcado ? 'checked' : ''} onclick="event.stopPropagation(); alternarTimeSel('${t.id}')" aria-label="Selecionar ${escHtml(t.nome)}">
+          <div class="team-row-badge" style="border-color:${t.cor || 'var(--neon-green)'}">${badge}</div>
+          <div class="team-row-info">
+            <div class="team-row-name">${t.nome}</div>
+            <div class="team-row-tag">${tags} ${qtdHtml}</div>
+          </div>
+        </div>`;
+      }
       return `
         <div class="team-row">
           <div class="team-row-badge" style="border-color:${t.cor || 'var(--neon-green)'}">${badge}</div>
           <div class="team-row-info">
             <div class="team-row-name">${t.nome}</div>
-            <div class="team-row-tag">${tags}</div>
+            <div class="team-row-tag">${tags} ${qtdHtml}</div>
           </div>
           <button class="icon-btn" onclick="openTeamForm('${t.id}')" aria-label="Editar time">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
